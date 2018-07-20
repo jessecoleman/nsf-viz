@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request
 from gensim.models.word2vec import Word2Vec
+import multiprocessing
 import logging
 import json
 import ruamel.yaml as yaml
 import pandas as pd
+from functools32 import lru_cache
 from flaskext.mysql import MySQL
 from collections import defaultdict
 
@@ -52,22 +54,31 @@ def search():
     j = request.get_json()
 
     if  j == "":
-        terms = keywords
+        terms = frozenset(keywords)
         with open("divisions.csv", "r") as f:
-            div = [l.strip() for l in f.readlines()]
+            div = frozenset([l.strip() for l in f.readlines()])
 
     else:
         data = yaml.safe_load(j)
-        terms, div = data["terms"], data["divisions"]
-        while len(div) < 2:
-            div.append("")
+        terms, div = frozenset(data["terms"]), frozenset(data["divisions"])
 
-    csv = "\n".join([
-        plot1(terms),
-        plot2(terms, div),
-        plot3(terms),
-        plot4(terms, div)
-    ])
+    #jobs = []
+    #pipe = []
+    #for i in range(2):
+    #    pipe.append(multiprocessing.Pipe(False))
+
+    #jobs.append(multiprocessing.Process(target=plot1, args=(pipe[0][1], terms)))
+    #jobs.append(multiprocessing.Process(target=plot2, args=(pipe[1][1], terms, div)))
+
+    #for p in jobs:
+    #    p.start()
+
+    #for p in jobs:
+    #    p.join()
+
+    #csv = "\n".join([p[0].recv() for p in pipe])
+    print(type(terms), type(div))
+    csv = plot1(terms) + "\n" + plot2(terms, div)
 
     return csv
 
@@ -75,16 +86,13 @@ word_vecs = Word2Vec.load("nsf_w2v_model").wv
 
 @app.route("/suggestions", methods=['POST'])
 def suggestions():
-    #print(request.get_json())
     terms = []
     for t in request.get_json():
         for t1 in t.split():
             if t1 in word_vecs.vocab:
                 terms.append(t1)
 
-    print(terms)
     related = word_vecs.most_similar(terms, [])
-    print(related)
     return ",".join([r[0] for r in related])
 
 
@@ -160,17 +168,17 @@ def get_divisions():
         } for d in open("divisions.csv", "r").readlines()
     ])
 
-@app.route("/c1")
+@lru_cache(maxsize=20)
 def plot1(terms):
     db = mysql.get_db()
 
-    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as total 
+    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as c_total, SUM(AwardAmount) as s_total 
                FROM Award WHERE YEAR(AwardEffectiveDate) BETWEEN 2007 AND 2017 
                GROUP BY YEAR(AwardEffectiveDate)"""
 
     total = pd.read_sql(query, db)
 
-    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as matching 
+    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as c_matching, SUM(AwardAmount) as s_matching 
                FROM Award A WHERE YEAR(AwardEffectiveDate) BETWEEN 2007 and 2017
                AND (MATCH(AwardTitle) AGAINST ('{0}' IN BOOLEAN MODE) 
                OR MATCH(AbstractNarration) AGAINST ('{0}' IN BOOLEAN MODE)) 
@@ -179,76 +187,40 @@ def plot1(terms):
     matching = pd.read_sql(query, db)
     return pd.merge(total, matching, on='year', how='outer').to_csv(index=False)
 
-@app.route("/c2")
+@lru_cache(maxsize=20)
 def plot2(terms, divisions):
     db = mysql.get_db()
 
-    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as total
+    if len(divisions) == 0:
+        long_name = "AND false"
+    elif len(divisions) == 1:
+        long_name = "AND LongName == " + divisions[0]
+    else:
+        long_name = "AND LongName IN " + str(tuple(divisions))
+
+    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as c_total, SUM(AwardAmount) as s_total 
                FROM Award A, Division D WHERE A.AwardID = D.AwardID 
                AND YEAR(AwardEffectiveDate) BETWEEN 2007 AND 2017 
-               AND LongName in {0} 
-               GROUP BY YEAR(AwardEffectiveDate)""".format(tuple(divisions))
+               {long_name} 
+               GROUP BY YEAR(AwardEffectiveDate)""".format(long_name=long_name)
     
     total = pd.read_sql(query, db)
 
-    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as matching
+    query = """SELECT YEAR(AwardEffectiveDate) as year, COUNT(*) as c_matching, SUM(AwardAmount) as s_matching 
                FROM Award A, Division D WHERE A.AwardID = D.AwardID 
                AND YEAR(AwardEffectiveDate) BETWEEN 2007 AND 2017 
                AND (MATCH(AwardTitle) AGAINST ('{0}' IN BOOLEAN MODE) 
                OR MATCH(AbstractNarration) AGAINST ('{0}' IN BOOLEAN MODE)) 
-               AND LongName in {1}
-               GROUP BY YEAR(AwardEffectiveDate)""".format(" ".join(['"{}"'.format(t) for t in terms]), tuple(divisions))
+               {1}
+               GROUP BY YEAR(AwardEffectiveDate)""".format(" ".join(['"{}"'.format(t) for t in terms]), long_name)
 
-    print(query)
-    matching = pd.read_sql(query, db)
-    print(matching)
+    try:
+        matching = pd.read_sql(query, db)
+    except:
+        matching = total
     return pd.merge(total, matching, on='year', how='outer').to_csv(index=False)
 
-@app.route("/c3")
-def plot3(terms):
-    db = mysql.get_db()
-
-    query = """SELECT YEAR(AwardEffectiveDate) as year, SUM(AwardAmount) as total
-               FROM Award WHERE YEAR(AwardEffectiveDate) BETWEEN 2007 AND 2017 
-               GROUP BY YEAR(AwardEffectiveDate) ORDER BY YEAR(AwardEffectiveDate)"""
-
-    total = pd.read_sql(query, db)
-
-    query = """SELECT YEAR(AwardEffectiveDate) as year, SUM(AwardAmount) as matching
-               FROM Award A WHERE YEAR(AwardEffectiveDate) BETWEEN 2007 AND 2017 
-               AND (MATCH(AwardTitle) AGAINST ('{0}' IN BOOLEAN MODE) 
-               OR MATCH(AbstractNarration) AGAINST ('{0}' IN BOOLEAN MODE)) 
-               GROUP BY YEAR(AwardEffectiveDate) 
-               ORDER BY YEAR(AwardEffectiveDate)""".format(" ".join(['"{}"'.format(t) for t in terms]))
-
-    matching = pd.read_sql(query, db)
-    return pd.merge(total, matching, on='year', how='outer').to_csv(index=False)
-
-@app.route("/c4")
-def plot4(terms, divisions):
-    db = mysql.get_db()
-
-    query = """SELECT YEAR(AwardEffectiveDate) as year, SUM(AwardAmount) as total
-               FROM Award A, Division D WHERE A.AwardID = D.AwardID 
-               AND YEAR(AwardEffectiveDate) BETWEEN 2007 AND 2017 
-               AND LongName in {0} 
-               GROUP BY YEAR(AwardEffectiveDate)""".format(tuple(divisions))
-
-    total = pd.read_sql(query, db)
-
-    query = """SELECT YEAR(AwardEffectiveDate) as year, SUM(AwardAmount) as matching
-               FROM Award A, Division D WHERE A.AwardID = D.AwardID 
-               AND YEAR(AwardEffectiveDate) BETWEEN 2007 AND 2017 
-               AND (MATCH(AwardTitle) AGAINST ('{0}' IN BOOLEAN MODE) 
-               OR MATCH(AbstractNarration) AGAINST ('{0}' IN BOOLEAN MODE)) 
-               AND LongName in {1} 
-               GROUP BY YEAR(AwardEffectiveDate)""".format(" ".join(['"{}"'.format(t) for t in terms]), tuple(divisions))
-
-    print(query)
-    matching = pd.read_sql(query, db)
-    print(matching)
-    return pd.merge(total, matching, on='year', how='outer').to_csv(index=False)
-
+#@lru_cache(maxsize=20)
 def grant_data(terms, divisions):
     db = mysql.get_db()
 
@@ -260,14 +232,6 @@ def grant_data(terms, divisions):
                AND LongName in {1}""".format(" ".join(['"{}"'.format(t) for t in terms]), tuple(divisions))
     
     return pd.read_sql(query, db).to_csv(index=False, header=False)
-
-#    cur.execute(query)
-#    def format_row(row):
-#        row = [str(val) for val in row]
-#        row[0] = '"{}"'.format(row[0].replace('"', '""'))
-#        return row
-#
-#    return "\n".join([",".join(format_row(row)) for row in cur.fetchall()])
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')

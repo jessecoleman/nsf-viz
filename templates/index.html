@@ -10,6 +10,16 @@ html, body, #main {
     height: 100%;
 }
 
+nav {
+    z-index: 3;
+    position: fixed;
+    bottom: 0;
+}
+
+.nav-wrapper {
+    position: relative;
+}
+
 #main {
     display: block;
     position: absolute;
@@ -18,26 +28,31 @@ html, body, #main {
     top: 0;
     left: 0;
     right: 0;
-    padding-left: 4%;
-    padding-right: 4%;
+    margin-bottom: 64px;
 }
 
 #viz {
+    position: relative;
     height: 100%;
-}
-
-body {
-    padding-left: 10%;
-    padding-right: 10%;
+    padding: 24px;
+    z-index: 2
 }
 
 #credits {
-    position: relative;
-    bottom: 0;
+    color: black;
+    position: absolute;
+    left: 0;
+    margin-left: 48px;
+}
+
+#links {
+    position: absolute;
+    right: 48px;
 }
 
 img {
-    padding: 8px;
+    margin: 8px;
+    height: 48px;
 }
 
 #spin {
@@ -52,9 +67,10 @@ img {
     position: absolute;
     z-index: 3;
     max-height: 16em;
-    overflow-y: scroll;
+    overflow-y: auto;
     padding: 8px;
     margin-top: 0;
+    margin-right: 10px;
 }
 
 #suggested-keywords {
@@ -63,10 +79,12 @@ img {
 }
 
 #controls {
+    z-index: 1
     position: relative;
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+    padding: 24px;
 }
 
 .d3-tip {
@@ -99,17 +117,18 @@ img {
 }
 
 div.tooltip {
-        position: absolute;
-        text-align: center;
-        width: 8em;
-        height: 2em;
-        padding: 4px;
-        font: 12px sans-serif;
-        color: white;
-        background: #005699;
-        border: 0px;
-        border-radius: 2px;
-        pointer-events: none;
+    z-index: 3;
+    position: absolute;
+    text-align: center;
+    width: auto; //8em;
+    height: 2em;
+    padding: 4px;
+    font: 12px sans-serif;
+    color: white;
+    background: #005699;
+    border: 0px;
+    border-radius: 2px;
+    pointer-events: none;
 }
 
 #grant-data {
@@ -119,7 +138,7 @@ div.tooltip {
 #keywords {
     margin: 0;
     border-bottom: none;
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height: 12em;
 }
 
@@ -147,14 +166,14 @@ div.tooltip {
 
 .btn-floating {
     position: absolute;
-    bottom: 48px;
-    right: 48px;
+    bottom: 96px;
+    left: 48px;
 
 </style>
 </head>
 <body>
     <div id="main" class="row">
-        <div class="col s4" id="controls">
+        <div class="col s4 grey lighten-5" id="controls">
             <h2 class="header center">NSF Grants Explorer</h2>
             <h5>SEARCH TERMS</h5>
             <a id="clear-terms" class="clear waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
@@ -175,14 +194,8 @@ div.tooltip {
             </div>
             <button id="search-button" class="waves-effect waves-light btn blue">search</button>
             </br>
-            <div id="credits">
-                <a href="https://datalab.ischool.uw.edu"><img src="/static/datalab_logo.png"></a>
-                <a href="https://www.moore.org"><img src="/static/moore_logo.jpg"></a>
-                </br>
-                Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab
-            </div>
-          </div>
-          <div class="col s8" id="viz">
+         </div>
+          <div class="col s8 z-depth-3" id="viz">
             <div id="spin" class="preloader-wrapper big active">
                 <div class="spinner-layer spinner-blue-only">
                     <div class="circle-clipper left">
@@ -196,8 +209,8 @@ div.tooltip {
             </div>
         </div>
     </div>
-    <a id="toggle-view" class="btn-floating btn-large waves-effect waves-light blue">#</a>
-    <button id="display-grants" class="btn-floating btn-large waves-effect waves-light blue modal-trigger" style="margin-bottom: 80px" data-target="grant-data"><i class="material-icons">insert_drive_file</i></button>
+    <a id="toggle-view" class="btn-floating btn-large waves-effect waves-light blue" style="margin-left: 80px">#</a>
+    <button id="display-grants" class="btn-floating btn-large waves-effect waves-light blue modal-trigger" data-target="grant-data"><i class="material-icons">insert_drive_file</i></button>
     <div class="modal" id="grant-data">
         <div class="modal-content">
             <div>
@@ -206,6 +219,7 @@ div.tooltip {
             </div>
             <table id="grant-table" class="striped">
                 <thead>
+                    <p id="table-message"></p>
                     <tr>
                         <th>Grant Title</th>
                         <th>Date</th>
@@ -221,6 +235,17 @@ div.tooltip {
             <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
         </div>
     </div>
+    <nav>
+        <div class="nav-wrapper light-blue lighten-3 z-depth-5">
+            <ul id="credits" class="left hide-on-med-and-down">
+                <li>Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab</li>
+            </ul>
+            <div id="links">
+                <a href="https://datalab.ischool.uw.edu"><img src="/static/datalab_logo.png"></a>
+                <a href="https://www.moore.org"><img src="/static/moore_logo.png"></a>
+            </div>
+       </div>
+    </nav>
 <script
     src="https://code.jquery.com/jquery-3.3.1.min.js"
     integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -228,7 +253,6 @@ div.tooltip {
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
-<!--<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>-->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
@@ -262,11 +286,11 @@ document.addEventListener("DOMContentLoaded", function() {
     let keywordContainer = document.querySelector("#keyword-container");
     let keywordInput = document.querySelector("#keywords input");
     let dropdown = document.querySelector("#dropdown");
-    dropdown.style.width = keywordContainer.style.width;
+    dropdown.style.maxWidth = keywordContainer.clientWidth + "px";
     let keywordFocused = false;
 
     keywordInput.addEventListener("focus", function(e) {
-        dropdown.style.display = "block";
+        dropdown.style.display = "inline";
     });
 
     keywordInput.addEventListener("focusout", function(e) {
@@ -318,26 +342,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
     });
 
-    d3.select("#clear-terms")
-        .on("click", (d) => {
-            d3.select("#keywords").selectAll(".chip").remove();
-            keywordInstance.chipsData = [];
-            getSuggestions(keywordInstance.chipsData);
+    clearTerms = document.querySelector("#clear-terms")
+    clearTerms.addEventListener("click", function(event) {
+        let l = keywordInstance.chipsData.length;
+        for (let i = 0; i < l; i++) {
+            keywordInstance.deleteChip(0);
+        }
+        getSuggestions([]);
+    });
 
-        })
-
-    $("#clear-divisions").click(function(d) {
-        $("#select-all").show()
-        $(this).hide()
+    clearDivisions = document.querySelector("#clear-divisions");
+    allDivisions = document.querySelector("#select-all");
+    clearDivisions.addEventListener("click", function(event) {
+        allDivisions.style.display = "block";
+        clearDivisions.style.display = "none";
         $("#select-division option").prop("selected", false);
-        M.FormSelect.init(select, null);
-    })
+        selectInstance = M.FormSelect.init(select, null);
+    });
 
     $("#select-all").click(function(d) {
-        $("#clear-divisions").show()
-        $(this).hide()
+        clearDivisions.style.display = "block";
+        allDivisions.style.display = "none";
         $("#select-division option").prop("selected", true);
-        M.FormSelect.init(select, null);
+        selectInstance = M.FormSelect.init(select, null);
     })
 
     d3.select("#search-button").on("click", () => { getData(this); });
@@ -347,7 +374,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function getData(event) {
 
-        $("#spin").show();
+        let spinner = document.querySelector("#spin");
+        spinner.style.display = "block";
         //$("#viz").hide();
 
         let data;
@@ -361,7 +389,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
             query["divisions"] = selectInstance.getSelectedValues();
             data = JSON.stringify(query);
-
         } else {
             data = "";
         }
@@ -374,6 +401,7 @@ document.addEventListener("DOMContentLoaded", function() {
             dataType: "json",
             complete: function(data) {
                 $("#spin").hide();
+                spinner.style.display = "none";
                 //$("#viz").show();
                 cellData = data.responseText.split("\n\n").map(d => d3.csvParse(d));
                 redraw(cellData);
@@ -381,21 +409,13 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     };
 
-    let width = document.querySelector("#viz").clientWidth;
-    let height = document.querySelector("#viz").clientHeight;
+    let m = {left: 24, right: 24, top: 24, bottom: 24};
+
+    let width = document.querySelector("#viz").clientWidth - m.left - m.right;
+    let height = document.querySelector("#viz").clientHeight - m.left - m.right;
     let svg = d3.select("#viz").append("svg")
         .attr("width", width)
         .attr("height", height);
-
-
-    /*
-    var tip = d3.tip()
-        .attr('class', 'd3-tip')
-        .offset([-10, 0])
-        .html(function(d) {
-            return "<strong>Percent:</strong> <span style='color:red'>" + d.matching + "</span>";
-        })
-    */
 
     let tooltip = d3.select("body").append("div")    
         .attr("class", "tooltip")                
@@ -432,8 +452,8 @@ document.addEventListener("DOMContentLoaded", function() {
         cell.chartHeight = height/2 - margin.top - margin.bottom;
 
         cell.x = d3.scaleBand().rangeRound([0, cell.chartWidth]).padding(0.1);
-        cell.yAbs = d3.scaleLinear().rangeRound([cell.chartHeight, 0]);
-        cell.yRel = d3.scaleLinear().rangeRound([cell.chartHeight, 0]);
+        cell.yCnt = d3.scaleLinear().rangeRound([cell.chartHeight, 0]);
+        cell.yPct = d3.scaleLinear().rangeRound([cell.chartHeight, 0]);
 
     });
 
@@ -441,11 +461,6 @@ document.addEventListener("DOMContentLoaded", function() {
         // clear elements from chart area
         d3.select("#toggle-view").text("#")
         svg.selectAll("*").remove();
-
-        let maxTopAbs = 0;
-        let maxTopRel = 0;
-        let maxBottomAbs = 0;
-        let maxBottomRel = 0;
 
         Object.keys(cells).forEach((c) => {
             let cell = cells[c],
@@ -458,28 +473,35 @@ document.addEventListener("DOMContentLoaded", function() {
 
         });
 
+        let maxTopCnt = 0;
+        let maxTopPct = 0;
+        let maxBottomCnt = 0;
+        let maxBottomPct = 0;
+
         data.forEach((c, i) => {
             c.forEach((d) => {
                 d.year = +d.year;
-                d.matching = +d.matching;
-                d.percent = d.matching/+d.total;
+                d.c_matching = +d.c_matching;
+                d.c_percent = d.c_matching/+d.c_total;
+                d.s_matching = +d.s_matching;
+                d.s_percent = d.s_matching/+d.s_total;
 
                 // update data range
-                if (i < 2 && maxTopAbs < d.matching) maxTopAbs = d.matching;
-                else if (i >= 2 && maxBottomAbs < d.matching) maxBottomAbs = d.matching;
-                if (i < 2 && maxTopRel < d.percent) maxTopRel = d.percent;
-                else if (i >= 2 && maxBottomRel < d.percent) maxBottomRel = d.percent;
-            });
+                if (maxTopCnt < d.c_matching) maxTopCnt = d.c_matching;
+                if (maxTopPct < d.c_percent) maxTopPct = d.c_percent;
+                if (maxBottomCnt < d.s_matching) maxBottomCnt = d.s_matching;
+                if (maxBottomPct < d.s_percent) maxBottomPct = d.s_percent;
+             });
         });
 
         Object.keys(cells).forEach((c) => {
 
             let cell = cells[c];
 
-            cell.x.domain(data[c].map((d) => { return d.year }).sort());
-            cell.yAbs.domain([0, c < 2 ? maxTopAbs : maxBottomAbs])
-            cell.yRel.domain([0, c < 2 ? maxTopRel : maxBottomRel])
-            cell.y = cell.yRel;
+            cell.x.domain(data[c % 2].map((d) => { return d.year }).sort());
+            cell.yCnt.domain([0, c < 2 ? maxTopCnt : maxBottomCnt])
+            cell.yPct.domain([0, c < 2 ? maxTopPct : maxBottomPct])
+            cell.y = cell.yPct;
     
             cell.chart.append("text")
                 .text(cell.title + " (%)")
@@ -506,13 +528,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 .text("%");
 
             cell.chart.selectAll(".bar")
-                .data(data[c])
+                .data(data[c % 2])
                 .enter().append("rect")
                 .attr("class", "bar")
                 .attr("x", (d) => { return cell.x(d.year); })
-                .attr("y", (d) => { return cell.y(d.percent); })
+                .attr("y", (d) => { return cell.y(c < 2 ? d.c_percent : d.s_percent); })
                 .attr("width", cell.x.bandwidth())
-                .attr("height", (d) => { return cell.chartHeight - cell.y(d.percent); })
+                .attr("height", (d) => { return cell.chartHeight - cell.y(c < 2 ? d.c_percent : d.s_percent); })
                 .attr("fill", (d) => { 
                     if (c < 2) return "#2196F3";
                     else return "#8BC34A";
@@ -576,11 +598,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function getTipText(cell, data, button) {
         if (button.text() == "#") {
-            return d3.format(".2%")(data.percent); 
+            return d3.format(".2%")(cell < 2 ? data.c_percent: data.s_percent); 
         } else if (cell < 2) {
-            return d3.format(",")(data.matching) + " grants";
+            return d3.format(",")(data.c_matching) + " grants";
         } else {
-            return d3.format("$,")(data.matching);
+            return d3.format("$,")(data.s_matching);
         }
     }
 
@@ -596,13 +618,13 @@ document.addEventListener("DOMContentLoaded", function() {
             let suffix;
 
             if (button.text() == "%") {
-                cell.y = cell.yRel;
-                val = "percent";
+                cell.y = cell.yPct;
+                val = c < 2 ? "c_percent" : "s_percent";
                 tickFmt = d3.format(".2%");
                 suffix = " (%)";
             } else {
-                cell.y = cell.yAbs;
-                val = "matching";
+                cell.y = cell.yCnt;
+                val = c < 2 ? "c_matching" : "s_matching";
                 if (c < 2) {
                     tickFmt = d3.format(".2s");
                     suffix = " (#)";
@@ -629,6 +651,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function getGrants(event) {
 
+        let message = d3.select("#table-message")
+        message.style("display", "inline");
         query = {"terms": [], "divisions": []};
 
         keywordInstance.chipsData.forEach((c) => {
@@ -637,9 +661,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
         query["divisions"] = selectInstance.getSelectedValues();
 
+        if (query["divisions"].length === 0) {
+            message.text("Please select some divisions from the filter dropdown before downloading");
+            return;
+        }
+
         let data = JSON.stringify(query);
 
-        d3.select("#grant-table").insert("p", "tbody").text("Loading data...");
+        message.text("Loading data...");
         d3.select("#grant-table tbody").selectAll("tr").remove();
 
         $.ajax({
@@ -650,7 +679,7 @@ document.addEventListener("DOMContentLoaded", function() {
             dataType: "json",
             complete: function(data) {
 
-                d3.select("#grant-table p").remove();
+                message.style("display", "none");
                 displayData(d3.csvParse(data.responseText));
                 d3.select("#csv-download").attr("href", URL.createObjectURL(new Blob(["\ufeff", data.responseText])));
                 d3.select("#csv-download").attr("download", "grants.csv");
@@ -664,10 +693,15 @@ document.addEventListener("DOMContentLoaded", function() {
             .enter()
             .append("tr");
 
+        let dateFormat = d3.timeFormat("%b %Y");
+        let dateParse = d3.timeParse("%Y-%m-%d");
+
         rows.selectAll("td")
             .data((d) => {
                 return ["title", "date", "value", "division"].map((c) => {
                     if (c == "value") return { column: c, value: "$" + d3.format(",")(d[c]) };
+                    else if (c == "date") { 
+                        return { column: c, value: dateFormat(dateParse(d[c])) }; }
                     else return { column: c, value: d[c] }; 
                 });
             })
