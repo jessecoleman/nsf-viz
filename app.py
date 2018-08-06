@@ -222,7 +222,7 @@ def get_defaults():
         } for i, d in enumerate(open("divisions.csv", "r").readlines())
     ]})
 
-#@lru_cache(maxsize=40)
+@lru_cache(maxsize=50)
 def get_filtered(terms):
 
     it = iter(terms)
@@ -336,7 +336,6 @@ def fast_grants(terms, divisions):
     for t in range(l):
         m = m | MultiMatch(query=next(it), fields=['title', 'abstract'], type="phrase")
 
-    print(divisions)
     s = Search(using=es).query(m)
 
     matched = ["\"{}\",{},{},{}".format(r.title, r.date, r.amount, r.division) for r in s.scan() if r.division in divisions]
