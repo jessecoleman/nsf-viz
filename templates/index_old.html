@@ -227,8 +227,6 @@ div.tooltip {
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-    let visPercent = true;
-
     let modal = document.querySelector("#grant-data");
     let select = document.querySelector("#select-division");
     $("#select-all").hide();
@@ -272,6 +270,7 @@ document.addEventListener("DOMContentLoaded", function() {
         } else {
             keywordInput.focus();
         }
+
     });
 
     keywordContainer.addEventListener("mouseover", function() {
@@ -285,7 +284,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // load keyword data from server
     d3.json("/defaults", function(data) {
         data.keywords.forEach((d) => {
             keywordInstance.addChip({tag: d});
@@ -302,7 +300,7 @@ document.addEventListener("DOMContentLoaded", function() {
         $("#select-division option.default").prop("selected", true);
         selectInstance = M.FormSelect.init(select, null);
 
-        getData();
+        getData(this);
     });
 
     clearTerms = document.querySelector("#clear-terms")
@@ -330,8 +328,47 @@ document.addEventListener("DOMContentLoaded", function() {
         selectInstance = M.FormSelect.init(select, null);
     })
 
-    d3.select("#search-button").on("click", () => { getData(); });
+    d3.select("#search-button").on("click", () => { getData(this); });
+    d3.select("#toggle-view").on("click", toggleView);
     d3.select("#display-grants").on("click", getGrants);
+
+    function getData(event) {
+
+        let spinner = document.querySelector("#spin");
+        spinner.style.display = "block";
+        //$("#viz").hide();
+
+        let data;
+
+        if (event != null) {
+            query = {"terms": [], "divisions": []};
+
+            keywordInstance.chipsData.forEach((c) => {
+                query["terms"].push(c.tag);
+            });
+
+            query["divisions"] = selectInstance.getSelectedValues();
+            data = JSON.stringify(query);
+        } else {
+            data = "";
+        }
+
+        $.ajax({
+            url: "/search",
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            dataType: "json",
+            complete: function(data) {
+                $("#spin").hide();
+                spinner.style.display = "none";
+                //$("#viz").show();
+                cellData = data.responseText.split("\n\n").map(d => d3.csvParse(d));
+                console.log(data.responseText)
+                redraw(cellData);
+            }
+        });
+    };
 
     let m = {left: 24, right: 24, top: 24, bottom: 24};
 
@@ -351,26 +388,18 @@ document.addEventListener("DOMContentLoaded", function() {
         0: {
             "pos": [0, 0], 
             "title": "Grants per Year",
-            "amount": false,
-            "filtered": false
         },
         1: {
             "pos": [1, 0], 
-            "title": "Grants in Filtered Divisions per Year",
-            "amount": false,
-            "filtered": true
+            "title": "Grants in Filtered Divisions per Year"
         },
         2: {
             "pos": [0, 1], 
-            "title": "Grant Funding per Year",
-            "amount": true,
-            "filtered": false
+            "title": "Grant Funding per Year"
         },    
         3: {
             "pos": [1, 1],
-            "title": "Grant Funding in Filtered Divisions per Year",
-            "amount": true,
-            "filtered": true
+            "title": "Grant Funding in Filtered Divisions per Year"
         }
     }
 
@@ -383,126 +412,99 @@ document.addEventListener("DOMContentLoaded", function() {
         cell.chartWidth = width/2 - margin.left - margin.right;
         cell.chartHeight = height/2 - margin.top - margin.bottom;
 
-        cell.chart = svg.append("g")
-            .attr("transform", "translate(" + (row*width/2 + margin.left) + "," 
-                + (col*height/2 + margin.top) + ")");
- 
         cell.x = d3.scaleBand().rangeRound([0, cell.chartWidth]).padding(0.1);
-        cell.y = d3.scaleLinear().rangeRound([cell.chartHeight, 0]);
+        cell.yCnt = d3.scaleLinear().rangeRound([cell.chartHeight, 0]);
+        cell.yPct = d3.scaleLinear().rangeRound([cell.chartHeight, 0]);
 
-        cell.chart.append("text")
-            .text(cell.title + " (%)")
-            .attr("class", "title")
-            .attr("x", cell.chartWidth / 2)
-            .attr("y", -5)
-            .attr("text-anchor", "middle");
-    
-        cell.xAxis = cell.chart.append("g")
-            .attr("class", "axis axis-x")
-            .attr("transform", "translate(0, " + cell.chartHeight + ")")
-
-        cell.yAxis = cell.chart.append("g")
-            .attr("class", "axis axis-y")
-
-        cell.yAxis.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", cell.chartWidth)
-            .attr("text-anchor", "end")
-            .text("%");
     });
 
-    function getData() {
+    function redraw(data) {
+        // clear elements from chart area
+        d3.select("#toggle-view").text("#")
+        svg.selectAll("*").remove();
 
-        let spinner = document.querySelector("#spin");
-        spinner.style.display = "block";
-        d3.select("#viz").style("opacity", 0.6);
+        Object.keys(cells).forEach((c) => {
+            let cell = cells[c],
+                row = cell.pos[0],
+                col = cell.pos[1];
 
-        let terms = [];
-        let divs = selectInstance.getSelectedValues();
+            cell.chart = svg.append("g")
+                .attr("transform", "translate(" + (row*width/2 + margin.left) + "," 
+                    + (col*height/2 + margin.top) + ")");
 
-        keywordInstance.chipsData.forEach((c) => {
-            terms.push(c.tag);
         });
 
-        //d3.request("/search2")
-        //    .header("Content-type": "application/json; charset=UTF-8")
-        //    .mimeType("application/json")
-        //    .post(JSON.stringify(data), function(error, cellData) { 
-        //        console.log(cellData);
-        //    });
+        let maxTopCnt = 0;
+        let maxTopPct = 0;
+        let maxBottomCnt = 0;
+        let maxBottomPct = 0;
 
-        $.ajax({
-            url: "/search2",
-            type: "POST",
-            data: JSON.stringify(terms),
-            contentType: "application/json",
-            dataType: "json",
-            complete: function(data) {
-                $("#spin").hide();
-                spinner.style.display = "none";
-                d3.select("#viz").style("opacity", 1);
-                redraw(JSON.parse(data.responseText), divs);
-            }
+        data.forEach((c, i) => {
+            c.forEach((d) => {
+                d.year = +d.year;
+                d.c_matching = +d.c_matching;
+                d.c_percent = d.c_matching/+d.c_total;
+                d.s_matching = +d.s_matching;
+                d.s_percent = d.s_matching/+d.s_total;
+
+                // update data range
+                if (maxTopCnt < d.c_matching) maxTopCnt = d.c_matching;
+                if (maxTopPct < d.c_percent) maxTopPct = d.c_percent;
+                if (maxBottomCnt < d.s_matching) maxBottomCnt = d.s_matching;
+                if (maxBottomPct < d.s_percent) maxBottomPct = d.s_percent;
+             });
         });
-    };
-
-    function redraw(data, divs, percent=visPercent) {
-        d3.select("#toggle-view").on("click", toggleView);
-
-        let maxGrants = Math.max.apply(null, 
-                data.map((d) => { return barData("val", cells[0], d.data, divs, percent); }).concat(
-                data.map((d) => { return barData("val", cells[1], d.data, divs, percent); }))
-            );
-
-        let maxAmount = Math.max.apply(null,
-                data.map((d) => { return barData("val", cells[2], d.data, divs, percent); }).concat(
-                data.map((d) => { return barData("val", cells[3], d.data, divs, percent); }))
-            );
 
         Object.keys(cells).forEach((c) => {
 
             let cell = cells[c];
 
-            let toggleButton = d3.select("#toggle-view");
-            let suffix, tickFmt;
-
-            if (percent) {
-                suffix = " (%)";
-                toggleButton.text("#");
-                tickFmt = d3.format(".2%");
-            } else {
-                if (!cell.amount) {
-                    tickFmt = d3.format(".2s");
-                    suffix = " (#)";
-                } else {
-                    tickFmt = (d) => { return "$" + d3.format(".2s")(d) };
-                    suffix = " ($)";
-                }
-                toggleButton.text("%");
-            }
-
-            cell.chart.select(".title")
-                .text(cell.title + suffix);
-
-            cell.x.domain(data.map((d) => { return d.year; }).sort());
-            cell.y.domain([0, cell.amount ? maxAmount : maxGrants ]);
+            cell.x.domain(data[c % 2].map((d) => { return d.year }).sort());
+            cell.yCnt.domain([0, c < 2 ? maxTopCnt : maxBottomCnt])
+            cell.yPct.domain([0, c < 2 ? maxTopPct : maxBottomPct])
+            cell.y = cell.yPct;
     
-            cell.xAxis.call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
-            cell.yAxis.call(d3.axisLeft(cell.y).ticks(5).tickFormat(tickFmt));
+            cell.chart.append("text")
+                .text(cell.title + " (%)")
+                .attr("class", "title")
+                .attr("x", cell.chartWidth / 2)
+                .attr("y", -5)
+                .attr("text-anchor", "middle");
+    
+            cell.chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", "translate(0, " + cell.chartHeight + ")")
+                .call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
+    
+            cell.yAxis = cell.chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(cell.y).ticks(5).tickFormat(d3.format(".2%")));
 
-            //cell.chart.selectAll(".bar").remove();
+            cell.yAxis
+                //.attr("transform", "translate(" + cell.chartWidth + ", 0)")
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", cell.chartWidth)
+                .attr("text-anchor", "end")
+                .text("%");
 
-            let bars = cell.chart.selectAll(".bar")
-                .data(data)
-
-            bars
+            cell.chart.selectAll(".bar")
+                .data(data[c % 2])
                 .enter().append("rect")
-                .merge(bars)
+                .attr("class", "bar")
+                .attr("x", (d) => { return cell.x(d.year); })
+                .attr("y", (d) => { return cell.y(c < 2 ? d.c_percent : d.s_percent); })
+                .attr("width", cell.x.bandwidth())
+                .attr("height", (d) => { return cell.chartHeight - cell.y(c < 2 ? d.c_percent : d.s_percent); })
+                .attr("fill", (d) => { 
+                    if (c < 2) return "#2196F3";
+                    else return "#8BC34A";
+                })
                 .on("mouseover", function(d) {
                     tooltip.transition()
                         .duration(200)
                         .style("opacity", .9);
-                    tooltip.html(barData("text", cell, d.data, divs, percent))
+                    tooltip.html(getTipText(c, d, d3.select("#toggle-view")))
                         .style("left", (d3.event.pageX) + "px")
                         .style("top", (d3.event.pageY - 28) + "px");
                     })
@@ -510,80 +512,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     tooltip.transition()
                         .duration(500)
                         .style("opacity", 0);
-                })    
-                .transition().duration(500)
-                .attr("class", "bar")
-                .attr("x", (d) => { return cell.x(d.year); })
-                .attr("y", (d) => { return barData("y", cell, d.data, divs, percent); })
-                .attr("width", cell.x.bandwidth())
-                .attr("height", (d) => { return barData("height", cell, d.data, divs, percent); })
-                .attr("fill", (d) => { 
-                    if (c < 2) return "#2196F3";
-                    else return "#8BC34A";
-                });
+                });    
         });
-
-        function barData(attr, cell, data, divs, percent) {
-            let t = 0;
-            let m = 0;
-            if (!cell.filtered) {
-                if (cell.amount) {
-                    m = data.all.match_amount
-                    t = data.all.total_amount;
-                } else {
-                    m = data.all.match_grants;
-                    t = data.all.total_grants;
-                }
-            } else {
-                if (cell.amount) {
-                    divs.forEach((div) => { 
-                        m += data[div].match_amount; 
-                        t += data[div].total_amount; 
-                    });
-                } else {
-                    divs.forEach((div) => { 
-                        m += data[div].match_grants; 
-                        t += data[div].total_grants; 
-                    });
-                }
-            }
-
-            let h;
-            if (percent) {
-                if (t != 0) h = m / t;
-                else h = 0;
-            }
-            else h = m;
-
-            if (attr == "height") return cell.chartHeight - cell.y(h);
-            else if (attr == "text") {
-                if (percent) return d3.format(".2%")(h);
-                else if (amount) return d3.format("$,")(h);
-                else return d3.format(",")(h) + "grants";
-            } 
-            else if (attr == "y") return cell.y(h);
-            else return h;
-        }
-
-        function getTipText(cell, data, button) {
-            if (button.text() == "#") {
-                return d3.format(".2%")(barData("text", cell, data, divs));
-            } else if (cell < 2) {
-                return d3.format(",")(data.c_matching) + " grants";
-            } else {
-                return d3.format("$,")(data.s_matching);
-            }
-        }
-
-        function toggleView(event) {
-            visPercent = !visPercent;
-            redraw(data, divs, visPercent); 
-        }
-    
-        //        cell.chart.selectAll(".bar")
-        //            .attr("y", (d) => { return cell.y(d[val]); })
-        //            .attr("height", (d) => { return cell.chartHeight - cell.y(d[val]); });
-    
     }
 
     function getSuggestions(data) {
@@ -596,35 +526,79 @@ document.addEventListener("DOMContentLoaded", function() {
 
         keywords = [];
         data.forEach((d) => {
-            keywords.push(d.tag);
+            keywords.push(encodeURIComponent(d.tag));
         });
 
-        $.ajax({
-            url: "/suggestions",
-            type: "POST",
-            data: JSON.stringify(keywords),
-            contentType: "application/json",
-            dataType: "json",
-            complete: function(data) {
-                let chips = data.responseText.split(",");
+        d3.json("/suggestions/" + keywords.join(","), function(error, chips) {
+            let suggested = d3.select("#suggested-keywords")
+                .selectAll(".chip").data(chips, function(d) { return d; });
+            
+            suggested.exit().remove()
 
-                let suggested = d3.select("#suggested-keywords")
-                    .selectAll(".chip").data(chips, function(d) { return d; });
-                
-                suggested.exit().remove()
-
-                suggested.enter().append("div")
-                    .attr("class", "chip")
-                    .attr("vertical-align", "middle")
-                    .text((d) => { return d; })
-                    .append("i")
-                    .attr("class", "close material-icons")
-                    .text("add")
-                    .on("mousedown", (d) => { 
-                        keywordInstance.addChip({tag: d});
-                    });
-             }
+            suggested.enter().append("div")
+                .attr("class", "chip")
+                .attr("vertical-align", "middle")
+                .text((d) => { return d; })
+                .append("i")
+                .attr("class", "close material-icons")
+                .text("add")
+                .on("mousedown", (d) => { 
+                    keywordInstance.addChip({tag: d});
+                });
         });
+    }
+
+    function getTipText(cell, data, button) {
+        if (button.text() == "#") {
+            return d3.format(".2%")(cell < 2 ? data.c_percent: data.s_percent); 
+        } else if (cell < 2) {
+            return d3.format(",")(data.c_matching) + " grants";
+        } else {
+            return d3.format("$,")(data.s_matching);
+        }
+    }
+
+    function toggleView(event) {
+        button = d3.select("#toggle-view");
+
+        Object.keys(cells).forEach((c) => {
+
+            cell = cells[c];
+
+            let val;
+            let tickFmt;
+            let suffix;
+
+            if (button.text() == "%") {
+                cell.y = cell.yPct;
+                val = c < 2 ? "c_percent" : "s_percent";
+                tickFmt = d3.format(".2%");
+                suffix = " (%)";
+            } else {
+                cell.y = cell.yCnt;
+                val = c < 2 ? "c_matching" : "s_matching";
+                if (c < 2) {
+                    tickFmt = d3.format(".2s");
+                    suffix = " (#)";
+                } else {
+                    tickFmt = (d) => { return "$" + d3.format(".2s")(d) };
+                    suffix = " ($)";
+                }
+            }
+
+            cell.chart.select(".axis-y").call(d3.axisLeft(cell.y).tickFormat(tickFmt));
+
+            cell.chart.select(".title")
+                .text(cell.title + suffix);
+
+            cell.chart.selectAll(".bar")
+                .transition().duration(250)
+                .attr("y", (d) => { return cell.y(d[val]); })
+                .attr("height", (d) => { return cell.chartHeight - cell.y(d[val]); });
+
+        });
+
+        button.text(button.text() == "%" ? "#" : "%");
     }
 
     function getGrants(event) {
@@ -650,13 +624,12 @@ document.addEventListener("DOMContentLoaded", function() {
         d3.select("#grant-table tbody").selectAll("tr").remove();
 
         $.ajax({
-            url: "/grants2",
+            url: "/grants",
             type: "POST",
             data: JSON.stringify(data),
             contentType: "application/json",
             dataType: "json",
             complete: function(data) {
-                console.log(data.responseText);
 
                 message.style("display", "none");
                 displayData(d3.csvParse(data.responseText));
