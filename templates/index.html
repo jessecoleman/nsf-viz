@@ -62,6 +62,22 @@ img {
     margin: auto;
 }
 
+#union-intersection:not(:checked)+.lever {
+    background-color: #2196F3;
+}
+
+#union-intersection:not(:checked)+lever:after {
+    background-color: #1976D2;
+}
+
+#union-intersection:checked+.lever {
+    background-color: #2196F3;
+}
+
+#union-intersection:checked+lever:after {
+    background-color: #1976D2;
+}
+
 #dropdown {
     display: none;
     position: absolute;
@@ -229,10 +245,6 @@ div.tooltip {
             </div>
        </div>
     </nav>
-<script
-    src="https://code.jquery.com/jquery-3.3.1.min.js"
-    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-    crossorigin="anonymous"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
@@ -240,14 +252,11 @@ div.tooltip {
 document.addEventListener("DOMContentLoaded", function() {
 
     let visPercent = true;
+    let visData = null;
 
     let modal = document.querySelector("#grant-data");
     let select = document.querySelector("#select-division");
-    $("#select-all").hide();
-
     let keywordChips = document.querySelector("#keywords");
-    let suggestedChips = document.querySelector("#suggested-keywords");
-    let suggest = document.querySelector("#term-suggestions");
 
      // initialize materialize elements
     let modalInstance = M.Modal.init(modal, null);
@@ -268,30 +277,30 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    let keywordContainer = document.querySelector("#keyword-container");
-    let keywordInput = document.querySelector("#keywords input");
-    let dropdown = document.querySelector("#dropdown");
-    dropdown.style.maxWidth = keywordContainer.clientWidth + "px";
+    let keywordContainer = d3.select("#keyword-container");
+    let keywordInput = d3.select("#keywords input");
+    let dropdown = d3.select("#dropdown");
+    dropdown.style("max-width", keywordContainer.node().getBoundingClientRect().width + "px");
     let keywordFocused = false;
 
-    keywordInput.addEventListener("focus", function(e) {
-        dropdown.style.display = "inline";
+    keywordInput.on("focus", function(e) {
+        dropdown.style("display", "inline");
     });
 
-    keywordInput.addEventListener("focusout", function(e) {
+    keywordInput.on("focusout", function(e) {
         if (!keywordFocused) {
-            dropdown.style.display = "none";
+            dropdown.style("display", "none");
         } else {
-            keywordInput.focus();
+            keywordInput.node().focus();
         }
     });
 
-    keywordContainer.addEventListener("mouseover", function() {
+    keywordContainer.on("mouseover", function() {
         keywordFocused = true;
     });
     
-    keywordContainer.addEventListener("mouseout", function(event) {
-        let e = event.toElement || event.relatedTarget;
+    keywordContainer.on("mouseout", function(event) {
+        let e = d3.event.toElement || d3.event.relatedTarget;
         if (!this.contains(e)) {
             keywordFocused = false;
         }
@@ -315,8 +324,7 @@ document.addEventListener("DOMContentLoaded", function() {
         getData();
     });
 
-    clearTerms = document.querySelector("#clear-terms")
-    clearTerms.addEventListener("click", function(event) {
+    d3.select("#clear-terms").on("click", function(event) {
         let l = keywordInstance.chipsData.length;
         for (let i = 0; i < l; i++) {
             keywordInstance.deleteChip(0);
@@ -324,131 +332,161 @@ document.addEventListener("DOMContentLoaded", function() {
         getSuggestions([]);
     });
 
-    clearDivisions = document.querySelector("#clear-divisions");
-    allDivisions = document.querySelector("#select-all");
-    clearDivisions.addEventListener("click", function(event) {
-        allDivisions.style.display = "block";
-        clearDivisions.style.display = "none";
-        d3.selectAll("#select-division option").property("selected", false);
-        selectInstance = M.FormSelect.init(select, null);
-    });
+    let clearDivisions = d3.select("#clear-divisions")
+        .on("click", function(event) {
+            allDivisions.style("display", "block");
+            clearDivisions.style("display", "none");
+            d3.selectAll("#select-division option").property("selected", false);
+            selectInstance = M.FormSelect.init(select, null);
+        });
 
-    $("#select-all").click(function(d) {
-        clearDivisions.style.display = "block";
-        allDivisions.style.display = "none";
-        d3.selectAll("#select-division option").propertY("selected", true);
-        selectInstance = M.FormSelect.init(select, null);
-    })
+    let allDivisions = d3.select("#select-all")
+        .style("display", "none")
+        .on("click", function(d) {
+            clearDivisions.style("display", "block");
+            allDivisions.style("display", "none");
+            d3.selectAll("#select-division option").property("selected", true);
+            selectInstance = M.FormSelect.init(select, null);
+        })
 
     d3.select("#search-button").on("click", () => { getData(); });
     d3.select("#display-grants").on("click", getGrants);
-
-    let m = {left: 24, right: 24, top: 24, bottom: 24};
-
-    let width = document.querySelector("#viz").clientWidth - m.left - m.right;
-    let height = document.querySelector("#viz").clientHeight - m.left - m.right;
-    let svg = d3.select("#viz").append("svg")
-        .attr("width", width)
-        .attr("height", height);
 
     let tooltip = d3.select("body").append("div")    
         .attr("class", "tooltip")                
         .style("opacity", 0);
 
-    let margin = {top: 30, right: 30, bottom: 20, left: 40};
-
-    let cells = {
-        0: {
+    let cells = [
+        {
             "pos": [0, 0], 
             "title": "Grants per Year",
             "amount": false,
             "filtered": false
         },
-        1: {
+        {
             "pos": [1, 0], 
             "title": "Grants in Filtered Divisions per Year",
             "amount": false,
             "filtered": true
         },
-        2: {
+        {
             "pos": [0, 1], 
             "title": "Grant Funding per Year",
             "amount": true,
             "filtered": false
         },    
-        3: {
+        {
             "pos": [1, 1],
             "title": "Grant Funding in Filtered Divisions per Year",
             "amount": true,
             "filtered": true
         }
-    }
+    ]
 
-    // initialize visualization
-    Object.keys(cells).forEach((c) => {
+    let svg = d3.select("#viz").append("svg")
+    let charts = svg.selectAll(".chart")
+        .data(cells)
+        .enter().append("g")
+        .attr("class", "chart")
 
-        let cell = cells[c],
-            row = cell.pos[0],
-            col = cell.pos[1];
+    function redraw(first=false) {
 
-        cell.chartWidth = width/2 - margin.left - margin.right;
-        cell.chartHeight = height/2 - margin.top - margin.bottom;
+        let m = {left: 24, right: 24, top: 24, bottom: 24};
 
-        cell.chart = svg.append("g")
-            .attr("transform", "translate(" + (row*width/2 + margin.left) + "," 
-                + (col*height/2 + margin.top) + ")");
+        let width = document.querySelector("#viz").clientWidth - m.left - m.right;
+        let height = document.querySelector("#viz").clientHeight - m.left - m.right;
+        svg.attr("width", width)
+            .attr("height", height);
 
-        reset(cell);
-    });
+        let margin = {top: 30, right: 30, bottom: 20, left: 40};
 
-    function reset(cell) {
-        let data = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
+        charts.attr("transform", (d) => { return "translate(" + (d.pos[0]*width/2 + margin.left) + ","
+                + (d.pos[1]*height/2 + margin.top) + ")"})
 
-        cell.x = d3.scaleBand()
-                .rangeRound([0, cell.chartWidth])
-                .domain(data)
-                .padding(0.1);
-        cell.y = d3.scaleLinear()
-                .rangeRound([cell.chartHeight, 0])
-                .domain([0, 1]);
+        // initialize visualization
+        cells.forEach((cell, i) => {
+    
+            cell.chart = d3.select(charts.nodes()[i])
+            /*
+               TODO fix this so it doesn't completely rerender
+            */
+            cell.chart.selectAll("*").remove();
+            cell.chartWidth = width/2 - margin.left - margin.right;
+            cell.chartHeight = height/2 - margin.top - margin.bottom;
+    
+            let data = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
 
-        cell.chart.append("text")
-            .text(cell.title + " (%)")
+            cell.x = d3.scaleBand()
+                    .rangeRound([0, cell.chartWidth])
+                    .domain(data)
+                    .padding(0.1);
+            cell.y = d3.scaleLinear()
+                    .rangeRound([cell.chartHeight, 0])
+                    .domain([0, 1]);
+
+            cell.xAxis = cell.chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", "translate(0, " + cell.chartHeight + ")")
+                .call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
+
+            cell.yAxis = cell.chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(cell.y).ticks(5))
+                //.append("text")
+                //.attr("transform", "rotate(-90)")
+                //.attr("y", cell.chartWidth)
+                //.attr("text-anchor", "end")
+                //.text("%");
+
+            let bars = cell.chart.selectAll(".bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", (d) => { return cell.x(d.year); })
+                .attr("width", cell.x.bandwidth())
+                .attr("y", (d) => { return cell.chartHeight; })
+                .attr("height", (d) => { return 0; })
+        });
+
+        charts
+            .append("text")
+            .text((d) => { return d.title + " (%)"; })
             .attr("class", "title")
-            .attr("x", cell.chartWidth / 2)
+            .attr("x", (d) => { return d.chartWidth / 2; })
             .attr("y", -5)
             .attr("text-anchor", "middle");
-    
-        cell.xAxis = cell.chart.append("g")
-            .attr("class", "axis axis-x")
-            .attr("transform", "translate(0, " + cell.chartHeight + ")")
 
-        cell.yAxis = cell.chart.append("g")
-            .attr("class", "axis axis-y")
-
-        cell.yAxis.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", cell.chartWidth)
-            .attr("text-anchor", "end")
-            .text("%");
-
-        cell.xAxis.call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
-        cell.yAxis.call(d3.axisLeft(cell.y).ticks(5));
-
-        let bars = cell.chart.selectAll(".bar")
-            .data(data)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("x", (d) => { return cell.x(d.year); })
-            .attr("width", cell.x.bandwidth())
-            .attr("y", (d) => { return cell.chartHeight; })
-            .attr("height", (d) => { return 0; })
     }
+
+    redraw();
+
+    let rtime;
+    let timeout = false;
+    let delta = 200;
+    
+    d3.select(window).on("resize", () => {
+        rtime = new Date();
+        if (timeout == false) {
+            timeout = true;
+            setTimeout(resizeEnd, delta);
+        }
+    });
+
+    function resizeEnd() {
+        if (new Date() - rtime < delta) {
+            setTimeout(resizeEnd, delta);
+        } else {
+            timeout = false;
+            redraw();
+            plot(visData);
+        }
+    };
 
     function getData() {
 
-        let spinner = document.querySelector("#spin");
-        spinner.style.display = "block";
+        let spinner = d3.select("#spin")
+            .style("display", "block");
+
         d3.select("#viz").style("opacity", 0.6);
 
         let terms = [];
@@ -459,29 +497,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
         let toggleState = d3.select("#union-intersection").property("checked");
 
-        //d3.request("/search")
-        //    .header("Content-type": "application/json; charset=UTF-8")
-        //    .mimeType("application/json")
-        //    .post(JSON.stringify(data), function(error, cellData) { 
-        //        console.log(cellData);
-        //    });
-
-        $.ajax({
-            url: "/search",
-            type: "POST",
-            data: JSON.stringify({"toggle": toggleState, "terms": terms}),
-            contentType: "application/json",
-            dataType: "json",
-            complete: function(data) {
-                $("#spin").hide();
-                spinner.style.display = "none";
-                d3.select("#viz").style("opacity", 1);
-                redraw(JSON.parse(data.responseText));
-            }
-        });
+        let searchResult = new XMLHttpRequest();
+        searchResult.open("POST", "/search", true);
+        searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        searchResult.onload = function() {
+            spinner.style("display", "none");
+            d3.select("#viz").style("opacity", 1);
+            visData = JSON.parse(searchResult.response);
+            plot(JSON.parse(searchResult.response));
+        };
+        searchResult.send(JSON.stringify({
+            "toggle": toggleState, 
+            "terms": terms
+        }))
     };
 
-    function redraw(data, percent=visPercent) {
+
+    function plot(data, percent=visPercent) {
         d3.select("#toggle-view").on("click", toggleView);
 
         let maxGrants = Math.max.apply(null, 
@@ -494,11 +526,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 data.map((d) => { return barData("val", cells[3], d.data, percent); }))
             );
 
-        Object.keys(cells).forEach((c) => {
+        let toggleButton = d3.select("#toggle-view");
+ 
+        //d3.selectAll(".chart")
+        //    .select(".title")
+        //    .text((d) => { return d.title + d.suffix; });
 
-            let cell = cells[c];
+        cells.forEach((cell) => {
 
-            let toggleButton = d3.select("#toggle-view");
             let suffix, tickFmt;
 
             if (percent) {
@@ -546,7 +581,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 .attr("y", (d) => { return barData("y", cell, d.data, percent); })
                 .attr("height", (d) => { return barData("height", cell, d.data, percent); })
                 .attr("fill", (d) => { 
-                    if (c < 2) return "#2196F3";
+                    if (!cell.amount) return "#2196F3";
                     else return "#8BC34A";
                 });
         });
@@ -610,7 +645,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         function toggleView(event) {
             visPercent = !visPercent;
-            redraw(data, visPercent); 
+            plot(data, visPercent); 
         }
     }
 
@@ -627,32 +662,31 @@ document.addEventListener("DOMContentLoaded", function() {
             keywords.push(d.tag);
         });
 
-        $.ajax({
-            url: "/suggestions",
-            type: "POST",
-            data: JSON.stringify(keywords),
-            contentType: "application/json",
-            dataType: "json",
-            complete: function(data) {
-                let chips = data.responseText.split(",");
+        let searchResult = new XMLHttpRequest();
+        searchResult.open("POST", "/suggestions", true);
+        searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        searchResult.onload = function() {
+            let chips = searchResult.response.split(",");
 
-                let suggested = d3.select("#suggested-keywords")
-                    .selectAll(".chip").data(chips, function(d) { return d; });
-                
-                suggested.exit().remove()
+            let suggested = d3.select("#suggested-keywords")
+                .selectAll(".chip")
+                .data(chips, function(d) { return d; });
 
-                suggested.enter().append("div")
-                    .attr("class", "chip")
-                    .attr("vertical-align", "middle")
-                    .text((d) => { return d; })
-                    .append("i")
-                    .attr("class", "close material-icons")
-                    .text("add")
-                    .on("mousedown", (d) => { 
-                        keywordInstance.addChip({tag: d});
-                    });
-             }
-        });
+            suggested.exit().remove()
+
+            suggested.enter().append("div")
+                .attr("class", "chip")
+                .attr("vertical-align", "middle")
+                .text((d) => { return d; })
+                .append("i")
+                .attr("class", "close material-icons")
+                .text("add")
+                .on("mousedown", (d) => { 
+                    keywordInstance.addChip({tag: d});
+                });
+ 
+        };
+        searchResult.send(JSON.stringify(keywords));
     }
 
     function getGrants(event) {
@@ -672,39 +706,38 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        toggle = d3.select("#union-intersection").property("checked");
+        let toggle = d3.select("#union-intersection").property("checked");
 
         message.text("Loading data...");
         d3.select("#grant-table tbody").selectAll("tr").remove();
 
-        $.ajax({
-            url: "/grants",
-            type: "POST",
-            data: JSON.stringify({
-                "terms": terms,
-                "divisions": divisions,
-                "toggle": toggle}),
-            contentType: "application/json",
-            dataType: "json",
-            complete: function(data) {
-                message.style("display", "none");
-                displayData(d3.csvParse(data.responseText));
-                d3.select("#csv-download").attr("href", URL.createObjectURL(new Blob(["\ufeff", data.responseText])));
-                d3.select("#csv-download").attr("download", "grants.csv");
-             }
-        });
-    }
+        let searchResult = new XMLHttpRequest();
+        searchResult.open("POST", "/grants", true);
+        searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        searchResult.onload = function() {
+            message.style("display", "none");
+            displayData(d3.csvParse(searchResult.response));
+            d3.select("#csv-download").attr("href", 
+                    URL.createObjectURL(
+                        new Blob(["\ufeff", searchResult.response])));
+            d3.select("#csv-download").attr("download", "grants.csv");
+        };
+        searchResult.send(JSON.stringify({
+            "terms": terms,
+            "divisions": divisions,
+            "toggle": toggle
+        }));
+    };
 
     function displayData(data) {
-        let rows = d3.select("#grant-table tbody").selectAll("tr")
-            .data(data)
-            .enter()
-            .append("tr");
-
         let dateFormat = d3.timeFormat("%b %Y");
         let dateParse = d3.timeParse("%Y-%m-%d");
 
-        rows.selectAll("td")
+        let rows = d3.select("#grant-table tbody").selectAll("tr")
+            .data(data)
+            .enter()
+            .append("tr")
+            .selectAll("td")
             .data((d) => {
                 return ["title", "date", "value", "division"].map((c) => {
                     if (c == "value") return { column: c, value: "$" + d3.format(",")(d[c]) };
