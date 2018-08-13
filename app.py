@@ -47,6 +47,10 @@ def women_phil():
     return render_template("index_women.html")
 
 
+@app.route("/index2")
+def main2():
+    return render_template("index2.html")
+
 @app.route("/")
 def main():
     return render_template("index.html")
@@ -72,31 +76,37 @@ def search():
     total = search_elastic(toggle)
     matched = search_elastic(toggle, frozenset(terms))
 
-    json_data = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    json_data = defaultdict(dict)
 
     for year in total.per_year.buckets:
         y = year.key_as_string[:4]
-        json_data[y]["all"]["match_grants"] = 0
-        json_data[y]["all"]["match_amount"] = 0
+        if int(y) not in list(range(2007, 2018)): continue
+        for div in year.per_division.buckets:
 
-        for division in year.per_division.buckets:
-            json_data[y][division.key]["total_grants"] = division.agg_grants.value
-            json_data[y][division.key]["total_amount"] = division.agg_amount.value
-            json_data[y][division.key]["match_grants"] = 0
-            json_data[y][division.key]["match_amount"] = 0
-            json_data[y]["all"]["total_grants"] += division.agg_grants.value
-            json_data[y]["all"]["total_amount"] += division.agg_amount.value
+            json_data[int(y)][div.key] = {
+                    "total_grants": div.agg_grants.value,
+                    "total_amount": div.agg_amount.value,
+                    "match_grants": 0,
+                    "match_amount": 0
+            }
 
+    def get_div(year, div):
+        for d in json_data[int(year)]:
+            if d["div"] == div:
+                return d
+
+    print(json_data.keys())
     for year in matched.per_year.buckets:
         y = year.key_as_string[:4]
-        for division in year.per_division.buckets:
-            json_data[y][division.key]["match_grants"] = division.agg_grants.value
-            json_data[y][division.key]["match_amount"] = division.agg_amount.value
-            json_data[y]["all"]["match_grants"] += division.agg_grants.value
-            json_data[y]["all"]["match_amount"] += division.agg_amount.value
+        if int(y) not in list(range(2007, 2018)): continue
+        for div in year.per_division.buckets:
+            json_data[int(y)][div.key].update({
+                "match_grants": div.agg_grants.value,
+                "match_amount": div.agg_amount.value
+            })
 
-    return json.dumps([{"year": year, "data": json_data[str(year)]} 
-        for year in range(2007, 2018)])
+    return json.dumps(json_data) #[{"div": div, "data": json_data[div]} 
+        #for div in ])
 
 
 word_vecs = Word2Vec.load("nsf_w2v_model").wv
@@ -122,17 +132,9 @@ def grants():
 
     j = request.get_json()
 
-    if  j == "":
-        terms = keywords
-        with open("divisions.csv", "r") as f:
-            div = [l.strip() for l in f.readlines()]
-
-    else:
-        terms = j["terms"]
-        div = j["divisions"]
-        toggle = j["toggle"]
-        while len(div) < 2:
-            div.append("")
+    terms = j["terms"]
+    div = j["divisions"]
+    toggle = j["toggle"]
 
     csv = "title,date,value,division\n" + grant_data(terms, div, toggle)
     return csv
@@ -183,7 +185,7 @@ def get_defaults():
     return json.dumps({
         "keywords": keywords,
         "divisions": [{
-            "value": d.strip(),#.lower().strip().replace(" ", "-"), 
+            "value": d.strip(),
             "text": d.strip(),
             "default": True if i < 3 else False
         } for i, d in enumerate(open("divisions.csv", "r").readlines())
@@ -231,7 +233,9 @@ def grant_data(terms, divisions, toggle):
 
     s = Search(using=es).query(m)
 
-    matched = ["\"{}\",{},{},{}".format(r.title, r.date, r.amount, r.division) for r in s.scan() if r.division in divisions]
+    matched = ["\"{}\",{},{},{}".format(r.title, r.date, r.amount, r.division) 
+            for r in s.scan() if r.division in divisions]
+
     return "\n".join(matched)
 
 

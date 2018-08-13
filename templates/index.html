@@ -389,6 +389,15 @@ document.addEventListener("DOMContentLoaded", function() {
         .enter().append("g")
         .attr("class", "chart")
 
+    let titles = charts.append("text")
+        .attr("class", "title")
+
+    let xAxes = charts.append("g")
+        .attr("class", "axis axis-x")
+
+    let yAxes = charts.append("g")
+        .attr("class", "axis axis-y")
+       
     function redraw(first=false) {
 
         let m = {left: 24, right: 24, top: 24, bottom: 24};
@@ -407,10 +416,6 @@ document.addEventListener("DOMContentLoaded", function() {
         cells.forEach((cell, i) => {
     
             cell.chart = d3.select(charts.nodes()[i])
-            /*
-               TODO fix this so it doesn't completely rerender
-            */
-            cell.chart.selectAll("*").remove();
             cell.chartWidth = width/2 - margin.left - margin.right;
             cell.chartHeight = height/2 - margin.top - margin.bottom;
     
@@ -424,20 +429,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     .rangeRound([cell.chartHeight, 0])
                     .domain([0, 1]);
 
-            cell.xAxis = cell.chart.append("g")
-                .attr("class", "axis axis-x")
-                .attr("transform", "translate(0, " + cell.chartHeight + ")")
-                .call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
-
-            cell.yAxis = cell.chart.append("g")
-                .attr("class", "axis axis-y")
-                .call(d3.axisLeft(cell.y).ticks(5))
-                //.append("text")
-                //.attr("transform", "rotate(-90)")
-                //.attr("y", cell.chartWidth)
-                //.attr("text-anchor", "end")
-                //.text("%");
-
+            // TODO maybe initialize this better
             let bars = cell.chart.selectAll(".bar")
                 .data(data)
                 .enter().append("rect")
@@ -448,21 +440,22 @@ document.addEventListener("DOMContentLoaded", function() {
                 .attr("height", (d) => { return 0; })
         });
 
-        charts
-            .append("text")
-            .text((d) => { return d.title + " (%)"; })
-            .attr("class", "title")
+        titles.text((d) => { return d.title + " (%)"; })
             .attr("x", (d) => { return d.chartWidth / 2; })
             .attr("y", -5)
             .attr("text-anchor", "middle");
 
+        xAxes.attr("transform", (c) => { return "translate(0, " + c.chartHeight + ")"; })
+            .call((c) => { return d3.axisBottom(c.x).tickFormat(d3.format("d")); });
+
+        yAxes.call((c) => { return d3.axisLeft(c.y).ticks(5); });
     }
 
     redraw();
 
     let rtime;
     let timeout = false;
-    let delta = 200;
+    let delta = 100;
     
     d3.select(window).on("resize", () => {
         rtime = new Date();
@@ -514,6 +507,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     function plot(data, percent=visPercent) {
+        console.log(data);
         d3.select("#toggle-view").on("click", toggleView);
 
         let maxGrants = Math.max.apply(null, 
@@ -557,8 +551,8 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.x.domain(data.map((d) => { return d.year; }).sort());
             cell.y.domain([0, cell.amount ? maxAmount : maxGrants ]);
     
-            cell.xAxis.transition(500).call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
-            cell.yAxis.transition(500).call(d3.axisLeft(cell.y).ticks(5).tickFormat(tickFmt));
+            cell.chart.select(".axis-x").transition(500).call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
+            cell.chart.select(".axis-y").transition(500).call(d3.axisLeft(cell.y).ticks(5).tickFormat(tickFmt));
 
             let bars = cell.chart.selectAll(".bar")
                 .data(data)
