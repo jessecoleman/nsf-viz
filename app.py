@@ -81,6 +81,7 @@ def search():
     for year in total.per_year.buckets:
         y = year.key_as_string[:4]
         if int(y) not in list(range(2007, 2018)): continue
+        json_data[int(y)]["year"] = int(y)
         for div in year.per_division.buckets:
 
             json_data[int(y)][div.key] = {
