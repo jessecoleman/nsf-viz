@@ -93,11 +93,6 @@ def search():
                     "match_amount": 0
             }
 
-    def get_div(year, div):
-        for d in json_data[int(year)]:
-            if d["div"] == div:
-                return d
-
     for year in matched.per_year.buckets:
         y = int(year.key_as_string[:4])
         if y not in list(range(2007, 2018)): continue
