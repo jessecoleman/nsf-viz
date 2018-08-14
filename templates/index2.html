@@ -377,9 +377,9 @@ document.addEventListener("DOMContentLoaded", function() {
             amount: false,
             filtered: false,
             total: 0,
-            value: (value, key) => { 
+            value: (value, key, norm=1) => { 
                 if (value[key]) {
-                    return value[key].match_grants; 
+                    return value[key].match_grants / norm; 
                 } else {
                     return 0;
                 }
@@ -391,9 +391,9 @@ document.addEventListener("DOMContentLoaded", function() {
             amount: false,
             filtered: true,
             total: 0,
-            value: (value, key) => { 
+            value: (value, key, norm=1) => { 
                 if (value[key]) {
-                    return value[key].match_grants; 
+                    return value[key].match_grants / norm; 
                 } else {
                     return 0;
                 }
@@ -405,9 +405,9 @@ document.addEventListener("DOMContentLoaded", function() {
             amount: true,
             filtered: false,
             total: 0,
-            value: (value, key) => { 
+            value: (value, key, norm=1) => { 
                 if (value[key]) {
-                    return value[key].match_amount; 
+                    return value[key].match_amount / norm; 
                 } else {
                     return 0;
                 }
@@ -419,9 +419,9 @@ document.addEventListener("DOMContentLoaded", function() {
             amount: true,
             filtered: true,
             total: 0,
-            value: (value, key) => { 
+            value: (value, key, norm=1) => { 
                 if (value[key]) {
-                    return value[key].match_amount; 
+                    return value[key].match_amount / norm; 
                 } else {
                     return 0;
                 }
@@ -573,6 +573,9 @@ document.addEventListener("DOMContentLoaded", function() {
          
         Object.keys(data).map((year) => {
             Object.keys(data[year]).map((div) => {
+                //if (divs.indexOf(div) != -1) {
+                //    data[year]["all"]["match_grants"]
+                //}
                 d = data[year][div];
                 if (d.total_grants) {
                     cells[0].total += d.total_grants;
@@ -585,13 +588,20 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
 
-        console.log(cells);
-
         cells.forEach((cell) => {
 
             let stack = d3.stack()
                 .keys(cell.filtered ? divs : ["all"])
-                .value((value, key) => { return cell.value(value, key); });
+                .value((value, key) => { 
+                    if (percent) {
+                        norm = divs.map((d) => { 
+                            return cell.amount ? value[d].total_amount : value[d].total_grants; 
+                        }).reduce((a, b) => a + b, 0);
+                        return cell.value(value, key, norm);
+                    } else {
+                        return cell.value(value, key, 1); 
+                    }
+                });
 
             let stackedData = stack(values);
             // TODO get max for this and adjacent cell
@@ -629,13 +639,20 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.chart.select(".axis-y").transition(500).call(d3.axisLeft(cell.y).ticks(5).tickFormat(tickFmt));
 
             let barGroup = cell.chart.selectAll(".bar-group")
-                .data(stackedData)
-                .enter().append("g")
+                .data(stackedData);
+
+            barGroup.exit().remove();
+
+            // TODO get data key function in order to preserve key order
+            barGroup.enter().append("g")
+                .merge(barGroup)
                 .attr("fill", (d) => { return getColor(d.index, cell.amount); })
                 .attr("class", "bar-group")
 
             let bars = barGroup.selectAll(".bar")
-                .data((d) => { return d; })
+                .data((d) => { return d; });
+
+            bars.exit().remove();
 
             bars.enter().append("rect")
                 .merge(bars)
