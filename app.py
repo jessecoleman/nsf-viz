@@ -47,10 +47,6 @@ def women_phil():
     return render_template("index_women.html")
 
 
-@app.route("/index2")
-def main2():
-    return render_template("index2.html")
-
 @app.route("/")
 def main():
     return render_template("index.html")

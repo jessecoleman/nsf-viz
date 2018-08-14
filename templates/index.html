@@ -251,8 +251,9 @@ div.tooltip {
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-    let visPercent = true;
+    let visPercent = false;
     let visData = null;
+    let visDivisions;
 
     let modal = document.querySelector("#grant-data");
     let select = document.querySelector("#select-division");
@@ -356,31 +357,76 @@ document.addEventListener("DOMContentLoaded", function() {
         .attr("class", "tooltip")                
         .style("opacity", 0);
 
+
+    function getColor(i, amount) {
+        let green = ["#A5D6A7", "#81C784", "#66BB6A", "#4CAF50", "#43A047", "#388E3C", "#2E7D32", "#1B5E20"];
+        let blue = ["#9FA8DA", "#7986CB", "#5C6BC0", "#3F51B5", "#3949AB", "#303F9F", "#283593", "#1A237E"];
+
+        if (amount) {
+            return green[i % green.length];
+        } else {
+            return blue[i % blue.length];
+        }
+    }
+
+    
     let cells = [
         {
-            "pos": [0, 0], 
-            "title": "Grants per Year",
-            "amount": false,
-            "filtered": false
+            pos: [0, 0], 
+            title: "Grants per Year",
+            amount: false,
+            filtered: false,
+            total: 0,
+            value: (value, key, norm=1) => { 
+                if (value[key]) {
+                    return value[key].match_grants / norm; 
+                } else {
+                    return 0;
+                }
+            }
         },
         {
-            "pos": [1, 0], 
-            "title": "Grants in Filtered Divisions per Year",
-            "amount": false,
-            "filtered": true
-        },
+            pos: [1, 0], 
+            title: "Grants in Filtered Divisions per Year",
+            amount: false,
+            filtered: true,
+            total: 0,
+            value: (value, key, norm=1) => { 
+                if (value[key]) {
+                    return value[key].match_grants / norm; 
+                } else {
+                    return 0;
+                }
+            }
+         },
         {
-            "pos": [0, 1], 
-            "title": "Grant Funding per Year",
-            "amount": true,
-            "filtered": false
-        },    
+            pos: [0, 1], 
+            title: "Grant Funding per Year",
+            amount: true,
+            filtered: false,
+            total: 0,
+            value: (value, key, norm=1) => { 
+                if (value[key]) {
+                    return value[key].match_amount / norm; 
+                } else {
+                    return 0;
+                }
+            }
+         },    
         {
-            "pos": [1, 1],
-            "title": "Grant Funding in Filtered Divisions per Year",
-            "amount": true,
-            "filtered": true
-        }
+            pos: [1, 1],
+            title: "Grant Funding in Filtered Divisions per Year",
+            amount: true,
+            filtered: true,
+            total: 0,
+            value: (value, key, norm=1) => { 
+                if (value[key]) {
+                    return value[key].match_amount / norm; 
+                } else {
+                    return 0;
+                }
+            }
+         }
     ]
 
     let svg = d3.select("#viz").append("svg")
@@ -427,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     .padding(0.1);
             cell.y = d3.scaleLinear()
                     .rangeRound([cell.chartHeight, 0])
-                    .domain([0, 1]);
+                    .domain([1, 0]);
 
             // TODO maybe initialize this better
             let bars = cell.chart.selectAll(".bar")
@@ -510,23 +556,43 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log(data);
         d3.select("#toggle-view").on("click", toggleView);
 
-        let maxGrants = Math.max.apply(null, 
-                data.map((d) => { return barData("val", cells[0], d.data, percent); }).concat(
-                data.map((d) => { return barData("val", cells[1], d.data, percent); }))
-            );
-
-        let maxAmount = Math.max.apply(null,
-                data.map((d) => { return barData("val", cells[2], d.data, percent); }).concat(
-                data.map((d) => { return barData("val", cells[3], d.data, percent); }))
-            );
-
         let toggleButton = d3.select("#toggle-view");
- 
+
+        let values = [];
+        
+        Object.keys(data).forEach(d => {
+            values.push(data[d]);
+        })
+
         //d3.selectAll(".chart")
         //    .select(".title")
         //    .text((d) => { return d.title + d.suffix; });
 
         cells.forEach((cell) => {
+
+            let divs = cell.filtered ? selectInstance.getSelectedValues() : ["all"];
+
+            let stack = d3.stack()
+                .keys(divs)
+                .value((value, key) => { 
+                    if (percent) {
+                        norm = divs.map((d) => { 
+                            return cell.amount ? value[d].total_amount : value[d].total_grants; 
+                        }).reduce((a, b) => a + b, 0);
+                        return cell.value(value, key, norm); 
+                    } else {
+                        return cell.value(value, key, 1); 
+                    }
+                });
+
+            let stackedData = stack(values);
+            // TODO get max for this and adjacent cell
+            let maxData = Math.max.apply(null,
+                stackedData[stackedData.length - 1].map((d) => {
+                    return d[1];
+                })
+            );
+
 
             let suffix, tickFmt;
 
@@ -548,19 +614,36 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.chart.select(".title")
                 .text(cell.title + suffix);
 
-            cell.x.domain(data.map((d) => { return d.year; }).sort());
-            cell.y.domain([0, cell.amount ? maxAmount : maxGrants ]);
+            cell.x.domain(Object.keys(data).sort());
+            cell.y.domain([0,maxData]);
     
             cell.chart.select(".axis-x").transition(500).call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
             cell.chart.select(".axis-y").transition(500).call(d3.axisLeft(cell.y).ticks(5).tickFormat(tickFmt));
 
-            let bars = cell.chart.selectAll(".bar")
-                .data(data)
+            let barGroup = cell.chart.selectAll(".bar-group")
+                .data(stackedData);
+
+            //barGroup.exit().remove();
+
+            // TODO get data key function in order to preserve key order
+            barGroup.enter().append("g")
+                .merge(barGroup)
+                .attr("fill", (d) => { return getColor(d.index, cell.amount); })
+                .attr("class", "bar-group")
+
+            let bars = barGroup.selectAll(".bar")
+                .data((d) => { return d; });
+
+            //bars.exit().remove();
+
+            bars.enter().append("rect")
+                .merge(bars)
+                .attr("class", "bar")
                 .on("mouseover", function(d) {
                     tooltip.transition()
                         .duration(200)
                         .style("opacity", 1);
-                    tooltip.html(barData("text", cell, d.data, percent))
+                    tooltip.html(d[1] - d[0]) //barData("text", cell, d.data, percent))
                         .style("left", (d3.event.pageX) + "px")
                         .style("top", (d3.event.pageY - 28) + "px");
                 })
@@ -568,18 +651,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     tooltip.transition()
                         .duration(500)
                         .style("opacity", 0);
-                })    
-                .attr("x", (d) => { return cell.x(d.year); })
+                })
+                .attr("x", (d) => { return cell.x(d.data.year); })
                 .attr("width", cell.x.bandwidth())
                 .transition().duration(500)
-                .attr("y", (d) => { return barData("y", cell, d.data, percent); })
-                .attr("height", (d) => { return barData("height", cell, d.data, percent); })
-                .attr("fill", (d) => { 
-                    if (!cell.amount) return "#2196F3";
-                    else return "#8BC34A";
-                });
-        });
-
+                .attr("y", (d) => { return cell.y(d[1]); })
+                .attr("height", (d) => { return cell.y(d[0]) - cell.y(d[1]); })
+       });
+  
         function barData(attr, cell, data, percent) {
             let divs = selectInstance.getSelectedValues();
             let t = 0;
