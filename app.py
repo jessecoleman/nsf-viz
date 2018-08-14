@@ -79,12 +79,14 @@ def search():
     json_data = defaultdict(dict)
 
     for year in total.per_year.buckets:
-        y = year.key_as_string[:4]
-        if int(y) not in list(range(2007, 2018)): continue
-        json_data[int(y)]["year"] = int(y)
+        y = int(year.key_as_string[:4])
+        if y not in list(range(2007, 2018)): continue
+        json_data[y]["year"] = int(y)
+        json_data[y]["all"] = defaultdict(int)
         for div in year.per_division.buckets:
-
-            json_data[int(y)][div.key] = {
+            json_data[y]["all"]["total_grants"] += div.agg_grants.value
+            json_data[y]["all"]["total_amount"] += div.agg_amount.value
+            json_data[y][div.key] = {
                     "total_grants": div.agg_grants.value,
                     "total_amount": div.agg_amount.value,
                     "match_grants": 0,
@@ -96,12 +98,13 @@ def search():
             if d["div"] == div:
                 return d
 
-    print(json_data.keys())
     for year in matched.per_year.buckets:
-        y = year.key_as_string[:4]
-        if int(y) not in list(range(2007, 2018)): continue
+        y = int(year.key_as_string[:4])
+        if y not in list(range(2007, 2018)): continue
         for div in year.per_division.buckets:
-            json_data[int(y)][div.key].update({
+            json_data[y]["all"]["match_grants"] += div.agg_grants.value
+            json_data[y]["all"]["match_amount"] += div.agg_amount.value
+            json_data[y][div.key].update({
                 "match_grants": div.agg_grants.value,
                 "match_amount": div.agg_amount.value
             })
