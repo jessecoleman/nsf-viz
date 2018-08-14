@@ -374,6 +374,7 @@ document.addEventListener("DOMContentLoaded", function() {
         {
             pos: [0, 0], 
             title: "Grants per Year",
+            suffix: (p) => { return p ? " (%)" : " (#)" },
             amount: false,
             filtered: false,
             total: 0,
@@ -388,6 +389,7 @@ document.addEventListener("DOMContentLoaded", function() {
         {
             pos: [1, 0], 
             title: "Grants in Filtered Divisions per Year",
+            suffix: (p) => { return p ? " (%)" : " (#)" },
             amount: false,
             filtered: true,
             total: 0,
@@ -402,6 +404,7 @@ document.addEventListener("DOMContentLoaded", function() {
         {
             pos: [0, 1], 
             title: "Grant Funding per Year",
+            suffix: (p) => { return p ? " (%)" : " ($)" },
             amount: true,
             filtered: false,
             total: 0,
@@ -416,6 +419,7 @@ document.addEventListener("DOMContentLoaded", function() {
         {
             pos: [1, 1],
             title: "Grant Funding in Filtered Divisions per Year",
+            suffix: (p) => { return p ? " (%)" : " ($)" },
             amount: true,
             filtered: true,
             total: 0,
@@ -476,14 +480,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     .domain([1, 0]);
 
             // TODO maybe initialize this better
-            let bars = cell.chart.selectAll(".bar")
-                .data(data)
-                .enter().append("rect")
-                .attr("class", "bar")
-                .attr("x", (d) => { return cell.x(d.year); })
-                .attr("width", cell.x.bandwidth())
-                .attr("y", (d) => { return cell.chartHeight; })
-                .attr("height", (d) => { return 0; })
+            // let bars = cell.chart.selectAll(".bar")
+            //     .data(data)
+            //     .enter().append("rect")
+            //     .attr("class", "bar")
+            //     .attr("x", (d) => { return cell.x(d.year); })
+            //     .attr("width", cell.x.bandwidth())
+            //     .attr("y", (d) => { return cell.chartHeight; })
+            //     .attr("height", (d) => { return 0; })
         });
 
         titles.text((d) => { return d.title + " (%)"; })
@@ -564,9 +568,10 @@ document.addEventListener("DOMContentLoaded", function() {
             values.push(data[d]);
         })
 
-        //d3.selectAll(".chart")
-        //    .select(".title")
-        //    .text((d) => { return d.title + d.suffix; });
+        d3.selectAll(".chart")
+            .data(cells)
+            .select(".title")
+            .text((d) => { return d.title + d.suffix(percent); });
 
         cells.forEach((cell) => {
 
@@ -623,10 +628,10 @@ document.addEventListener("DOMContentLoaded", function() {
             let barGroup = cell.chart.selectAll(".bar-group")
                 .data(stackedData);
 
-            //barGroup.exit().remove();
+            barGroup.exit().remove();
 
             // TODO get data key function in order to preserve key order
-            barGroup.enter().append("g")
+            barGroup = barGroup.enter().append("g")
                 .merge(barGroup)
                 .attr("fill", (d) => { return getColor(d.index, cell.amount); })
                 .attr("class", "bar-group")
@@ -634,9 +639,9 @@ document.addEventListener("DOMContentLoaded", function() {
             let bars = barGroup.selectAll(".bar")
                 .data((d) => { return d; });
 
-            //bars.exit().remove();
+            bars.exit().remove();
 
-            bars.enter().append("rect")
+            bars = bars.enter().append("rect")
                 .merge(bars)
                 .attr("class", "bar")
                 .on("mouseover", function(d) {
