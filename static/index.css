@@ -2,7 +2,14 @@ html, body, #main {
     height: 100%;
 }
 
-nav {
+.nav-top {
+    z-index: 3;
+    position: fixed;
+    height: 200px;
+    line-height: 200px;
+}
+
+.nav-bottom {
     z-index: 3;
     position: fixed;
     bottom: 0;
@@ -55,7 +62,7 @@ img {
 }
 
 .switch {
-    margin-bottom: 8px;
+    //margin-bottom: 8px;
 }
 /*
 .switch label input[type=checkbox]:checked + .lever
@@ -92,6 +99,11 @@ input[type=checkbox]:not(:disabled) ~ .lever:active:after, input[type=checkbox]:
     padding: 8px;
     margin-top: 0;
     margin-right: 10px;
+}
+
+#keyword-container {
+    line-height: 18px;
+    height: 100%;
 }
 
 #suggested-keywords {
@@ -135,7 +147,7 @@ div.tooltip {
     margin: 0;
     border-bottom: none;
     overflow-y: auto;
-    max-height: 12em;
+    height: 9em;
 }
 
 #csv-download { 
@@ -146,8 +158,15 @@ div.tooltip {
 
 .clear {
     float: right;
-    margin-top: -36px;
+    height: default;
+    line-height: default;
+
+//    margin-left: auto;
+//    margin-right: 0;
 }
+//    float: right;
+//    margin-top: -36px;
+//}
 
 #credits {
     position: absolute;
