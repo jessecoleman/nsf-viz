@@ -138,52 +138,29 @@ keywords = [
       'data science',
       'machine learning',
       'artificial intelligence'
-  ]
-    #  'deep learning',
-    #  'convolutional neural networks',
-    #  'recurrent neural network',
-    #  'stochastic gradient descent',
-    #  'support vector machines',
-    #  'unsupervised learning',
-    #  'supervised learning',
-    #  'reinforcement learning',
-    #  'generative adversarial networks',
-    #  'random forest',
-    #  'naive bayes',
-    #  'bayesian networks',
-    ##generic = [
-    #  'data science',
-    #  'big data',
-    #  'data driven',
-    #  'data intensive',
-    #  'data enabled',
-    ##visualization = [
-    #  'matplotlib',
-    #  'ggplot',
-    #  'd3',
-    #  'vega',
-    #  'vega-lite',
-    ##dbms = [
-    #  'sql',
-    #  'mysql',
-    #  'sql server',
-    ##infrastructure = [
-    #  'matlab',
-    #  'jupyter',
-    #  'cesium',
-    #  'cyverse',
-    #  'iplant',
-    #]
+      'deep learning',
+      'convolutional neural networks',
+      'recurrent neural network',
+      'stochastic gradient descent',
+      'support vector machines',
+      'unsupervised learning',
+      'supervised learning',
+      'reinforcement learning',
+      'generative adversarial networks',
+      'random forest',
+      'naive bayes',
+      'bayesian networks',
+      'big data'
+]
 
 @app.route("/defaults")
 def get_defaults():
     return json.dumps({
         "keywords": keywords,
         "divisions": [{
-            "value": d.strip(),
-            "text": d.strip(),
-            "default": True if i < 3 else False
-        } for i, d in enumerate(open("divisions.csv", "r").readlines())
+            "name": d.strip()[:-2],
+            "default": d.strip()[-1] == "y"
+        } for i, d in enumerate(open("static/divisions.csv", "r").readlines())
     ]})
 
 

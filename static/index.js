@@ -1,0 +1,519 @@
+let cells = [
+    {
+        pos: [0, 0], 
+        title: (p) => "ALL Grants per year " + (p ? "(%)" : "(#)"),
+        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants",
+        tick: (p) => p ? d3.format(".2%") : d3.format(".2s"),
+        amount: false,
+        filtered: false,
+        total: 0,
+        value: (value, key, norm=1) => { 
+            if (value[key]) {
+                return value[key].match_grants / norm; 
+            } else {
+                return 0;
+            }
+        }
+    },
+    {
+        pos: [1, 0], 
+        title: (p) => "Grants in SELECTED divisions per year " + (p ? "(%)" : "(#)"),
+        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants",
+        tick: (p) => p ? d3.format(".2%") : d3.format(".2s"),
+        amount: false,
+        filtered: true,
+        total: 0,
+        value: (value, key, norm=1) => { 
+            if (value[key]) {
+                return value[key].match_grants / norm; 
+            } else {
+                return 0;
+            }
+        }
+     },
+    {
+        pos: [0, 1], 
+        title: (p) => "ALL grant funding per year " + (p ? "(%)" : "($)"),
+        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format("$,")(v),
+        tick: (p) => p ? d3.format(".2%") : d3.format("$.2s"),
+        amount: true,
+        filtered: false,
+        total: 0,
+        value: (value, key, norm=1) => { 
+            if (value[key]) {
+                return value[key].match_amount / norm; 
+            } else {
+                return 0;
+            }
+        }
+     },    
+    {
+        pos: [1, 1],
+        title: (p) => "Grant funding in SELECTED divisions per year " + (p ? "(%)" : "($)"),
+        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format("$,")(v),
+        tick: (p) => p ? d3.format(".2%") : d3.format("$.2s"),
+        amount: true,
+        filtered: true,
+        total: 0,
+        value: (value, key, norm=1) => { 
+            if (value[key]) {
+                return value[key].match_amount / norm; 
+            } else {
+                return 0;
+            }
+        }
+     }
+]
+
+let visPercent = true;
+let visData = null;
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    let modal = document.querySelector("#grant-data");
+    let select = document.querySelector("#select-division");
+    let keywordChips = document.querySelector("#keywords");
+
+     // initialize materialize elements
+    let modalInstance = M.Modal.init(modal, null);
+    let selectInstance = M.FormSelect.init(select, null);
+    let keywordInstance = M.Chips.init(keywordChips, {
+        onChipAdd: function(e, c) {
+            getSuggestions(keywordInstance.chipsData);
+            terms = c.firstChild.nodeValue.split(",");
+            if (terms.length > 1) {
+                keywordInstance.deleteChip(keywordInstance.chipsData.length - 1);
+                terms.forEach((t) => {
+                    keywordInstance.addChip({tag: t});
+                });
+            }
+        },
+        onChipDelete: function(e, c) {
+            getSuggestions(keywordInstance.chipsData);
+        }
+    });
+
+    let keywordContainer = d3.select("#keyword-container");
+    let keywordInput = d3.select("#keywords input");
+    let dropdown = d3.select("#dropdown")
+        .style("max-width", keywordContainer.node().getBoundingClientRect().width + "px");
+    let keywordFocused = false;
+
+    keywordInput.on("focus", function(e) {
+        dropdown.style("display", "inline");
+    });
+
+    keywordInput.on("focusout", function(e) {
+        if (!keywordFocused) {
+            dropdown.style("display", "none");
+        } else {
+            keywordInput.node().focus();
+        }
+    });
+
+    keywordContainer.on("mouseover", function() {
+        keywordFocused = true;
+    });
+    
+    keywordContainer.on("mouseout", function(event) {
+        let e = d3.event.toElement || d3.event.relatedTarget;
+        if (!this.contains(e)) {
+            keywordFocused = false;
+        }
+    });
+
+    // load keyword data from server
+    d3.json("/defaults", function(data) {
+        data.keywords.forEach((d) => {
+            keywordInstance.addChip({tag: d});
+        });
+
+        d3.select("#select-division").selectAll("option")
+            .data(data.divisions)
+            .enter().append("option")
+            .text((d) => d.name)
+            .property("selected", (d) => d.default)
+            .attr("value", (d) => d.name);
+
+        selectInstance = M.FormSelect.init(select, null);
+
+        getData();
+
+        let toggleButton = d3.select("#toggle-view").on("click", () => {
+            toggleButton.text(visPercent ? "%" : "#");
+            visPercent = !visPercent;
+            plot(visData, visPercent); 
+        });
+    });
+
+    d3.select("#clear-terms").on("click", (e) => {
+        let l = keywordInstance.chipsData.length;
+        for (let i = 0; i < l; i++) {
+            keywordInstance.deleteChip(0);
+        }
+        getSuggestions([]);
+    });
+
+    let clearDivisions = d3.select("#clear-divisions")
+        .on("click", (e) => {
+            allDivisions.style("display", "block");
+            clearDivisions.style("display", "none");
+            d3.selectAll("#select-division option").property("selected", false);
+            selectInstance = M.FormSelect.init(select, null);
+        });
+
+    let allDivisions = d3.select("#select-all")
+        .style("display", "none")
+        .on("click", (e) => {
+            clearDivisions.style("display", "block");
+            allDivisions.style("display", "none");
+            d3.selectAll("#select-division option").property("selected", true);
+            selectInstance = M.FormSelect.init(select, null);
+        })
+
+    d3.select("#search-button").on("click", getData);
+    d3.select("#display-grants").on("click", getGrants);
+
+    let tooltip = d3.select("body").append("div")    
+        .attr("class", "tooltip z-depth-3")
+        .style("opacity", 0);
+
+    function getColor(i, amount) {
+        let green = ["#A5D6A7", "#81C784", "#66BB6A", "#4CAF50", "#43A047", "#388E3C", "#2E7D32", "#1B5E20"];
+        let blue = ["#9FA8DA", "#7986CB", "#5C6BC0", "#3F51B5", "#3949AB", "#303F9F", "#283593", "#1A237E"];
+
+        if (amount) {
+            return green[i % green.length];
+        } else {
+            return blue[i % blue.length];
+        }
+    }
+
+    let svg = d3.select("#viz").append("svg")
+
+    let charts = svg.selectAll(".chart")
+        .data(cells)
+        .enter().append("g")
+        .attr("class", "chart")
+
+    let titles = charts.append("text")
+        .attr("class", "title")
+
+    let xAxes = charts.append("g")
+        .attr("class", "axis axis-x")
+
+    let yAxes = charts.append("g")
+        .attr("class", "axis axis-y")
+       
+    function redraw() {
+
+        let m = {left: 24, right: 24, top: 24, bottom: 24};
+
+        let width = document.querySelector("#viz").clientWidth - m.left - m.right;
+        let height = document.querySelector("#viz").clientHeight - m.left - m.right;
+        svg.attr("width", width)
+            .attr("height", height);
+
+        let margin = {top: 30, right: 30, bottom: 20, left: 40};
+
+        charts.attr("transform", (c) => "translate(" 
+                + (c.pos[0]*width/2 + margin.left) + ","
+                + (c.pos[1]*height/2 + margin.top) + ")")
+
+        let chartWidth = width/2 - margin.left - margin.right;
+        let chartHeight = height/2 - margin.top - margin.bottom;
+
+        titles.text((c) => c.title(visPercent))
+            .attr("x", chartWidth / 2)
+            .attr("y", -5)
+            .attr("text-anchor", "middle");
+
+        xAxes.attr("transform", "translate(0, " + chartHeight + ")")
+            .call((c) => d3.axisBottom(c.x).tickFormat(d3.format("d")));
+
+        yAxes.call((c) => d3.axisLeft(c.y).ticks(5));
+         // initialize visualization
+        cells.forEach((cell, i) => {
+
+            cell.chart = d3.select(charts.nodes()[i])
+   
+            let data = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
+
+            cell.x = d3.scaleBand()
+                    .rangeRound([0, chartWidth])
+                    .domain(data)
+                    .padding(0.1);
+            cell.y = d3.scaleLinear()
+                    .rangeRound([chartHeight, 0])
+                    .domain([1, 0]);
+
+            // TODO maybe initialize this better
+            // let bars = cell.chart.selectAll(".bar")
+            //     .data(data)
+            //     .enter().append("rect")
+            //     .attr("class", "bar")
+            //     .attr("x", (d) => { return cell.x(d.year); })
+            //     .attr("width", cell.x.bandwidth())
+            //     .attr("y", (d) => { return cell.chartHeight; })
+            //     .attr("height", (d) => { return 0; })
+        });
+
+    }
+
+    redraw();
+
+    let rtime;
+    let timeout = false;
+    let delta = 100;
+    
+    d3.select(window).on("resize", () => {
+        rtime = new Date();
+        if (timeout == false) {
+            timeout = true;
+            setTimeout(resizeEnd, delta);
+        }
+    });
+
+    function resizeEnd() {
+        if (new Date() - rtime < delta) {
+            setTimeout(resizeEnd, delta);
+        } else {
+            timeout = false;
+            redraw();
+            plot(visData, visPercent);
+        }
+    };
+
+    function getData() {
+
+        let spinner = d3.select("#spin")
+            .style("display", "block");
+
+        d3.select("#viz").style("opacity", 0.6);
+
+        let terms = [];
+
+        keywordInstance.chipsData.forEach((c) => {
+            terms.push(c.tag);
+        });
+
+        let toggleState = d3.select("#any-all").property("checked");
+
+        let searchResult = new XMLHttpRequest();
+        searchResult.open("POST", "/search", true);
+        searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        searchResult.onload = function() {
+            spinner.style("display", "none");
+            d3.select("#viz").style("opacity", 1);
+            visData = JSON.parse(searchResult.response);
+            plot(visData, visPercent);
+        };
+        searchResult.send(JSON.stringify({
+            "toggle": toggleState, 
+            "terms": terms
+        }))
+    };
+
+
+    function plot(data, percent) {
+
+        let toggleButton = d3.select("#toggle-view");
+
+        d3.selectAll(".chart")
+            .data(cells)
+            .select(".title")
+            .text((d) => d.title(percent));
+
+        cells.forEach((cell, i) => {
+
+            let divs = cell.filtered ? selectInstance.getSelectedValues() : ["all"];
+
+            cell.stacked = d3.stack()
+                .keys(divs)
+                .value((value, key) => { 
+                    if (percent) {
+                        norm = divs.map((d) => { 
+                            if (!value[d]) return 0;
+                            return cell.amount ? value[d].total_amount : value[d].total_grants; 
+                        }).reduce((a, b) => a + b, 0);
+                        return cell.value(value, key, norm); 
+                    } 
+                    else return cell.value(value, key); 
+                })(Object.keys(data).map((d) => data[d]));
+
+            // TODO get max for this and adjacent cell
+            if (cell.stacked.length == 0) return 0;
+            cell.maxData = Math.max.apply(null,
+                cell.stacked[cell.stacked.length - 1].map((d) => {
+                    return d[1];
+                })
+            );
+
+            if (i % 2 == 1) {
+                if (cells[i-1].maxData > cell.maxData) {
+                    cell.maxData = cells[i-1].maxData;
+                } else {
+                    cells[i-1].maxData = cell.maxData;
+                }
+            }
+        });
+
+        cells.forEach((cell, i) => {
+
+            cell.x.domain(Object.keys(data).sort());
+            cell.y.domain([0, cell.maxData]);
+    
+            cell.chart.select(".axis-x")
+                .transition(500)
+                .call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
+
+            cell.chart.select(".axis-y")
+                .transition(500)
+                .call(d3.axisLeft(cell.y).ticks(5).tickFormat(cell.tick(percent)));
+
+            let barGroup = cell.chart.selectAll(".bar-group")
+                .data(cell.stacked);
+
+            barGroup.exit().remove();
+
+            // TODO get data key function in order to preserve key order
+            barGroup = barGroup.enter().append("g")
+                .merge(barGroup)
+                .attr("fill", (d) => getColor(d.index, cell.amount))
+                .attr("class", "bar-group")
+
+            let bars = barGroup.selectAll(".bar")
+                .data((d) => d);
+
+            bars.exit().remove();
+
+            bars = bars.enter().append("rect")
+                .merge(bars)
+                .attr("class", "bar")
+                .on("mouseover", function(d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 1);
+                    tooltip.html(cell.tip(d[1] - d[0], percent))
+               })
+               .on("mousemove", (d) => {
+                    tooltip.style("left", (d3.event.pageX - tooltip.node().getBoundingClientRect().width / 2) + "px")
+                        .style("top", (d3.event.pageY - 36) + "px");
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                })
+                .attr("x", (d) => cell.x(d.data.year))
+                .attr("width", cell.x.bandwidth())
+                .transition().duration(500)
+                .attr("y", (d) => cell.y(d[1]))
+                .attr("height", (d) => cell.y(d[0]) - cell.y(d[1]))
+       });
+  
+    }
+
+    function getSuggestions(data) {
+        if(data.length == 0) {
+            d3.select("#suggested-keywords")
+                .selectAll(".chip")
+                .remove();
+            return;
+        }
+
+        keywords = [];
+        data.forEach((d) => {
+            keywords.push(d.tag);
+        });
+
+        let searchResult = new XMLHttpRequest();
+        searchResult.open("POST", "/suggestions", true);
+        searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        searchResult.onload = function() {
+            let chips = searchResult.response.split(",");
+
+            let suggested = d3.select("#suggested-keywords")
+                .selectAll(".chip")
+                .data(chips, (d) => d);
+
+            suggested.exit().remove()
+
+            suggested.enter().append("div")
+                .attr("class", "chip")
+                .attr("vertical-align", "middle")
+                .text((d) => d)
+                .append("i")
+                .attr("class", "close material-icons")
+                .text("add")
+                .on("mousedown", (d) => { 
+                    keywordInstance.addChip({tag: d});
+                });
+ 
+        };
+        searchResult.send(JSON.stringify(keywords));
+    }
+
+    function getGrants(event) {
+
+        let message = d3.select("#table-message")
+        message.style("display", "inline");
+
+        let terms = [];
+        keywordInstance.chipsData.forEach((c) => {
+            terms.push(c.tag);
+        });
+
+        let divisions = selectInstance.getSelectedValues();
+
+        if (divisions.length === 0) {
+            message.text("Please select some divisions from the filter dropdown before downloading");
+            return;
+        }
+
+        let toggle = d3.select("#any-all").property("checked");
+
+        message.text("Loading data...");
+        d3.select("#grant-table tbody").selectAll("tr").remove();
+
+        let searchResult = new XMLHttpRequest();
+        searchResult.open("POST", "/grants", true);
+        searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        searchResult.onload = function() {
+            message.style("display", "none");
+            displayData(d3.csvParse(searchResult.response));
+            d3.select("#csv-download").attr("href", 
+                    URL.createObjectURL(
+                        new Blob(["\ufeff", searchResult.response])));
+            d3.select("#csv-download").attr("download", "grants.csv");
+        };
+        searchResult.send(JSON.stringify({
+            "terms": terms,
+            "divisions": divisions,
+            "toggle": toggle
+        }));
+    };
+
+    function displayData(data) {
+        let dateFormat = d3.timeFormat("%b %Y");
+        let dateParse = d3.timeParse("%Y-%m-%d");
+
+        let rows = d3.select("#grant-table tbody").selectAll("tr")
+            .data(data)
+            .enter()
+            .append("tr")
+            .selectAll("td")
+            .data((d) => {
+                return ["title", "date", "value", "division"].map((c) => {
+                    if (c == "value") return { column: c, value: "$" + d3.format(",")(d[c]) };
+                    else if (c == "date") { 
+                        return { column: c, value: dateFormat(dateParse(d[c])) }; }
+                    else return { column: c, value: d[c] }; 
+                });
+            })
+            .enter()
+            .append('td')
+            .text((d) => d.value);
+    }
+
+});
