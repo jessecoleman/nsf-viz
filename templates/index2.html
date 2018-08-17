@@ -7,31 +7,28 @@
     <link rel="stylesheet" href="{{url_for('static', filename='index.css')}}">
 </head>
 <body>
-    <nav class="nav-top">
-        <div class="nav-wrapper light-blue lighten-3 z-depth-2">
-            <div class="row">
-                <div class="col s4">
-                    <h2 class="header center">NSF Grants</br>Explorer</h2>
-                </div>
-                <div id="keyword-container" class="col s8">
-                    <div>
-                        <h5 style="display: inline;" >SEARCH TERMS</h5>
-                        <span class="switch">
-                            <label>ANY
-                                <input id="any-all" type="checkbox">
-                                <span class="lever"></span>
-                                ALL
-                            </label>
-                        </span>
-                        <a id="clear-terms" class="clear waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
-                    </div>
-                    <div id="keywords" class="chips"></div>
-                    <div id="dropdown" class="card-panel">
-                        <div id="suggested-keywords" class="card-content chips"></div>
-                    </div>
-                </div>
-       </div>
-    </nav>
+    <div class="nav-top row z-depth-2 light-blue lighten-3">
+        <div class="col s4">
+            <h2 class="header center">NSF Grants</br>Explorer</h2>
+        </div>
+        <div id="keyword-container" class="col s8">
+            <div>
+                <h5 style="display: inline;" >SEARCH TERMS</h5>
+                <span class="switch">
+                    <label>ANY
+                        <input id="any-all" type="checkbox">
+                        <span class="lever"></span>
+                        ALL
+                    </label>
+                </span>
+                <a id="clear-terms" class="clear waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
+            </div>
+            <div id="keywords" class="chips"></div>
+            <div id="dropdown" class="card-panel">
+                <div id="suggested-keywords" class="card-content chips"></div>
+            </div>
+        </div>
+    </div>
     <div id="main" class="row">
         <div class="col s4 grey lighten-5" id="controls">
             <h2 class="header center">NSF Grants Explorer</h2>
