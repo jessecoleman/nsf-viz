@@ -74,6 +74,9 @@ def search():
 
     total = search_elastic(toggle)
     matched = search_elastic(toggle, frozenset(terms))
+    #order = search_elastic(toggle, frozenset(terms), sort=True)
+    #sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
+    #inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
 
     json_data = defaultdict(dict)
 
@@ -168,7 +171,7 @@ def get_defaults():
 
 
 @lru_cache(maxsize=50)
-def search_elastic(toggle, terms=None):
+def search_elastic(toggle, terms=None, sort=False):
 
     s = Search(using=es)
 
@@ -186,10 +189,16 @@ def search_elastic(toggle, terms=None):
 
         s = s.query(m)
 
-    s.aggs.bucket("per_year", "date_histogram", field="date", interval="year") \
-        .bucket("per_division", "terms", field="division", size=80) \
-        .metric("agg_grants", "value_count", field="date") \
-        .metric("agg_amount", "sum", field="amount")
+    if sort:
+        s.aggs.bucket("per_division", "terms", field="division", order={"agg_grants": "desc"}, size=80) \
+            .metric("agg_grants", "value_count", field="date") \
+            .metric("agg_amount", "sum", field="amount")
+
+    else:
+        s.aggs.bucket("per_year", "date_histogram", field="date", interval="year") \
+            .bucket("per_division", "terms", field="division", size=80) \
+            .metric("agg_grants", "value_count", field="date") \
+            .metric("agg_amount", "sum", field="amount")
 
     return s.execute().aggregations
 
