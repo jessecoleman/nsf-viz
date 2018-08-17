@@ -124,7 +124,7 @@ def grants():
 
     if  j == "":
         terms = keywords
-        with open("divisions.csv", "r") as f:
+        with open("static/divisions.csv", "r") as f:
             div = [l.strip() for l in f.readlines()]
 
     else:
@@ -183,10 +183,10 @@ def get_defaults():
     return json.dumps({
         "keywords": keywords,
         "divisions": [{
-            "value": d.strip(),#.lower().strip().replace(" ", "-"), 
-            "text": d.strip(),
-            "default": True if i < 3 else False
-        } for i, d in enumerate(open("divisions.csv", "r").readlines())
+            "value": d.strip()[:-2],#.lower().strip().replace(" ", "-"), 
+            "text": d.strip()[:-2],
+            "default": d.strip()[-1] == "y"
+        } for i, d in enumerate(open("static/divisions.csv", "r").readlines())
     ]})
 
 
