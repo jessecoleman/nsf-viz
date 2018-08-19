@@ -7,37 +7,48 @@
     <link rel="stylesheet" href="{{url_for('static', filename='index.css')}}">
 </head>
 <body>
-    <div id="main" class="row">
-        <div class="col s4 grey lighten-5" id="controls">
-            <h2 class="header center">NSF Grants Explorer</h2>
-            <h5>SEARCH TERMS</h5>
-            <a id="clear-terms" class="clear waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
-            <div class="switch">
-                <label>ANY
-                    <input id="any-all" type="checkbox">
-                    <span class="lever"></span>
-                    ALL
-                </label>
+    <div id="nav-top" class="z-depth-2 teal">
+        <div id="title">
+            <h2 class="header center white-text">NSF Grants</br>Explorer</h2>
+        </div>
+        <div id="keyword-container">
+            <div id="keyword-controls">
+                <h5 id="keyword-title">SEARCH TERMS</h5>
+                <span class="switch">
+                    <label>ANY
+                        <input id="any-all" type="checkbox">
+                        <span class="lever"></span>
+                        ALL
+                    </label>
+                </span>
+                <a id="clear-terms" class="white-text waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
             </div>
-
-            <div id="keyword-container">
-                <div id="keywords" class="chips"></div>
-                <div id="dropdown" class="card-panel">
-                    <div id="suggested-keywords" class="card-content chips"></div>
+            <div id="keywords-autocomplete" class="chips"></div>
+            <div id="keywords-dropdown" class="dropdown card-panel">
+                <div id="suggested-keywords" class="card-content chips"></div>
+            </div>
+        </div>
+    </div>
+    <div id="main">
+        <div class="grey lighten-5" id="controls">
+            <div class="input-field" id="division-container">
+                <div id="division-controls">
+                    <h5 id="division-title">FILTER DIVISIONS</h5>
+                    <a id="clear-divisions" class="waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
+                    <a id="select-all" class="waves-effect waves-green btn-flat"><i class="material-icons right">done_all</i>select all</a>
                 </div>
+                 <input type="text" id="divisions-autocomplete" placeholder="select divisions">
+                <ul id="divisions-dropdown" style="position: absolute;" class="dropdown"></ul>
             </div>
-
-            <h5>FILTER DIVISIONS</h5>
-            <a id="clear-divisions" class="clear waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
-            <a id="select-all" class="clear waves-effect waves-green btn-flat"><i class="material-icons right">done_all</i>select all</a>
-            <div class="input-field">
-                <select multiple id="select-division"></select>
-                <!--<label>Select Divisions</label>-->
+            <div id="control-buttons">
+                <button id="display-grants" class="btn waves-effect waves-light blue modal-trigger" data-target="grant-data">
+                    <i class="material-icons left">insert_drive_file</i>
+                    view grants
+                </button>
+                <a id="toggle-view" class="btn waves-effect waves-light blue" style="margin-left: 80px"># view counts</a>
             </div>
-            <button id="search-button" class="waves-effect waves-light btn blue">search</button>
-            </br>
-         </div>
-          <div class="col s8 z-depth-3" id="viz">
+          </div>
+          <div class="z-depth-3" id="viz">
             <div id="spin" class="preloader-wrapper big active">
                 <div class="spinner-layer spinner-blue-only">
                     <div class="circle-clipper left">
@@ -49,12 +60,8 @@
                     </div>
                 </div>
             </div>
-        </div>
+          </div>
     </div>
-    <a id="toggle-view" class="btn-floating btn-large waves-effect waves-light blue" style="margin-left: 80px">#</a>
-    <button id="display-grants" class="btn-floating btn-large waves-effect waves-light blue modal-trigger" data-target="grant-data">
-        <i class="material-icons">insert_drive_file</i>
-    </button>
     <div class="modal" id="grant-data">
         <div class="modal-content">
             <div>
@@ -82,10 +89,10 @@
             <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
         </div>
     </div>
-    <nav class="nav-bottom">
-        <div class="nav-wrapper light-blue lighten-3 z-depth-5">
+    <nav id="nav-bottom">
+        <div class="nav-wrapper teal z-depth-5">
             <ul id="credits" class="left hide-on-med-and-down">
-                <li>Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab</li>
+                <li class="white-text">Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab</li>
             </ul>
             <div id="links">
                 <a href="https://datalab.ischool.uw.edu"><img src="/static/datalab_logo.png"></a>
@@ -97,3 +104,4 @@
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
 <script src="{{url_for('static', filename='index.js')}}"></script>
+</body>

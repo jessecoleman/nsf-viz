@@ -115,7 +115,6 @@ word_vecs = Word2Vec.load("nsf_w2v_model").wv
 @app.route("/suggestions", methods=['POST'])
 def suggestions():
     terms = []
-    print(request.get_json());
     for t in request.get_json():
         for t1 in t.split():
             if t1 in word_vecs.vocab:
@@ -143,7 +142,7 @@ def grants():
 keywords = [
       'data science',
       'machine learning',
-      'artificial intelligence'
+      'artificial intelligence',
       'deep learning',
       'convolutional neural networks',
       'recurrent neural network',
