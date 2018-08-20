@@ -2,7 +2,7 @@ let cells = [
     {
         pos: [0, 0], 
         title: (p) => "Grants in SELECTED divisions per year " + (p ? "(%)" : "(#)"),
-        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants",
+        tip: (v, p, n) => n + ": " + (p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants"),
         tick: (p) => p ? d3.format(".2%") : d3.format(".2s"),
         amount: false,
         filtered: true,
@@ -34,7 +34,7 @@ let cells = [
     {
         pos: [0, 1], 
         title: (p) => "Grant funding in SELECTED divisions per year " + (p ? "(%)" : "($)"),
-        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format("$,")(v),
+        tip: (v, p, n) => n + ": " + (p ? d3.format(".2%")(v) : d3.format("$,")(v)),
         tick: (p) => p ? d3.format(".2%") : d3.format("$.2s"),
         amount: true,
         filtered: true,
@@ -85,6 +85,12 @@ document.addEventListener("DOMContentLoaded", function() {
         if (searchTimeout == false) {
             searchTimeout = true;
             function callback() {
+
+                let spinner = d3.select("#spin")
+                    .style("display", "block");
+
+                d3.select("#viz").style("opacity", 0.6);
+
                 if (new Date() - searchTime < searchDelta) {
                     setTimeout(callback, searchDelta);
                 } else {
@@ -121,22 +127,21 @@ document.addEventListener("DOMContentLoaded", function() {
     let keywordInput = d3.select("#keywords-autocomplete input");
     let divisionInput = d3.select("#divisions-autocomplete");
     let keywordDropdown = d3.select("#keywords-dropdown")
-        .style("max-width", keywordContainer.node().getBoundingClientRect().width + "px");
+        //.style("max-width", keywordContainer.node().getBoundingClientRect().width + "px");
     let keywordFocused = false;
     let divisionFocused = false;
 
     // TODO clean this up
-    let bbox = divisionInput.node().getBoundingClientRect();
     let divisionDropdown = d3.select("#divisions-dropdown")
-        .style("width", divisionInput.node().getBoundingClientRect().width + "px")
         .style("position", "absolute")
-        .style("max-height", (d) => {
-            let wHeight = document.querySelector("body").clientHeight
-                - document.querySelector("#nav-bottom").clientHeight;
-            return (wHeight - (bbox.y + bbox.height) - 24) + "px";
-        })
-        .style("top", (d) => (bbox.y + bbox.height) + "px")
-        .style("left", (d) => bbox.x + "px")
+        //.style("width", divisionInput.node().getBoundingClientRect().width + "px")
+        //.style("max-height", (d) => {
+        //    let wHeight = document.querySelector("body").clientHeight
+        //        - document.querySelector("#nav-bottom").clientHeight;
+        //    return (wHeight - (bbox.y + bbox.height) - 24) + "px";
+        //})
+        //.style("top", (d) => (bbox.y + bbox.height) + "px")
+        //.style("left", (d) => bbox.x + "px")
 
     keywordInput.on("focus", function(e) {
         // TODO
@@ -168,41 +173,10 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     divisionInput.on("keyup", (e) => {
-        divisionList = divisionDropdown.selectAll("li");
         let query = divisionInput.node().value;
-        let filtered = visDivisions.filter((d) => {
-            return d.name.toLowerCase().indexOf(query.toLowerCase()) != -1;
+        divisionList.classed("hide", (d) => {
+            return d.name.toLowerCase().indexOf(query.toLowerCase()) == -1;
         });
-        divisionList = divisionList.data(filtered, (d) => d.name);
-
-        divisionList.exit().remove();
-
-        let i = 0;
-        let filteredList = divisionList.enter().append("li")
-            .attr("tabindex", (d) => { i++; return i; })
-            .on("click", function(d) {
-                let checkbox = d3.select(this).select("input");
-                checkbox.property("checked", (d) => {
-                    d.checked = !d.checked;
-                    return !checkbox.property("checked");
-                })
-                plot(visData, visPercent);
-            })
-
-        let divisionItems = filteredList
-            .append("span");
-
-        divisionItems.append("label")
-            .attr("for", (d) => d.name)
-
-        divisionItems.append("input")
-            .attr("type", "checkbox")
-            .property("checked", (d) => d.checked)
-            .attr("id", (d) => d.name)
-
-        divisionItems.append("span")
-            .text((d) => d.name);
- 
     });
 
     keywordContainer.on("mouseover", function() {
@@ -371,6 +345,21 @@ document.addEventListener("DOMContentLoaded", function() {
        
     function redraw() {
 
+        let bbox = divisionInput.node().getBoundingClientRect();
+        //let divisionBox = document.querySelector("#divisions-autocomplete")
+        divisionDropdown
+            .style("width", divisionInput.node().getBoundingClientRect().width + "px")
+            .style("max-height", (d) => {
+                let wHeight = document.querySelector("body").clientHeight
+                    - document.querySelector("#nav-bottom").clientHeight;
+                return (wHeight - (bbox.y + bbox.height) - 24) + "px";
+            })
+            .style("top", (d) => (bbox.y + bbox.height) + "px")
+            .style("left", (d) => bbox.x + "px")
+
+        keywordDropdown
+            .style("max-width", keywordContainer.node().getBoundingClientRect().width + "px");
+ 
         let m = {left: 24, right: 24, top: 24, bottom: 24};
 
         let width = document.querySelector("#viz").clientWidth - m.left - m.right;
@@ -493,14 +482,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 .value((value, key) => { 
                     if (percent) {
                         norm = divs.map((d) => { 
-                            if (!value[d]) return 0;
-                            return cell.amount ? value[d].total_amount : value[d].total_grants; 
+                            if (!value.data[d]) return 0;
+                            return cell.amount ? value.data[d].total_amount : value.data[d].total_grants; 
                         }).reduce((a, b) => a + b, 0);
-                        return cell.value(value, key, norm); 
+                        return cell.value(value.data, key, norm); 
                     } 
-                    else return cell.value(value, key); 
+                    else return cell.value(value.data, key); 
                 })(Object.keys(data).map((d) => {
-                    return data[d];
+                    return {year: d, data: data[d]};
                 }));
 
             if (cell.stacked.length == 0) return 0;
@@ -533,37 +522,45 @@ document.addEventListener("DOMContentLoaded", function() {
                 .call(d3.axisLeft(cell.y).ticks(5).tickFormat(cell.tick(percent)));
 
             let barGroup = cell.chart.selectAll(".bar-group")
-                .data(cell.stacked);
+                .data(cell.stacked, (d) => {
+                    return d.key
+                });
 
             barGroup.exit().remove();
 
             // TODO get data key function in order to preserve key order
             barGroup = barGroup.enter().append("g")
                 .merge(barGroup)
-                .attr("fill", (d) => getColor(d.index, cell.amount))
                 .attr("class", "bar-group")
 
             let bars = barGroup.selectAll(".bar")
-                .data((groupData) => groupData) //{
-                //    return groupData.map((data) => { 
-                //        return {
-                //            key: data.key, 
-                //            data: groupData, 
-                //            index: data.index
-                //        }; 
-                //    });
-                //});
+                .data((groupData) => {
+                    return groupData.map((data) => { 
+                        //console.log(data[0] + " " + data[1]);
+                        r = {
+                            0: data[0],
+                            1: data[1], 
+                            year: +data.data.year,
+                            key: groupData.key, 
+                            index: data.data.data[groupData.key] ? data.data.data[groupData.key].index : -1
+                        }; 
+                        return r;
+                    });
+                }, (d) => d.key);
 
             bars.exit().remove();
 
             bars = bars.enter().append("rect")
                 .merge(bars)
                 .attr("class", "bar")
+                .attr("fill", (d) => {
+                    return getColor(d.index, cell.amount);
+                })
                 .on("mouseover", function(d) {
                     tooltip.transition()
                         .duration(200)
                         .style("opacity", 1);
-                    tooltip.html(cell.tip(d[1] - d[0], percent))
+                    tooltip.html(cell.tip(d[1] - d[0], percent, d.key))
                })
                .on("mousemove", (d) => {
                     tooltip.style("left", (d3.event.pageX - tooltip.node().getBoundingClientRect().width / 2) + "px")
@@ -574,9 +571,9 @@ document.addEventListener("DOMContentLoaded", function() {
                         .duration(500)
                         .style("opacity", 0);
                 })
-                .attr("x", (d) => cell.x(d.data.year))
+                .attr("x", (d) => cell.x(d.year))
                 .attr("width", cell.x.bandwidth())
-                .transition().duration(500)
+                //.transition().duration(500)
                 .attr("y", (d) => cell.y(d[1]))
                 .attr("height", (d) => cell.y(d[0]) - cell.y(d[1]))
        });

@@ -6,18 +6,6 @@ html, body {
     overflow: hidden;
 }
 
-.show-ul {
-    display: block;
-    width: 300px;
-    left: 0px;
-    top: 0px;
-    height: 500px;
-    transform-origin: 0px 0px 0px;
-    opacity: 1;
-    transform: scaleX(1) scaleY(1);
-}
-
-
 #nav-top {
     display: flex;
     flex-direction: row;
@@ -83,7 +71,7 @@ input[type=checkbox]:not(:disabled) ~ .lever:active:after, input[type=checkbox]:
     background-color: #2196F3;
 }
 
-#any-all:not(:checked)+lever:after {
+#any-all:not(:checked)+.lever:after {
     background-color: #1976D2;
 }
 
@@ -91,8 +79,12 @@ input[type=checkbox]:not(:disabled) ~ .lever:active:after, input[type=checkbox]:
     background-color: #2196F3;
 }
 
-#union-intersection:checked+lever:after {
+#any-all:checked+.lever:after {
     background-color: #1976D2;
+}
+
+.hide {
+    display: none;
 }
 
 .dropdown {

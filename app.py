@@ -74,21 +74,24 @@ def search():
 
     total = search_elastic(toggle)
     matched = search_elastic(toggle, frozenset(terms))
-    #order = search_elastic(toggle, frozenset(terms), sort=True)
+    order = search_elastic(toggle, frozenset(terms), sort=True)
     #sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
-    #inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
+    inv_sorted = {b.key: i for i, b in enumerate(order.per_division.buckets)}
 
     json_data = defaultdict(dict)
 
     for year in total.per_year.buckets:
         y = int(year.key_as_string[:4])
         if y not in list(range(2007, 2018)): continue
-        json_data[y]["year"] = int(y)
+        json_data[y]["year"] = y
         json_data[y]["all"] = defaultdict(int)
+        json_data[y]["all"]["index"] = 5
         for div in year.per_division.buckets:
             json_data[y]["all"]["total_grants"] += div.agg_grants.value
             json_data[y]["all"]["total_amount"] += div.agg_amount.value
             json_data[y][div.key] = {
+                    "year": y,
+                    "index": -1,
                     "total_grants": div.agg_grants.value,
                     "total_amount": div.agg_amount.value,
                     "match_grants": 0,
@@ -102,6 +105,7 @@ def search():
             json_data[y]["all"]["match_grants"] += div.agg_grants.value
             json_data[y]["all"]["match_amount"] += div.agg_amount.value
             json_data[y][div.key].update({
+                "index": inv_sorted[div.key],
                 "match_grants": div.agg_grants.value,
                 "match_amount": div.agg_amount.value
             })
