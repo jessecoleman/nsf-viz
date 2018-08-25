@@ -536,7 +536,6 @@ document.addEventListener("DOMContentLoaded", function() {
             let bars = barGroup.selectAll(".bar")
                 .data((groupData) => {
                     return groupData.map((data) => { 
-                        //console.log(data[0] + " " + data[1]);
                         r = {
                             0: data[0],
                             1: data[1], 

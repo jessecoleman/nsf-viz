@@ -84,8 +84,13 @@ def search():
         y = int(year.key_as_string[:4])
         if y not in list(range(2007, 2018)): continue
         json_data[y]["year"] = y
-        json_data[y]["all"] = defaultdict(int)
-        json_data[y]["all"]["index"] = 5
+        json_data[y]["all"] = {
+            "index": 5,
+            "match_grants": 0,
+            "match_amount": 0,
+            "total_grants": 0,
+            "total_amount": 0
+        }
         for div in year.per_division.buckets:
             json_data[y]["all"]["total_grants"] += div.agg_grants.value
             json_data[y]["all"]["total_amount"] += div.agg_amount.value
