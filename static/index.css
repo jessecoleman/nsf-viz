@@ -55,32 +55,28 @@ img {
     margin: auto;
 }
 
+#divisions-table {
+    cursor: pointer;
+}
 
-
-/*
-.switch label input[type=checkbox]:checked + .lever
-.switch label input[type=checkbox]:checked + .lever:after
-.switch label .lever
-.switch label .lever:after
-input[type=checkbox]:checked:not(:disabled) ~ .lever:active::after, input[type=checkbox]:checked:not(:disabled).tabbed:focus ~ .lever::after
-input[type=checkbox]:not(:disabled) ~ .lever:active:after, input[type=checkbox]:not(:disabled).tabbed:focus ~ .lever::after
-.switch label input[type=checkbox][disabled] + .lever:after, .switch label input[type=checkbox][disabled]:checked + .lever:after
-*/
+#sort-val, #divisions-table .amount {
+    text-align: right;
+}
 
 #any-all:not(:checked)+.lever {
-    background-color: #2196F3;
+    background-color: #607d8b;
 }
 
 #any-all:not(:checked)+.lever:after {
-    background-color: #1976D2;
+    background-color: #b0bec5;
 }
 
 #any-all:checked+.lever {
-    background-color: #2196F3;
+    background-color: #607d8b;
 }
 
 #any-all:checked+.lever:after {
-    background-color: #1976D2;
+    background-color: #b0bec5;
 }
 
 .hide {
@@ -183,6 +179,34 @@ div.tooltip {
 
 #grant-data {
     width: 67%;
+}
+
+#divisions-table thead {
+    line-height: 0.75;
+}
+
+.sort-desc, .sort-asc {
+    position: relative;
+}
+
+.sort-desc:before {
+    content: "";
+    border-style: solid;
+    border-width: 5px 5px 5px 5px;
+    border-color: black transparent transparent transparent;
+    position: absolute;
+    left: -1em;
+    top: 1.7em;
+}
+
+.sort-asc:before {
+    content: "";
+    border-style: solid;
+    border-width: 5px 5px 5px 5px;
+    border-color: transparent transparent black transparent;
+    position: absolute;
+    left: -1em;
+    top: 1.3em;
 }
 
 //#grant-table {

@@ -208,6 +208,10 @@ document.addEventListener("DOMContentLoaded", function() {
             .selectAll("tr")
             .data(data.divisions)
             .enter().append("tr")
+            .style("font-weight", d => {
+                if (d.checked = d.default) return "bold";
+                else return "normal";
+            })
             .on("click", function(d) {
                 d3.select(this).style("font-weight", d => d.checked ? "normal" : "bold")
                 d.checked = !d.checked;
@@ -226,11 +230,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
         let sortVal = d3.select("#divisions-table").select("#sort-val");
         sortVal.on("click", () => {
-            if (sortVal.text() === "#") {
-                sortVal.text("$");
+            if (sortVal.text() === "grants") {
+                sortVal.text("funding");
                 reorder(visData, "amount");
             } else {
-                sortVal.text("#");
+                sortVal.text("grants");
                 reorder(visData, "grants");
             }
         })
@@ -257,9 +261,11 @@ document.addEventListener("DOMContentLoaded", function() {
             allDivisions.style("display", "block");
             clearDivisions.style("display", "none");
  
-            divisionList
-                .select("input")
-                .property("checked", (d) => d.checked = false);
+            divisionList.selectAll("td")
+                .style("font-weight", (d) => {
+                    d.checked = false;
+                    return "normal";
+                })
 
             plot(visData, visPercent); 
         });
@@ -270,9 +276,11 @@ document.addEventListener("DOMContentLoaded", function() {
             clearDivisions.style("display", "block");
             allDivisions.style("display", "none");
 
-            divisionList
-                .select("input")
-                .property("checked", (d) => d.checked = true);
+            divisionList.selectAll("td")
+                .style("font-weight", (d) => {
+                    d.checked = true
+                    return "bold";
+                })
 
             plot(visData, visPercent); 
         })
@@ -446,16 +454,19 @@ document.addEventListener("DOMContentLoaded", function() {
             data = data.total_grants;
         }
 
-        if (val === "name") divisionList.sort();
+        if (val === "name") divisionList = divisionList.sort();
         else {
-            divisionList.sort((a, b) => {
+            divisionList = divisionList.sort((a, b) => {
                 aVal = data[a.name];
                 if (!aVal) aVal = 0;
                 bVal = data[b.name];
                 if (!bVal) bVal = 0;
                 return bVal - aVal;
             })
-            divisionList.select(".amount").text(d => format(data[d.name]));
+            divisionList
+                .classed("hide", d => !data[d.name])
+                .select(".amount")
+                .text(d => format(data[d.name]));
         }
     }
 
@@ -475,13 +486,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
             cell.stacked = d3.stack()
                 .keys(divs)
-                .value((value, key) => cell.value(value.data, key, percent ? value.norm : 1))
+                .value((value, key) => cell.value(value.data, key, value.norm))
                 (Object.keys(data).filter(y => !isNaN(y)).map((y) => {
-                    norm = divs.map((d) => { 
-                        if (!data[y][d]) return 0;
-                        else if (cell.amount) return data[y][d].total_amount;
-                        else return data[y][d].total_grants; 
-                    }).reduce((a, b) => a + b, 0);
+                    let norm;
+                    if (percent) {
+                        norm = divs.map((d) => { 
+                            if (!data[y][d]) return 0;
+                            else if (cell.amount) return data[y][d].total_amount;
+                            else return data[y][d].total_grants; 
+                        }).reduce((a, b) => a + b, 0);
+                    } else {
+                        norm = 1;
+                    }
                     return {year: y, norm: norm, data: data[y]};
                 }));
 
@@ -644,22 +660,57 @@ document.addEventListener("DOMContentLoaded", function() {
         let dateFormat = d3.timeFormat("%b %Y");
         let dateParse = d3.timeParse("%Y-%m-%d");
 
+        data.forEach(d => {
+            d.date = dateParse(d.date);
+            d.value = +d.value;
+        })
+
         let rows = d3.select("#grant-table tbody").selectAll("tr")
             .data(data)
             .enter()
             .append("tr")
-            .selectAll("td")
+
+        rows.selectAll("td")
             .data((d) => {
                 return ["title", "date", "value", "division"].map((c) => {
                     if (c == "value") return { column: c, value: "$" + d3.format(",")(d[c]) };
                     else if (c == "date") { 
-                        return { column: c, value: dateFormat(dateParse(d[c])) }; }
+                        return { column: c, value: dateFormat(d[c]) }; }
                     else return { column: c, value: d[c] }; 
                 });
             })
             .enter()
             .append('td')
             .text((d) => d.value);
+
+        d3.selectAll("#grant-table thead th").on("click", function() {
+            let tag = d3.select(this)
+            d3.selectAll("#grant-table thead th").filter(function(d) { return this.innerText !== tag.text(); })
+                .classed("sort-asc sort-desc", false);
+            tag.attr("class", (d) => tag.classed("sort-desc") ? "sort-asc" : "sort-desc")
+
+            let order = tag.classed("sort-desc") ? 1 : -1;
+
+            if (tag.text() === "Grant Title") {
+                rows = rows.sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
+            } else if (tag.text() === "Date") {
+                rows = rows.sort((a, b) => { 
+                    if (a.date && b.date) return (a.date.getTime() - b.date.getTime())*order;
+                    else if (a.date) return 1*order;
+                    else if (b.date) return -1*order;
+                    else return 0;
+                });
+            } else if (tag.text() === "Amount") {
+                rows = rows.sort((a, b) => { 
+                    if (a.value && b.value) return (a.value - b.value) * order;
+                    else if (a.value) return 1*order;
+                    else if (b.value) return -1*order;
+                    else return 0;
+                })
+            } else if (tag.text() === "Division") {
+                rows = rows.sort((a, b) => a.division.toLowerCase().localeCompare(b.division.toLowerCase()))
+            }
+        })
     }
 
 });
