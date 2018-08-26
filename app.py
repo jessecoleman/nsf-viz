@@ -75,10 +75,13 @@ def search():
     total = search_elastic(toggle)
     matched = search_elastic(toggle, frozenset(terms))
     order = search_elastic(toggle, frozenset(terms), sort=True)
-    #sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
-    inv_sorted = {b.key: i for i, b in enumerate(order.per_division.buckets)}
+    sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
+    inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
 
     json_data = defaultdict(dict)
+    json_data["total_grants"] = {b.key: b.agg_grants.value for b in order.per_division.buckets}
+    json_data["total_amount"] = {b.key: b.agg_amount.value for b in order.per_division.buckets}
+    print(json_data)
 
     for year in total.per_year.buckets:
         y = int(year.key_as_string[:4])
@@ -110,7 +113,7 @@ def search():
             json_data[y]["all"]["match_grants"] += div.agg_grants.value
             json_data[y]["all"]["match_amount"] += div.agg_amount.value
             json_data[y][div.key].update({
-                "index": inv_sorted[div.key],
+                "index": inv_sort[div.key],
                 "match_grants": div.agg_grants.value,
                 "match_amount": div.agg_amount.value
             })

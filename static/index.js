@@ -105,7 +105,6 @@ document.addEventListener("DOMContentLoaded", function() {
  
      // initialize materialize elements
     let modalInstance = M.Modal.init(modal, null);
-    let selectInstance = M.FormSelect.init(select, null);
     let keywordInstance = M.Chips.init(keywordChips, {
         onChipAdd: function(e, c) {
             terms = c.firstChild.nodeValue.split(",");
@@ -127,21 +126,12 @@ document.addEventListener("DOMContentLoaded", function() {
     let keywordInput = d3.select("#keywords-autocomplete input");
     let divisionInput = d3.select("#divisions-autocomplete");
     let keywordDropdown = d3.select("#keywords-dropdown")
-        //.style("max-width", keywordContainer.node().getBoundingClientRect().width + "px");
     let keywordFocused = false;
     let divisionFocused = false;
 
     // TODO clean this up
     let divisionDropdown = d3.select("#divisions-dropdown")
         .style("position", "absolute")
-        //.style("width", divisionInput.node().getBoundingClientRect().width + "px")
-        //.style("max-height", (d) => {
-        //    let wHeight = document.querySelector("body").clientHeight
-        //        - document.querySelector("#nav-bottom").clientHeight;
-        //    return (wHeight - (bbox.y + bbox.height) - 24) + "px";
-        //})
-        //.style("top", (d) => (bbox.y + bbox.height) + "px")
-        //.style("left", (d) => bbox.x + "px")
 
     keywordInput.on("focus", function(e) {
         // TODO
@@ -201,11 +191,12 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    let auto = document.querySelector("#division-autocomplete");
+    let auto = document.querySelector("#divisions-autocomplete");
     let autoInstance = M.Autocomplete.init({data: {"test": null, "test2": null, "test3": null},
     limit: 20, minLength: 0});
 
     let divisionList;
+    let divisionItems;
 
     // load keyword data from server
     d3.json("/defaults", function(data) {
@@ -213,51 +204,37 @@ document.addEventListener("DOMContentLoaded", function() {
             keywordInstance.addChip({tag: d});
         });
 
-        let i = 0;
-        visDivisions = data.divisions;
-        divisionList = divisionDropdown
-            .attr("class", "select-dropdown dropdown-content")
-            //.style("display", "block")
-            .style("opacity", 1)
-            .style("list-style-type", "default")
-            .selectAll("li")
-            .data(data.divisions, (d) => d.name)
-            .enter().append("li")
-            .attr("tabindex", (d) => { i++; return i; })
+        divisionList = d3.select("#divisions-table tbody")
+            .selectAll("tr")
+            .data(data.divisions)
+            .enter().append("tr")
             .on("click", function(d) {
-                let checkbox = d3.select(this).select("input");
-                checkbox.property("checked", (d) => {
-                    d.checked = !d.checked;
-                    return !checkbox.property("checked");
-                })
+                d3.select(this).style("font-weight", d => d.checked ? "normal" : "bold")
+                d.checked = !d.checked;
                 plot(visData, visPercent);
             })
 
-        let divisionItems = divisionList.append("span");
+        divisionList.append("td")
+            .attr("class", "name")
+            .text(d => d.name);
 
-        divisionItems.append("label")
-            .attr("for", (d) => d.name)
+        divisionList.append("td")
+            .attr("class", "amount")
 
-        divisionItems.append("input")
-            .attr("type", "checkbox")
-            .property("checked", (d) => {
-                d.checked = d.default;
-                return d.default;
-            })
-            .attr("id", (d) => d.name)
+        let sortName = d3.select("#divisions-table").select("#sort-name");
+        sortName.on("click", () => reorder(visData, "name"));
 
-        divisionItems.append("span")
-            .text((d) => d.name);
-            
-        //d3.select("#select-division").selectAll("option")
-        //    .data(data.divisions)
-        //    .enter().append("option")
-        //    .text((d) => d.name)
-        //    .property("selected", (d) => d.default)
-        //    .attr("value", (d) => d.name);
-
-        //selectInstance = M.FormSelect.init(select, null);
-
+        let sortVal = d3.select("#divisions-table").select("#sort-val");
+        sortVal.on("click", () => {
+            if (sortVal.text() === "#") {
+                sortVal.text("$");
+                reorder(visData, "amount");
+            } else {
+                sortVal.text("#");
+                reorder(visData, "grants");
+            }
+        })
+ 
         getData();
 
         let toggleButton = d3.select("#toggle-view").on("click", () => {
@@ -280,16 +257,9 @@ document.addEventListener("DOMContentLoaded", function() {
             allDivisions.style("display", "block");
             clearDivisions.style("display", "none");
  
-            visDivisions.forEach((d) => {
-                d.checked = false;
-            });
-
             divisionList
                 .select("input")
-                .property("checked", (d) => {
-                    d.checked = false;
-                    return false;
-                });
+                .property("checked", (d) => d.checked = false);
 
             plot(visData, visPercent); 
         });
@@ -302,13 +272,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
             divisionList
                 .select("input")
-                .property("checked", (d) => {
-                    d.checked = true;
-                    return true;
-                });
+                .property("checked", (d) => d.checked = true);
 
             plot(visData, visPercent); 
         })
+
+    let toggle = d3.select("#any-all").on("change", getData);
 
     d3.select("#display-grants").on("click", getGrants);
 
@@ -385,7 +354,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .call((c) => d3.axisBottom(c.x).tickFormat(d3.format("d")));
 
         yAxes.call((c) => d3.axisLeft(c.y).ticks(5));
-         // initialize visualization
+        // initialize visualization
         cells.forEach((cell, i) => {
 
             cell.chart = d3.select(charts.nodes()[i])
@@ -455,6 +424,7 @@ document.addEventListener("DOMContentLoaded", function() {
             spinner.style("display", "none");
             d3.select("#viz").style("opacity", 1);
             visData = JSON.parse(searchResult.response);
+            reorder(visData);
             plot(visData, visPercent);
         };
         searchResult.send(JSON.stringify({
@@ -462,6 +432,32 @@ document.addEventListener("DOMContentLoaded", function() {
             "terms": terms
         }))
     };
+
+    function reorder(data, val, p) {
+
+        if (!data) return;
+
+        if (val === "amount") {
+            data = data.total_amount;
+            format = p ? d3.format(".2%") : d3.format("$.2s");
+        }
+        else {
+            format = p ? d3.format(".2%") : d3.format(".2s");
+            data = data.total_grants;
+        }
+
+        if (val === "name") divisionList.sort();
+        else {
+            divisionList.sort((a, b) => {
+                aVal = data[a.name];
+                if (!aVal) aVal = 0;
+                bVal = data[b.name];
+                if (!bVal) bVal = 0;
+                return bVal - aVal;
+            })
+            divisionList.select(".amount").text(d => format(data[d.name]));
+        }
+    }
 
 
     function plot(data, percent) {
@@ -475,21 +471,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
         cells.forEach((cell, i) => {
 
-            let divs = cell.filtered ? visDivisions.filter(d => d.checked).map(d => d.name) : ["all"];
+            let divs = cell.filtered ? divisionList.data().filter(d => d.checked).map(d => d.name) : ["all"];
 
             cell.stacked = d3.stack()
                 .keys(divs)
-                .value((value, key) => { 
-                    if (percent) {
-                        norm = divs.map((d) => { 
-                            if (!value.data[d]) return 0;
-                            return cell.amount ? value.data[d].total_amount : value.data[d].total_grants; 
-                        }).reduce((a, b) => a + b, 0);
-                        return cell.value(value.data, key, norm); 
-                    } 
-                    else return cell.value(value.data, key); 
-                })(Object.keys(data).map((d) => {
-                    return {year: d, data: data[d]};
+                .value((value, key) => cell.value(value.data, key, percent ? value.norm : 1))
+                (Object.keys(data).filter(y => !isNaN(y)).map((y) => {
+                    norm = divs.map((d) => { 
+                        if (!data[y][d]) return 0;
+                        else if (cell.amount) return data[y][d].total_amount;
+                        else return data[y][d].total_grants; 
+                    }).reduce((a, b) => a + b, 0);
+                    return {year: y, norm: norm, data: data[y]};
                 }));
 
             if (cell.stacked.length == 0) return 0;
@@ -510,7 +503,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         cells.forEach((cell, i) => {
 
-            cell.x.domain(Object.keys(data).sort());
+            cell.x.domain(Object.keys(data).filter(y => !isNaN(y)).sort());
             cell.y.domain([0, cell.maxData]);
     
             cell.chart.select(".axis-x")
@@ -522,9 +515,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 .call(d3.axisLeft(cell.y).ticks(5).tickFormat(cell.tick(percent)));
 
             let barGroup = cell.chart.selectAll(".bar-group")
-                .data(cell.stacked, (d) => {
-                    return d.key
-                });
+                .data(cell.stacked, (d) => d.key);
 
             barGroup.exit().remove();
 
@@ -534,27 +525,22 @@ document.addEventListener("DOMContentLoaded", function() {
                 .attr("class", "bar-group")
 
             let bars = barGroup.selectAll(".bar")
-                .data((groupData) => {
-                    return groupData.map((data) => { 
-                        r = {
-                            0: data[0],
-                            1: data[1], 
-                            year: +data.data.year,
-                            key: groupData.key, 
-                            index: data.data.data[groupData.key] ? data.data.data[groupData.key].index : -1
-                        }; 
-                        return r;
-                    });
-                }, (d) => d.key);
+                .data(div => div.map(data => { 
+                    return {
+                        0: data[0],
+                        1: data[1], 
+                        year: +data.data.year,
+                        key: div.key, 
+                        index: data.data.data[div.key] ? data.data.data[div.key].index : -1
+                    }; 
+                }), d => d.key);
 
             bars.exit().remove();
 
             bars = bars.enter().append("rect")
                 .merge(bars)
                 .attr("class", "bar")
-                .attr("fill", (d) => {
-                    return getColor(d.index, cell.amount);
-                })
+                .attr("fill", (d) => getColor(d.index, cell.amount))
                 .on("mouseover", function(d) {
                     tooltip.transition()
                         .duration(200)
@@ -587,10 +573,7 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        keywords = [];
-        data.forEach((d) => {
-            keywords.push(d.tag);
-        });
+        keywords = data.map(d => d.tag);
 
         let searchResult = new XMLHttpRequest();
         searchResult.open("POST", "/suggestions", true);
@@ -619,7 +602,7 @@ document.addEventListener("DOMContentLoaded", function() {
         searchResult.send(JSON.stringify(keywords));
     }
 
-    function getGrants(event) {
+    function getGrants() {
 
         d3.select("#grant-table tbody").selectAll("tr").remove();
         let message = d3.select("#table-message")
@@ -627,14 +610,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
         let terms = keywordInstance.chipsData.map((c) => c.tag);
 
-        let divisions = visDivisions.filter(d => d.checked).map(d => d.name);
+        let divisions = divisionList.data().filter(d => d.checked).map(d => d.name);
 
         if (divisions.length === 0) {
             message.text("Please select some divisions from the filter dropdown before downloading");
             return;
         }
 
-        let toggle = d3.select("#any-all").property("checked");
+        let toggleState = toggle.property("checked");
 
         message.text("Loading data...");
         d3.select("#grant-table tbody").selectAll("tr").remove();
@@ -653,7 +636,7 @@ document.addEventListener("DOMContentLoaded", function() {
         searchResult.send(JSON.stringify({
             "terms": terms,
             "divisions": divisions,
-            "toggle": toggle
+            "toggle": toggleState
         }));
     };
 

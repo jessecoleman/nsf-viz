@@ -33,12 +33,24 @@
         <div class="grey lighten-5" id="controls">
             <div class="input-field" id="division-container">
                 <div id="division-controls">
-                    <h5 id="division-title">FILTER DIVISIONS</h5>
+                    <h5 id="division-title">SELECT DIVISIONS</h5>
                     <a id="clear-divisions" class="waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
                     <a id="select-all" class="waves-effect waves-green btn-flat"><i class="material-icons right">done_all</i>select all</a>
                 </div>
-                 <input type="text" id="divisions-autocomplete" placeholder="select divisions">
-                <ul id="divisions-dropdown" style="position: absolute;" class="dropdown"></ul>
+                 <input type="text" id="divisions-autocomplete" placeholder="filter divisions">
+                 <div id="divisions-dropdown" class="dropdown card-panel">
+                     <table id="divisions-table"> 
+                         <thead>
+                             <tr>
+                                 <th id="sort-name">Division</th>
+                                 <th id="sort-val">#</th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                         </tbody>
+                     </table>
+     
+                 </div>
             </div>
             <div id="control-buttons">
                 <button id="display-grants" class="btn waves-effect waves-light blue modal-trigger" data-target="grant-data">
