@@ -2,7 +2,21 @@ let cells = [
     {
         pos: [0, 0], 
         title: (p) => "Grants in SELECTED divisions per year " + (p ? "(%)" : "(#)"),
-        tip: (v, p, n) => n + ": " + (p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants"),
+        tip: (v, p, name, norm) => {
+            return `<table class="striped">
+                <tbody>
+                    <tr>
+                        <td>SELECTED divisions</td>
+                        <td>${(p ? d3.format(".2%")(norm) : d3.format(",")(norm) + " grants")}</td>
+                    </tr>
+                    <tr>
+                        <td>${name}</td>
+                        <td>${(p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants")}</td>
+                    </tr>
+                </tbody>
+            </table>`;
+            //return n + ": " + (p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants"),
+        },
         tick: (p) => p ? d3.format(".2%") : d3.format(".2s"),
         amount: false,
         filtered: true,
@@ -18,7 +32,7 @@ let cells = [
     {
         pos: [1, 0], 
         title: (p) => "ALL Grants per year " + (p ? "(%)" : "(#)"),
-        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants",
+        tip: (v, p) => `<span style="padding: 8px">${p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants"}</span>`,
         tick: (p) => p ? d3.format(".2%") : d3.format(".2s"),
         amount: false,
         filtered: false,
@@ -34,7 +48,20 @@ let cells = [
     {
         pos: [0, 1], 
         title: (p) => "Grant funding in SELECTED divisions per year " + (p ? "(%)" : "($)"),
-        tip: (v, p, n) => n + ": " + (p ? d3.format(".2%")(v) : d3.format("$,")(v)),
+        tip: (v, p, name, norm) => {
+            return `<table class="striped">
+                <tbody>
+                    <tr>
+                        <td>SELECTED divisions</td>
+                        <td>${(p ? d3.format(".2%")(norm) : d3.format("$,")(norm))}</td>
+                    </tr>
+                    <tr>
+                        <td>${name}</td>
+                        <td>${(p ? d3.format(".2%")(v) : d3.format("$,")(v))}</td>
+                    </tr>
+                </tbody>
+            </table>`;
+        },
         tick: (p) => p ? d3.format(".2%") : d3.format("$.2s"),
         amount: true,
         filtered: true,
@@ -50,7 +77,7 @@ let cells = [
     {
         pos: [1, 1],
         title: (p) => "ALL grant funding per year " + (p ? "(%)" : "($)"),
-        tip: (v, p) => p ? d3.format(".2%")(v) : d3.format("$,")(v),
+        tip: (v, p) => `<span style="padding: 8px">${p ? d3.format(".2%")(v) : d3.format("$,")(v)}</span>`,
         tick: (p) => p ? d3.format(".2%") : d3.format("$.2s"),
         amount: true,
         filtered: false,
@@ -71,6 +98,7 @@ let visData = null;
 
 document.addEventListener("DOMContentLoaded", function() {
 
+    let sidenav = document.querySelector("#side-bar");
     let modal = document.querySelector("#grant-data");
     let select = document.querySelector("#select-division");
     let keywordChips = document.querySelector("#keywords-autocomplete");
@@ -89,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 let spinner = d3.select("#spin")
                     .style("display", "block");
 
-                d3.select("#viz").style("opacity", 0.6);
+                svg.transition().duration(200).style("opacity", 0.4);
 
                 if (new Date() - searchTime < searchDelta) {
                     setTimeout(callback, searchDelta);
@@ -104,6 +132,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
  
      // initialize materialize elements
+    let sidenavInstance = M.Sidenav.init(sidenav);
     let modalInstance = M.Modal.init(modal, null);
     let keywordInstance = M.Chips.init(keywordChips, {
         onChipAdd: function(e, c) {
@@ -120,6 +149,8 @@ document.addEventListener("DOMContentLoaded", function() {
             sTimeout();
         }
     });
+    
+    d3.select("#keywords-autocomplete input").property("placeholder", "enter search terms").style("color", "white")
 
     let keywordContainer = d3.select("#keyword-container");
     let divisionContainer = d3.select("#division-container");
@@ -149,9 +180,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     divisionInput.on("focus", function(e) {
-        // TODO
-        divisionDropdown.style("display", "block");
-        divisionDropdown.style("position", "fixed")
+        divisionDropdown
+            .style("display", "block")
+            .style("position", "fixed")
     });
 
     divisionInput.on("focusout", function(e) {
@@ -215,7 +246,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .on("click", function(d) {
                 d3.select(this).style("font-weight", d => d.checked ? "normal" : "bold")
                 d.checked = !d.checked;
-                plot(visData, visPercent);
+                plot(visData, visPercent, d3.select(this).attr("data-index"), d.checked);
             })
 
         divisionList.append("td")
@@ -225,19 +256,29 @@ document.addEventListener("DOMContentLoaded", function() {
         divisionList.append("td")
             .attr("class", "amount")
 
-        let sortName = d3.select("#divisions-table").select("#sort-name");
-        sortName.on("click", () => reorder(visData, "name"));
+        let sortName = d3.select("#divisions-table").select("#sort-name")
+            .on("click", () => {
+                let order = sortName.classed("sort-desc") ? 1 : -1;
+                sortVal.classed("sort-desc sort-asc", false);
+                sortName.classed("sort-desc", true); 
+                reorder(visData, "name", order); 
+            });
 
-        let sortVal = d3.select("#divisions-table").select("#sort-val");
-        sortVal.on("click", () => {
-            if (sortVal.text() === "grants") {
-                sortVal.text("funding");
-                reorder(visData, "amount");
-            } else {
-                sortVal.text("grants");
-                reorder(visData, "grants");
-            }
-        })
+        let sortVal = d3.select("#divisions-table").select("#sort-val")
+            .on("click", () => {
+                let order = sortVal.classed("sort-desc") ? 1 : -1;
+                if (sortVal.text() === "grants") {
+                    sortVal.text("funding");
+                    sortName.classed("sort-desc sort-asc", false); 
+                    sortVal.classed("sort-desc", true);
+                    reorder(visData, "amount", order);
+                } else {
+                    sortVal.text("grants");
+                    sortName.classed("sort-desc sort-asc", false); 
+                    sortVal.classed("sort-desc", true);
+                    reorder(visData, "grants", order);
+                }
+            });
  
         getData();
 
@@ -261,8 +302,7 @@ document.addEventListener("DOMContentLoaded", function() {
             allDivisions.style("display", "block");
             clearDivisions.style("display", "none");
  
-            divisionList.selectAll("td")
-                .style("font-weight", (d) => {
+            divisionList.style("font-weight", (d) => {
                     d.checked = false;
                     return "normal";
                 })
@@ -276,8 +316,7 @@ document.addEventListener("DOMContentLoaded", function() {
             clearDivisions.style("display", "block");
             allDivisions.style("display", "none");
 
-            divisionList.selectAll("td")
-                .style("font-weight", (d) => {
+            divisionList.style("font-weight", (d) => {
                     d.checked = true
                     return "bold";
                 })
@@ -322,13 +361,14 @@ document.addEventListener("DOMContentLoaded", function() {
        
     function redraw() {
 
+        // TODO
         let bbox = divisionInput.node().getBoundingClientRect();
         //let divisionBox = document.querySelector("#divisions-autocomplete")
         divisionDropdown
             .style("width", divisionInput.node().getBoundingClientRect().width + "px")
             .style("max-height", (d) => {
                 let wHeight = document.querySelector("body").clientHeight
-                    - document.querySelector("#nav-bottom").clientHeight;
+                    //- document.querySelector("#nav-bottom").clientHeight;
                 return (wHeight - (bbox.y + bbox.height) - 24) + "px";
             })
             .style("top", (d) => (bbox.y + bbox.height) + "px")
@@ -373,11 +413,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     .rangeRound([0, chartWidth])
                     .domain(data)
                     .padding(0.1);
+
+            // TODO
+            //cell.oldY = cell.y;
+            //console.log(cell.oldY)
             cell.y = d3.scaleLinear()
                     .rangeRound([chartHeight, 0])
                     .domain([1, 0]);
 
-            // TODO maybe initialize this better
             // let bars = cell.chart.selectAll(".bar")
             //     .data(data)
             //     .enter().append("rect")
@@ -419,7 +462,7 @@ document.addEventListener("DOMContentLoaded", function() {
         let spinner = d3.select("#spin")
             .style("display", "block");
 
-        d3.select("#viz").style("opacity", 0.6);
+        svg.transition().duration(200).style("opacity", 0.4);
 
         let terms = keywordInstance.chipsData.map((c) => c.tag);
 
@@ -430,9 +473,9 @@ document.addEventListener("DOMContentLoaded", function() {
         searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         searchResult.onload = function() {
             spinner.style("display", "none");
-            d3.select("#viz").style("opacity", 1);
+            svg.transition().duration(200).style("opacity", 1);
             visData = JSON.parse(searchResult.response);
-            reorder(visData);
+            reorder(visData, "grants", 1);
             plot(visData, visPercent);
         };
         searchResult.send(JSON.stringify({
@@ -441,37 +484,43 @@ document.addEventListener("DOMContentLoaded", function() {
         }))
     };
 
-    function reorder(data, val, p) {
+    function reorder(data, val, order, p) {
 
-        if (!data) return;
+        if (!data.total_grants) return;
 
         if (val === "amount") {
             data = data.total_amount;
             format = p ? d3.format(".2%") : d3.format("$.2s");
         }
-        else {
-            format = p ? d3.format(".2%") : d3.format(".2s");
+        else if (val === "grants") {
             data = data.total_grants;
+            format = p ? d3.format(".2%") : d3.format(".2s");
         }
 
-        if (val === "name") divisionList = divisionList.sort();
-        else {
+        if (val === "name") {
+            divisionList = divisionList.sort((a, b) => {
+                return a.name
+                    .toLowerCase()
+                    .localeCompare(b.name.toLowerCase());
+            })
+        } else {
             divisionList = divisionList.sort((a, b) => {
                 aVal = data[a.name];
                 if (!aVal) aVal = 0;
                 bVal = data[b.name];
                 if (!bVal) bVal = 0;
-                return bVal - aVal;
+                return order * (bVal - aVal);
             })
             divisionList
                 .classed("hide", d => !data[d.name])
+                .attr("data-index", (d, i) => i)
                 .select(".amount")
                 .text(d => format(data[d.name]));
         }
     }
 
 
-    function plot(data, percent) {
+    function plot(data, percent, updateIdx, enter) {
 
         let toggleButton = d3.select("#toggle-view");
 
@@ -480,14 +529,32 @@ document.addEventListener("DOMContentLoaded", function() {
             .select(".title")
             .text((d) => d.title(percent));
 
+        let prev;
+
+        let filteredDivs = divisionList.data().filter(d => d.checked).map(d => {
+            let div = data[2007][d.name];
+            if (updateIdx && div && div.index > -1 && div.index < updateIdx) prev = d; 
+            return d.name; 
+        }) 
+
+        console.log(prev);
+
         cells.forEach((cell, i) => {
 
-            let divs = cell.filtered ? divisionList.data().filter(d => d.checked).map(d => d.name) : ["all"];
+            if (cell.filtered) divs = filteredDivs;
+            else divs = ["all"];
 
+            cell.prevTotals = cell.totals;
+            cell.totals = [];
             cell.stacked = d3.stack()
                 .keys(divs)
                 .value((value, key) => cell.value(value.data, key, value.norm))
                 (Object.keys(data).filter(y => !isNaN(y)).map((y) => {
+                    let total = divs.map((d) => { 
+                        if (!data[y][d]) return 0;
+                        else if (cell.amount) return data[y][d].match_amount;
+                        else return data[y][d].match_grants; 
+                    }).reduce((a, b) => a + b, 0);
                     let norm;
                     if (percent) {
                         norm = divs.map((d) => { 
@@ -498,7 +565,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     } else {
                         norm = 1;
                     }
-                    return {year: y, norm: norm, data: data[y]};
+                    cell.totals.push(total);
+                    return {year: y, total: total, norm: norm, data: data[y]};
                 }));
 
             if (cell.stacked.length == 0) return 0;
@@ -533,51 +601,88 @@ document.addEventListener("DOMContentLoaded", function() {
             let barGroup = cell.chart.selectAll(".bar-group")
                 .data(cell.stacked, (d) => d.key);
 
-            barGroup.exit().remove();
+            barGroup.exit()
+                .transition()
+                .duration(500)
+                .remove()
+                .selectAll(".bar")
+                .attr("y", (d, i) => cell.y(d[0]))
+                //.attr("y", (d, i) => { console.log(i); return cell.y((cell.prevTotals[i] / cell.totals[i]) * d[0]); })
+                //.attr("y", (d, i) => { console.log(i); return cell.y((cell.totals[i] - d[0]) / (cell.prevTotals[i] - d[0]) * d[0]); })
+                //.attr("y", (d) => {
+                //    if (y2.length) return cell.y(y2[i]);
+                //    else return cell.y(d[0]); 
+                //})
+                .attr("height", (d) => 0);
 
-            // TODO get data key function in order to preserve key order
             barGroup = barGroup.enter().append("g")
                 .merge(barGroup)
                 .attr("class", "bar-group")
 
+            let oldY = {}
+            let y2 = []
+
             let bars = barGroup.selectAll(".bar")
-                .data(div => div.map(data => { 
-                    return {
-                        0: data[0],
-                        1: data[1], 
-                        year: +data.data.year,
+                .data(div => div.map(d => { 
+                   let data = {
+                        0: d[0],
+                        1: d[1], 
+                        total: d.data.total,
+                        norm: d.data.norm,
+                        year: +d.data.year,
                         key: div.key, 
-                        index: data.data.data[div.key] ? data.data.data[div.key].index : -1
+                        index: d.data.data[div.key] ? d.data.data[div.key].index : -1
                     }; 
-                }), d => d.key);
+                    if (prev && data.key === prev.name) {
+                        oldY[data.year] = data[1];
+                        y2.push(data[1]);
+                    }
+                    return data;
+                }), d => d.year);
 
-            bars.exit().remove();
+            bars.transition().duration(500)
+                .attr("x", (d) => cell.x(d.year))
+                .attr("width", cell.x.bandwidth())
+                .attr("y", (d) => cell.y(d[1]))
+                .attr("height", (d) => cell.y(d[0]) - cell.y(d[1]))
 
-            bars = bars.enter().append("rect")
-                .merge(bars)
+            let barsEnter = bars.enter().append("rect")
                 .attr("class", "bar")
+                .attr("x", (d) => cell.x(d.year))
+                //.attr("y", (d, i) => { console.log(i); return cell.y((cell.totals[i] - d[0]) / (cell.prevTotals[i] - d[0]) * d[0]); })
+                //.attr("y", (d, i) => cell.y(d[0]))
+                .attr("y", (d, i) => {
+                    //console.log(y2);
+                    if (y2.length) return cell.y(y2[i]);
+                    else return cell.y(d[0]); 
+                })
+                .attr("width", cell.x.bandwidth())
+                .attr("height", (d) => 0)
+
+            barsEnter 
+                .transition().duration(500)
+                .attr("y", (d) => cell.y(d[1]))
+                .attr("height", (d) => cell.y(d[0]) - cell.y(d[1]))
+
+            bars = barsEnter.merge(bars)
                 .attr("fill", (d) => getColor(d.index, cell.amount))
-                .on("mouseover", function(d) {
+                .on("mouseover", (d) => {
                     tooltip.transition()
                         .duration(200)
                         .style("opacity", 1);
-                    tooltip.html(cell.tip(d[1] - d[0], percent, d.key))
-               })
-               .on("mousemove", (d) => {
-                    tooltip.style("left", (d3.event.pageX - tooltip.node().getBoundingClientRect().width / 2) + "px")
-                        .style("top", (d3.event.pageY - 36) + "px");
+                    tooltip.html(() => cell.tip(d[1] - d[0], percent, d.key, d.total/d.norm))
                 })
-                .on("mouseout", function(d) {
+                .on("mousemove", (d) => {
+                   let bbox = tooltip.node().getBoundingClientRect();
+                    tooltip.style("left", (d3.event.pageX - bbox.width / 2) + "px")
+                        .style("top", (d3.event.pageY - bbox.height - 8) + "px");
+                })
+                .on("mouseout", (d) => {
                     tooltip.transition()
                         .duration(500)
                         .style("opacity", 0);
                 })
-                .attr("x", (d) => cell.x(d.year))
-                .attr("width", cell.x.bandwidth())
-                //.transition().duration(500)
-                .attr("y", (d) => cell.y(d[1]))
-                .attr("height", (d) => cell.y(d[0]) - cell.y(d[1]))
-       });
+      });
   
     }
 
@@ -692,23 +797,23 @@ document.addEventListener("DOMContentLoaded", function() {
             let order = tag.classed("sort-desc") ? 1 : -1;
 
             if (tag.text() === "Grant Title") {
-                rows = rows.sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
+                rows = rows.sort((a, b) => order*a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
             } else if (tag.text() === "Date") {
                 rows = rows.sort((a, b) => { 
-                    if (a.date && b.date) return (a.date.getTime() - b.date.getTime())*order;
-                    else if (a.date) return 1*order;
-                    else if (b.date) return -1*order;
+                    if (a.date && b.date) return order*(a.date.getTime() - b.date.getTime());
+                    else if (a.date) return order*1;
+                    else if (b.date) return order*(-1);
                     else return 0;
                 });
             } else if (tag.text() === "Amount") {
                 rows = rows.sort((a, b) => { 
-                    if (a.value && b.value) return (a.value - b.value) * order;
-                    else if (a.value) return 1*order;
-                    else if (b.value) return -1*order;
+                    if (a.value && b.value) return order * (a.value - b.value);
+                    else if (a.value) return order * 1;
+                    else if (b.value) return order * (-1);
                     else return 0;
                 })
             } else if (tag.text() === "Division") {
-                rows = rows.sort((a, b) => a.division.toLowerCase().localeCompare(b.division.toLowerCase()))
+                rows = rows.sort((a, b) => order * a.division.toLowerCase().localeCompare(b.division.toLowerCase()))
             }
         })
     }

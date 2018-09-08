@@ -81,7 +81,6 @@ def search():
     json_data = defaultdict(dict)
     json_data["total_grants"] = {b.key: b.agg_grants.value for b in order.per_division.buckets}
     json_data["total_amount"] = {b.key: b.agg_amount.value for b in order.per_division.buckets}
-    print(json_data)
 
     for year in total.per_year.buckets:
         y = int(year.key_as_string[:4])

@@ -9,7 +9,14 @@
 <body>
     <div id="nav-top" class="z-depth-2 teal lighten-1">
         <div id="title">
-            <h2 class="header center white-text">NSF Grants</br>Explorer</h2>
+            <!--<a href="#" data-target="side-bar" class="white sidenav-trigger"><i class="material-icons">menu</i></a>-->
+            <h2 id="title-text" class="header center white-text">NSF Grants Explorer</h2>
+            <!--
+            <div id="links">
+                <a href="https://datalab.ischool.uw.edu"><img src="/static/datalab_logo.png"></a>
+                <a href="https://www.moore.org"><img src="/static/moore_logo.png"></a>
+            </div>
+            -->
         </div>
         <div id="keyword-container">
             <div id="keyword-controls">
@@ -23,12 +30,22 @@
                 </span>
                 <a id="clear-terms" class="white-text waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
             </div>
+            <div style="flex-grow: 1; min-height: 8px"></div>
             <div id="keywords-autocomplete" class="chips"></div>
             <div id="keywords-dropdown" class="dropdown card-panel">
-                <div id="suggested-keywords" class="card-content chips"></div>
+                <div id="suggested-keywords" class="card-content chips">
+                    {% for keyword in default_keywords %}
+                    <div class="chip">{{ keyword }}</div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
+    <!--
+    <ul id="side-bar" class="sidenav">
+        <li><a href="#!"></li>
+    </ul>
+    -->
     <div id="main">
         <div class="grey lighten-5" id="controls">
             <div class="input-field" id="division-container">
@@ -46,6 +63,11 @@
                                  <th id="sort-val">grants</th>
                              </tr>
                          </thead>
+                         </tbody>
+                         {% for div in divisions %}
+                         <tr></tr>
+                         {% endfor %}
+                         </tbody>
                          <tbody>
                          </tbody>
                      </table>
@@ -55,9 +77,14 @@
             <div id="control-buttons">
                 <button id="display-grants" class="btn waves-effect waves-light blue modal-trigger" data-target="grant-data">
                     <i class="material-icons left">insert_drive_file</i>
-                    view grants
+                    download grants
                 </button>
                 <a id="toggle-view" class="btn waves-effect waves-light blue" style="margin-left: 80px"># view counts</a>
+            </div>
+            <p>Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab, and Chris Mentzel at the Moore Foundation</p>
+            <div id="links">
+                <a href="https://datalab.ischool.uw.edu"><img src="/static/datalab_logo.png"></a>
+                <a href="https://www.moore.org"><img src="/static/moore_logo.png"></a>
             </div>
           </div>
           <div class="z-depth-3" id="viz">
@@ -88,9 +115,9 @@
                     <p id="table-message"></p>
                     <tr>
                         <th>Grant Title</th>
-                        <th>Date</th>
+                        <th style="padding-right: 3em">Date</th>
                         <th>Amount</th>
-                        <th>Division</th>
+                        <th style="padding-right: 9em">Division</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -101,17 +128,6 @@
             <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
         </div>
     </div>
-    <nav id="nav-bottom">
-        <div class="nav-wrapper teal lighten-1 z-depth-5">
-            <ul id="credits" class="left hide-on-med-and-down">
-                <li class="white-text">Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab</li>
-            </ul>
-            <div id="links">
-                <a href="https://datalab.ischool.uw.edu"><img src="/static/datalab_logo.png"></a>
-                <a href="https://www.moore.org"><img src="/static/moore_logo.png"></a>
-            </div>
-       </div>
-    </nav>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
