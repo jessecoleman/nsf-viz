@@ -166,8 +166,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     keywordInput.on("focus", function(e) {
         // TODO
-        keywordDropdown.style("display", "block");
-        keywordDropdown.style("position", "fixed")
+        keywordDropdown.style("display", "block")
+            .style("position", "fixed")
             .style("top", d3.select("#keyword-container").node().getBoundingClientRect().height + "px")
     });
 
@@ -200,11 +200,11 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    keywordContainer.on("mouseover", function() {
+    keywordDropdown.on("mouseover", function() {
         keywordFocused = true;
     });
     
-    keywordContainer.on("mouseout", function(event) {
+    keywordDropdown.on("mouseout", function(event) {
         let e = d3.event.toElement || d3.event.relatedTarget;
         if (!this.contains(e)) {
             keywordFocused = false;
@@ -591,11 +591,13 @@ document.addEventListener("DOMContentLoaded", function() {
             cell.y.domain([0, cell.maxData]);
     
             cell.chart.select(".axis-x")
-                .transition(500)
+                .transition()
+                .duration(500)
                 .call(d3.axisBottom(cell.x).tickFormat(d3.format("d")));
 
             cell.chart.select(".axis-y")
-                .transition(500)
+                .transition()
+                .duration(500)
                 .call(d3.axisLeft(cell.y).ticks(5).tickFormat(cell.tick(percent)));
 
             let barGroup = cell.chart.selectAll(".bar-group")

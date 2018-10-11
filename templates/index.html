@@ -20,7 +20,7 @@
         </div>
         <div id="keyword-container">
             <div id="keyword-controls">
-                <h5 id="keyword-title">SEARCH TERMS</h5>
+                <h5 id="keyword-title">TERMS</h5>
                 <span class="switch">
                     <label>ANY
                         <input id="any-all" type="checkbox">
@@ -28,7 +28,7 @@
                         ALL
                     </label>
                 </span>
-                <a id="clear-terms" class="white-text waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear all</a>
+                <a id="clear-terms" class="white-text waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear</a>
             </div>
             <div style="flex-grow: 1; min-height: 8px"></div>
             <div id="keywords-autocomplete" class="chips"></div>
@@ -47,6 +47,19 @@
     </ul>
     -->
     <div id="main">
+          <div class="z-depth-3" id="viz">
+            <div id="spin" class="preloader-wrapper big active">
+                <div class="spinner-layer spinner-blue-only">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div><div class="gap-patch">
+                        <div class="circle"></div>
+                    </div><div class="circle-clipper right">
+                        <div class="circle"></div>
+                    </div>
+                </div>
+            </div>
+          </div>
         <div class="grey lighten-5" id="controls">
             <div class="input-field" id="division-container">
                 <div id="division-controls">
@@ -87,20 +100,7 @@
                 <a href="https://www.moore.org"><img src="/static/moore_logo.png"></a>
             </div>
           </div>
-          <div class="z-depth-3" id="viz">
-            <div id="spin" class="preloader-wrapper big active">
-                <div class="spinner-layer spinner-blue-only">
-                    <div class="circle-clipper left">
-                        <div class="circle"></div>
-                    </div><div class="gap-patch">
-                        <div class="circle"></div>
-                    </div><div class="circle-clipper right">
-                        <div class="circle"></div>
-                    </div>
-                </div>
-            </div>
-          </div>
-    </div>
+        </div>
     <div class="modal" id="grant-data">
         <div class="modal-content">
             <div>

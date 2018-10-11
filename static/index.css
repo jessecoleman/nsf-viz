@@ -1,13 +1,27 @@
 html, body {
     height: 100%;
     margin: 0;
+    display: -moz-flex;
+    display: -webkit-flex;
     display: flex;
+    -webkit-box-direction: normal;
+    -webkit-box-orient: vertical;
+    -moz-box-direction: normal;
+    -moz-box-orient: vertical;
     flex-direction: column;
     overflow: hidden;
 }
 
 #nav-top {
+    display: -moz-flex;
+    display: -webkit-flex;
     display: flex;
+    -webkit-order: -2;
+    order: -2;
+    -webkit-box-direction: normal;
+    -webkit-box-orient: horizontal;
+    -moz-box-direction: normal;
+    -moz-box-orient: horizontal;
     flex-direction: row;
     margin-bottom: 0;
     z-index: 4;
@@ -16,8 +30,14 @@ html, body {
 
 #main {
     flex: 1;
+    display: -moz-flex;
+    display: -webkit-flex;
     display: flex;
-    flex-direction: row;
+    -webkit-box-direction: normal;
+    -webkit-box-orient: horizontal;
+    -moz-box-direction: normal;
+    -moz-box-orient: horizontal;
+     flex-direction: row;
 }
 
 #viz {
@@ -96,8 +116,14 @@ img {
 #keyword-container {
     position: relative;
     width: 67%;
+    display: -moz-flex;
+    display: -webkit-flex;
     display: flex;
-    flex-direction: column;
+    -webkit-box-direction: normal;
+    -webkit-box-orient: vertical;
+    -moz-box-direction: normal;
+    -moz-box-orient: vertical;
+     flex-direction: column;
     padding: 8px;
 }
 
@@ -117,6 +143,8 @@ img {
 }
 
 #keyword-controls, #division-controls {
+    display: -moz-flex;
+    display: -webkit-flex;
     display: flex;
     align-items: center;
 }
@@ -150,8 +178,16 @@ img {
 }
 
 #controls {
+    display: -moz-flex;
+    display: -webkit-flex;
     display: flex;
-    flex-direction: column;
+    -webkit-order: -2;
+    order: -1;
+    -webkit-box-direction: normal;
+    -webkit-box-orient: vertical;
+    -moz-box-direction: normal;
+    -moz-box-orient: vertical;
+     flex-direction: column;
     width: 33%;
     z-index: 1;
     overflow-y: auto;
@@ -248,3 +284,47 @@ th {
 #credits img {
     height: 80px;
 }
+
+@media only screen and (max-width: 768px) {
+
+    body {
+        height: initial;
+    }
+
+    #viz, #title, #keyword-container, #controls {
+        width: 100%;
+    }
+
+    #controls {
+        order: 0;
+    }
+
+    #nav-top, #main {
+        -webkit-box-direction: normal;
+        -webkit-box-orient: vertical;
+        -moz-box-direction: normal;
+        -moz-box-orient: vertical;
+         flex-direction: column;
+    }
+
+    #nav-top {
+        height: 280px;
+    }
+
+    #main {
+        display: block;
+        overflow: scroll;
+    }
+
+    #viz {
+        height: calc(100% - 280px);
+        height: -moz-calc(100% - 280px);
+        height: -webkit-calc(100% - 280px);
+        height: 600px;
+    }
+
+    #title-text {
+        font-size: 3rem;
+    }
+}
+
