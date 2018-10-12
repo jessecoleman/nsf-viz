@@ -15,7 +15,6 @@ let cells = [
                     </tr>
                 </tbody>
             </table>`;
-            //return n + ": " + (p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants"),
         },
         tick: (p) => p ? d3.format(".2%") : d3.format(".2s"),
         amount: false,
@@ -31,8 +30,12 @@ let cells = [
     },
     {
         pos: [1, 0], 
-        title: (p) => "ALL Grants per year " + (p ? "(%)" : "(#)"),
-        tip: (v, p) => `<span style="padding: 8px">${p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants"}</span>`,
+        title: (p) => "ALL grants per year " + (p ? "(%)" : "(#)"),
+        tip: (v, p) => {
+            return `<span style="padding: 8px">
+                ${p ? d3.format(".2%")(v) : d3.format(",")(v) + " grants"}
+            </span>`;
+        },
         tick: (p) => p ? d3.format(".2%") : d3.format(".2s"),
         amount: false,
         filtered: false,
@@ -77,7 +80,11 @@ let cells = [
     {
         pos: [1, 1],
         title: (p) => "ALL grant funding per year " + (p ? "(%)" : "($)"),
-        tip: (v, p) => `<span style="padding: 8px">${p ? d3.format(".2%")(v) : d3.format("$,")(v)}</span>`,
+        tip: (v, p) => {
+            return `<span style="padding: 8px">
+                ${p ? d3.format(".2%")(v) : d3.format("$,")(v)}
+            </span>`;
+        },
         tick: (p) => p ? d3.format(".2%") : d3.format("$.2s"),
         amount: true,
         filtered: false,
@@ -168,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // TODO
         keywordDropdown.style("display", "block")
             .style("position", "fixed")
-            .style("top", d3.select("#keyword-container").node().getBoundingClientRect().height + "px")
+            .style("top", d3.select("#nav-top").node().getBoundingClientRect().height + "px")
     });
 
     keywordInput.on("focusout", function(e) {
@@ -231,7 +238,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // load keyword data from server
     d3.json("/defaults", function(data) {
-        data.keywords.forEach((d) => {
+        
+        url_terms.forEach(d => {
             keywordInstance.addChip({tag: d});
         });
 
@@ -266,17 +274,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
         let sortVal = d3.select("#divisions-table").select("#sort-val")
             .on("click", () => {
-                let order = sortVal.classed("sort-desc") ? 1 : -1;
                 if (sortVal.text() === "grants") {
                     sortVal.text("funding");
                     sortName.classed("sort-desc sort-asc", false); 
                     sortVal.classed("sort-desc", true);
-                    reorder(visData, "amount", order);
+                    reorder(visData, "amount", 1);
                 } else {
                     sortVal.text("grants");
                     sortName.classed("sort-desc sort-asc", false); 
                     sortVal.classed("sort-desc", true);
-                    reorder(visData, "grants", order);
+                    reorder(visData, "grants", 1);
                 }
             });
  
@@ -464,13 +471,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
         svg.transition().duration(200).style("opacity", 0.4);
 
-        let terms = keywordInstance.chipsData.map((c) => c.tag);
-
-        let toggleState = d3.select("#any-all").property("checked");
+        let toggleVal = (d3.select("#any-all").property("checked") == true) ? "all" : "any";
+        let terms = keywordInstance.chipsData.map((c) => encodeURIComponent(c.tag)).join(",");
+        let route = `/${toggleVal}/${terms}`;
+        window.history.pushState({}, document.title, route);
 
         let searchResult = new XMLHttpRequest();
-        searchResult.open("POST", "/search", true);
+        
+        searchResult.open("GET", "/search" + route, true);
         searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
         searchResult.onload = function() {
             spinner.style("display", "none");
             svg.transition().duration(200).style("opacity", 1);
@@ -478,10 +488,8 @@ document.addEventListener("DOMContentLoaded", function() {
             reorder(visData, "grants", 1);
             plot(visData, visPercent);
         };
-        searchResult.send(JSON.stringify({
-            "toggle": toggleState, 
-            "terms": terms
-        }))
+
+        searchResult.send();
     };
 
     function reorder(data, val, order, p) {
@@ -796,10 +804,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 .classed("sort-asc sort-desc", false);
             tag.attr("class", (d) => tag.classed("sort-desc") ? "sort-asc" : "sort-desc")
 
-            let order = tag.classed("sort-desc") ? 1 : -1;
+            let order = tag.classed("sort-desc") ? -1 : 1;
 
             if (tag.text() === "Grant Title") {
-                rows = rows.sort((a, b) => order*a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
+                rows = rows.sort((a, b) => -1 * order * a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
             } else if (tag.text() === "Date") {
                 rows = rows.sort((a, b) => { 
                     if (a.date && b.date) return order*(a.date.getTime() - b.date.getTime());
@@ -815,7 +823,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     else return 0;
                 })
             } else if (tag.text() === "Division") {
-                rows = rows.sort((a, b) => order * a.division.toLowerCase().localeCompare(b.division.toLowerCase()))
+                rows = rows.sort((a, b) => -1 * order * a.division.toLowerCase().localeCompare(b.division.toLowerCase()))
             }
         })
     }

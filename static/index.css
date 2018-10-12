@@ -116,6 +116,7 @@ img {
 #keyword-container {
     position: relative;
     width: 67%;
+    flex-grow: 1;
     display: -moz-flex;
     display: -webkit-flex;
     display: flex;
@@ -295,6 +296,11 @@ th {
         width: 100%;
     }
 
+    #keyword-container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
     #controls {
         order: 0;
     }
@@ -308,7 +314,11 @@ th {
     }
 
     #nav-top {
-        height: 280px;
+        height: 400px;
+    }
+
+    #title-text {
+        margin: 12px;
     }
 
     #main {

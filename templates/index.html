@@ -31,13 +31,16 @@
                 <a id="clear-terms" class="white-text waves-effect waves-red btn-flat"><i class="material-icons right">clear_all</i>clear</a>
             </div>
             <div style="flex-grow: 1; min-height: 8px"></div>
-            <div id="keywords-autocomplete" class="chips"></div>
-            <div id="keywords-dropdown" class="dropdown card-panel">
-                <div id="suggested-keywords" class="card-content chips">
-                    {% for keyword in default_keywords %}
-                    <div class="chip">{{ keyword }}</div>
-                    {% endfor %}
+            <div id="keywords-autocomplete" class="chips">
+                {% for keyword in default_keywords %}
+                <div class="chip" tabindex="{{ loop.index }}">
+                    {{ keyword }}
+                    <i class="material-icons close">close</i>
                 </div>
+                {% endfor %}
+            </div>
+            <div id="keywords-dropdown" class="dropdown card-panel">
+                <div id="suggested-keywords" class="card-content chips"></div>
             </div>
         </div>
     </div>
@@ -92,7 +95,7 @@
                     <i class="material-icons left">insert_drive_file</i>
                     download grants
                 </button>
-                <a id="toggle-view" class="btn waves-effect waves-light blue" style="margin-left: 80px"># view counts</a>
+                <a id="toggle-view" class="btn waves-effect waves-light blue"># view counts</a>
             </div>
             <p>Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab, and Chris Mentzel at the Moore Foundation</p>
             <div id="links">
@@ -131,5 +134,9 @@
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
+<script>
+let url_terms = {{terms|tojson}};
+if ("{{toggle}}" == "all") d3.select("#any-all").property("checked", true);
+</script>
 <script src="{{url_for('static', filename='index.js')}}"></script>
 </body>

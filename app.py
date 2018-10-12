@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, abort
 from gensim.models.word2vec import Word2Vec
 import logging
 import json
@@ -50,15 +50,43 @@ def women_phil():
 def main2():
     return render_template("index2.html")
 
+
+default_terms = [
+      'data science',
+      'machine learning',
+      'artificial intelligence',
+      'deep learning',
+      'convolutional neural networks',
+      'recurrent neural network',
+      'stochastic gradient descent',
+      'support vector machines',
+      'unsupervised learning',
+      'supervised learning',
+      'reinforcement learning',
+      'generative adversarial networks',
+      'random forest',
+      'naive bayes',
+      'bayesian networks',
+      'big data'
+]
+
 @app.route("/")
-def main():
-    return render_template("index.html")
+@app.route("/<toggle>/<terms>")
+def main(toggle="any", terms=default_terms):
+
+    if toggle not in ("any", "all"): 
+        abort
+
+    if isinstance(terms, (unicode, str)):
+        terms = terms.split(",")
+
+    return render_template("index.html", toggle=toggle, terms=terms)
 
 
-@app.route("/search", methods=["POST"])
-def search():
-    j = request.get_json()
-    toggle, terms = j["toggle"], j["terms"]
+@app.route("/search/<toggle>/<terms>")
+def search(toggle, terms):
+
+    toggle = (toggle == "all")
 
     if len(terms) == 0: 
         return json.dumps(
@@ -73,8 +101,8 @@ def search():
         )
 
     total = search_elastic(toggle)
-    matched = search_elastic(toggle, frozenset(terms))
-    order = search_elastic(toggle, frozenset(terms), sort=True)
+    matched = search_elastic(toggle, terms)
+    order = search_elastic(toggle, terms, sort=True)
     sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
     inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
 
@@ -117,8 +145,7 @@ def search():
                 "match_amount": div.agg_amount.value
             })
 
-    return json.dumps(json_data) #[{"div": div, "data": json_data[div]} 
-        #for div in ])
+    return json.dumps(json_data)
 
 
 word_vecs = Word2Vec.load("nsf_w2v_model").wv
@@ -150,29 +177,10 @@ def grants():
     csv = "title,date,value,division\n" + grant_data(terms, div, toggle)
     return csv
 
-keywords = [
-      'data science',
-      'machine learning',
-      'artificial intelligence',
-      'deep learning',
-      'convolutional neural networks',
-      'recurrent neural network',
-      'stochastic gradient descent',
-      'support vector machines',
-      'unsupervised learning',
-      'supervised learning',
-      'reinforcement learning',
-      'generative adversarial networks',
-      'random forest',
-      'naive bayes',
-      'bayesian networks',
-      'big data'
-]
 
 @app.route("/defaults")
 def get_defaults():
     return json.dumps({
-        "keywords": keywords,
         "divisions": [{
             "name": d.strip()[:-2],
             "default": d.strip()[-1] == "y"
@@ -186,16 +194,15 @@ def search_elastic(toggle, terms=None, sort=False):
     s = Search(using=es)
 
     if terms is not None:
-        it = iter(terms)
+        terms = terms.split(",")
     
-        m = MultiMatch(query=next(it), fields=['title', 'abstract'], type="phrase")
+        m = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type="phrase")
         # take union of all matching queries
-        l = len(terms) - 1
-        for t in range(l):
+        for t in terms:
             if toggle:
-                m = m & MultiMatch(query=next(it), fields=['title', 'abstract'], type="phrase")
+                m = m & MultiMatch(query=t, fields=['title', 'abstract'], type="phrase")
             else:
-                m = m | MultiMatch(query=next(it), fields=['title', 'abstract'], type="phrase")
+                m = m | MultiMatch(query=t, fields=['title', 'abstract'], type="phrase")
 
         s = s.query(m)
 
