@@ -72,7 +72,7 @@
                 </div>
                  <input type="text" id="divisions-autocomplete" placeholder="filter divisions">
                  <div id="divisions-dropdown" class="dropdown card-panel">
-                     <table id="divisions-table"> 
+                     <table id="divisions-table">
                          <thead>
                              <tr>
                                  <th id="sort-name">Division</th>
@@ -80,14 +80,12 @@
                              </tr>
                          </thead>
                          </tbody>
-                         {% for div in divisions %}
-                         <tr></tr>
-                         {% endfor %}
-                         </tbody>
-                         <tbody>
+				 {% for div in divisions %}
+				 <tr data-name="{{div.name}}" data-default="{{div.default}}"></tr>
+				 {% endfor %}
                          </tbody>
                      </table>
-     
+
                  </div>
             </div>
             <div id="control-buttons">

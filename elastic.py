@@ -9,8 +9,8 @@ client = Elasticsearch()
 connections.create_connection(hosts=['localhost'], timeout=20)
 
 db = conn.connect(database="nsf",
-        user="nsf",
-        password="!DLnsf333",
+        user="datalab",
+        password="datalab",
         host="localhost")
 
 print(db)
@@ -31,18 +31,26 @@ class Grant(Document):
     class Index:
         name = "nsf"
 
-nsf.delete()
+try:
+    nsf.delete()
+except:
+    pass
 nsf.create()
 
 cur = db.cursor()
-cur.execute("select AwardTitle, AbstractNarration, AwardAmount, AwardEffectiveDate, LongName from Award join Division on Award.AwardID = Division.AwardID")
+cur.execute("""select AwardTitle, AbstractNarration, AwardAmount, AwardEffectiveDate, LongName from Award 
+            join Division on Award.AwardID = Division.AwardID 
+            where LongName = 2983307 """)
 
 Grant.init()
 
 for r in cur.fetchall():
+    print(r)
+    if type(r[2]) is not int:
+        print(type(r[2]))
     g = Grant(title=r[0], abstract=r[1], date=r[3], division=r[4])
     g.amount = r[2]
-    g.save()
+    #g.save()
 
 exit()
 

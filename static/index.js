@@ -1,6 +1,6 @@
 let cells = [
     {
-        pos: [0, 0], 
+        pos: [0, 0],
         title: (p) => "Grants in SELECTED divisions per year " + (p ? "(%)" : "(#)"),
         tip: (v, p, name, norm) => {
             return `<table class="striped">
@@ -20,16 +20,16 @@ let cells = [
         amount: false,
         filtered: true,
         total: 0,
-        value: (value, key, norm=1) => { 
+        value: (value, key, norm=1) => {
             if (value[key]) {
-                return value[key].match_grants / norm; 
+                return value[key].match_grants / norm;
             } else {
                 return 0;
             }
         }
     },
     {
-        pos: [1, 0], 
+        pos: [1, 0],
         title: (p) => "ALL grants per year " + (p ? "(%)" : "(#)"),
         tip: (v, p) => {
             return `<span style="padding: 8px">
@@ -40,16 +40,16 @@ let cells = [
         amount: false,
         filtered: false,
         total: 0,
-        value: (value, key, norm=1) => { 
+        value: (value, key, norm=1) => {
             if (value[key]) {
-                return value[key].match_grants / norm; 
+                return value[key].match_grants / norm;
             } else {
                 return 0;
             }
         }
     },
     {
-        pos: [0, 1], 
+        pos: [0, 1],
         title: (p) => "Grant funding in SELECTED divisions per year " + (p ? "(%)" : "($)"),
         tip: (v, p, name, norm) => {
             return `<table class="striped">
@@ -69,9 +69,9 @@ let cells = [
         amount: true,
         filtered: true,
         total: 0,
-        value: (value, key, norm=1) => { 
+        value: (value, key, norm=1) => {
             if (value[key]) {
-                return value[key].match_amount / norm; 
+                return value[key].match_amount / norm;
             } else {
                 return 0;
             }
@@ -89,14 +89,14 @@ let cells = [
         amount: true,
         filtered: false,
         total: 0,
-        value: (value, key, norm=1) => { 
+        value: (value, key, norm=1) => {
             if (value[key]) {
-                return value[key].match_amount / norm; 
+                return value[key].match_amount / norm;
             } else {
                 return 0;
             }
         }
-     },    
+     },
 ]
 
 let visPercent = true;
@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function() {
             setTimeout(callback, searchDelta);
         }
     }
- 
+
      // initialize materialize elements
     let sidenavInstance = M.Sidenav.init(sidenav);
     let modalInstance = M.Modal.init(modal, null);
@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function() {
             sTimeout();
         }
     });
-    
+
     d3.select("#keywords-autocomplete input").property("placeholder", "enter search terms").style("color", "white")
 
     let keywordContainer = d3.select("#keyword-container");
@@ -210,7 +210,7 @@ document.addEventListener("DOMContentLoaded", function() {
     keywordDropdown.on("mouseover", function() {
         keywordFocused = true;
     });
-    
+
     keywordDropdown.on("mouseout", function(event) {
         let e = d3.event.toElement || d3.event.relatedTarget;
         if (!this.contains(e)) {
@@ -221,7 +221,7 @@ document.addEventListener("DOMContentLoaded", function() {
     divisionContainer.on("mouseover", function() {
         divisionFocused = true;
     });
-    
+
     divisionContainer.on("mouseout", function(event) {
         let e = d3.event.toElement || d3.event.relatedTarget;
         if (!this.contains(e)) {
@@ -236,64 +236,60 @@ document.addEventListener("DOMContentLoaded", function() {
     let divisionList;
     let divisionItems;
 
-    // load keyword data from server
-    d3.json("/defaults", function(data) {
-        
-        url_terms.forEach(d => {
-            keywordInstance.addChip({tag: d});
+    url_terms.forEach(d => {
+        keywordInstance.addChip({tag: d});
+    });
+
+    divisionList = d3.select("#divisions-table tbody")
+        .selectAll("tr")
+        .data(function () { return this.dataset; })
+        .enter().append("tr")
+        .style("font-weight", d => {
+            if (d.checked = d.default) return "bold";
+            else return "normal";
+        })
+        .on("click", function(d) {
+            d3.select(this).style("font-weight", d => d.checked ? "normal" : "bold")
+            d.checked = !d.checked;
+            plot(visData, visPercent, d3.select(this).attr("data-index"), d.checked);
+        })
+
+    divisionList.append("td")
+        .attr("class", "name")
+        .text(d => d.name);
+
+    divisionList.append("td")
+        .attr("class", "amount")
+
+    let sortName = d3.select("#divisions-table").select("#sort-name")
+        .on("click", () => {
+            let order = sortName.classed("sort-desc") ? 1 : -1;
+            sortVal.classed("sort-desc sort-asc", false);
+            sortName.classed("sort-desc", true);
+            reorder(visData, "name", order);
         });
 
-        divisionList = d3.select("#divisions-table tbody")
-            .selectAll("tr")
-            .data(data.divisions)
-            .enter().append("tr")
-            .style("font-weight", d => {
-                if (d.checked = d.default) return "bold";
-                else return "normal";
-            })
-            .on("click", function(d) {
-                d3.select(this).style("font-weight", d => d.checked ? "normal" : "bold")
-                d.checked = !d.checked;
-                plot(visData, visPercent, d3.select(this).attr("data-index"), d.checked);
-            })
-
-        divisionList.append("td")
-            .attr("class", "name")
-            .text(d => d.name);
-
-        divisionList.append("td")
-            .attr("class", "amount")
-
-        let sortName = d3.select("#divisions-table").select("#sort-name")
-            .on("click", () => {
-                let order = sortName.classed("sort-desc") ? 1 : -1;
-                sortVal.classed("sort-desc sort-asc", false);
-                sortName.classed("sort-desc", true); 
-                reorder(visData, "name", order); 
-            });
-
-        let sortVal = d3.select("#divisions-table").select("#sort-val")
-            .on("click", () => {
-                if (sortVal.text() === "grants") {
-                    sortVal.text("funding");
-                    sortName.classed("sort-desc sort-asc", false); 
-                    sortVal.classed("sort-desc", true);
-                    reorder(visData, "amount", 1);
-                } else {
-                    sortVal.text("grants");
-                    sortName.classed("sort-desc sort-asc", false); 
-                    sortVal.classed("sort-desc", true);
-                    reorder(visData, "grants", 1);
-                }
-            });
- 
-        getData();
-
-        let toggleButton = d3.select("#toggle-view").on("click", () => {
-            toggleButton.text(visPercent ? "% view percent" : "# view counts");
-            visPercent = !visPercent;
-            plot(visData, visPercent); 
+    let sortVal = d3.select("#divisions-table").select("#sort-val")
+        .on("click", () => {
+            if (sortVal.text() === "grants") {
+                sortVal.text("funding");
+                sortName.classed("sort-desc sort-asc", false);
+                sortVal.classed("sort-desc", true);
+                reorder(visData, "amount", 1);
+            } else {
+                sortVal.text("grants");
+                sortName.classed("sort-desc sort-asc", false);
+                sortVal.classed("sort-desc", true);
+                reorder(visData, "grants", 1);
+            }
         });
+
+    getData();
+
+    let toggleButton = d3.select("#toggle-view").on("click", () => {
+        toggleButton.text(visPercent ? "% view percent" : "# view counts");
+        visPercent = !visPercent;
+        plot(visData, visPercent);
     });
 
     d3.select("#clear-terms").on("click", (e) => {
@@ -308,13 +304,13 @@ document.addEventListener("DOMContentLoaded", function() {
         .on("click", (e) => {
             allDivisions.style("display", "block");
             clearDivisions.style("display", "none");
- 
+
             divisionList.style("font-weight", (d) => {
                     d.checked = false;
                     return "normal";
                 })
 
-            plot(visData, visPercent); 
+            plot(visData, visPercent);
         });
 
     let allDivisions = d3.select("#select-all")
@@ -328,14 +324,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     return "bold";
                 })
 
-            plot(visData, visPercent); 
+            plot(visData, visPercent);
         })
 
     let toggle = d3.select("#any-all").on("change", getData);
 
     d3.select("#display-grants").on("click", getGrants);
 
-    let tooltip = d3.select("body").append("div")    
+    let tooltip = d3.select("body").append("div")
         .attr("class", "tooltip z-depth-3")
         .style("opacity", 0);
 
@@ -365,7 +361,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let yAxes = charts.append("g")
         .attr("class", "axis axis-y")
-       
+
     function redraw() {
 
         // TODO
@@ -383,7 +379,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         keywordDropdown
             .style("max-width", keywordContainer.node().getBoundingClientRect().width + "px");
- 
+
         let m = {left: 24, right: 24, top: 24, bottom: 24};
 
         let width = document.querySelector("#viz").clientWidth - m.left - m.right;
@@ -393,7 +389,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         let margin = {top: 30, right: 30, bottom: 20, left: 40};
 
-        charts.attr("transform", (c) => "translate(" 
+        charts.attr("transform", (c) => "translate("
                 + (c.pos[0]*width/2 + margin.left) + ","
                 + (c.pos[1]*height/2 + margin.top) + ")")
 
@@ -413,7 +409,7 @@ document.addEventListener("DOMContentLoaded", function() {
         cells.forEach((cell, i) => {
 
             cell.chart = d3.select(charts.nodes()[i])
-   
+
             let data = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
 
             cell.x = d3.scaleBand()
@@ -445,7 +441,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let rtime;
     let timeout = false;
     let delta = 100;
-    
+
     d3.select(window).on("resize", () => {
         rtime = new Date();
         if (timeout == false) {
@@ -477,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function() {
         window.history.pushState({}, document.title, route);
 
         let searchResult = new XMLHttpRequest();
-        
+
         searchResult.open("GET", "/search" + route, true);
         searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
@@ -541,9 +537,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
         let filteredDivs = divisionList.data().filter(d => d.checked).map(d => {
             let div = data[2007][d.name];
-            if (updateIdx && div && div.index > -1 && div.index < updateIdx) prev = d; 
-            return d.name; 
-        }) 
+            if (updateIdx && div && div.index > -1 && div.index < updateIdx) prev = d;
+            return d.name;
+        })
 
         console.log(prev);
 
@@ -558,17 +554,17 @@ document.addEventListener("DOMContentLoaded", function() {
                 .keys(divs)
                 .value((value, key) => cell.value(value.data, key, value.norm))
                 (Object.keys(data).filter(y => !isNaN(y)).map((y) => {
-                    let total = divs.map((d) => { 
+                    let total = divs.map((d) => {
                         if (!data[y][d]) return 0;
                         else if (cell.amount) return data[y][d].match_amount;
-                        else return data[y][d].match_grants; 
+                        else return data[y][d].match_grants;
                     }).reduce((a, b) => a + b, 0);
                     let norm;
                     if (percent) {
-                        norm = divs.map((d) => { 
+                        norm = divs.map((d) => {
                             if (!data[y][d]) return 0;
                             else if (cell.amount) return data[y][d].total_amount;
-                            else return data[y][d].total_grants; 
+                            else return data[y][d].total_grants;
                         }).reduce((a, b) => a + b, 0);
                     } else {
                         norm = 1;
@@ -597,7 +593,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             cell.x.domain(Object.keys(data).filter(y => !isNaN(y)).sort());
             cell.y.domain([0, cell.maxData]);
-    
+
             cell.chart.select(".axis-x")
                 .transition()
                 .duration(500)
@@ -621,7 +617,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 //.attr("y", (d, i) => { console.log(i); return cell.y((cell.totals[i] - d[0]) / (cell.prevTotals[i] - d[0]) * d[0]); })
                 //.attr("y", (d) => {
                 //    if (y2.length) return cell.y(y2[i]);
-                //    else return cell.y(d[0]); 
+                //    else return cell.y(d[0]);
                 //})
                 .attr("height", (d) => 0);
 
@@ -633,16 +629,16 @@ document.addEventListener("DOMContentLoaded", function() {
             let y2 = []
 
             let bars = barGroup.selectAll(".bar")
-                .data(div => div.map(d => { 
+                .data(div => div.map(d => {
                    let data = {
                         0: d[0],
-                        1: d[1], 
+                        1: d[1],
                         total: d.data.total,
                         norm: d.data.norm,
                         year: +d.data.year,
-                        key: div.key, 
+                        key: div.key,
                         index: d.data.data[div.key] ? d.data.data[div.key].index : -1
-                    }; 
+                    };
                     if (prev && data.key === prev.name) {
                         oldY[data.year] = data[1];
                         y2.push(data[1]);
@@ -664,12 +660,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 .attr("y", (d, i) => {
                     //console.log(y2);
                     if (y2.length) return cell.y(y2[i]);
-                    else return cell.y(d[0]); 
+                    else return cell.y(d[0]);
                 })
                 .attr("width", cell.x.bandwidth())
                 .attr("height", (d) => 0)
 
-            barsEnter 
+            barsEnter
                 .transition().duration(500)
                 .attr("y", (d) => cell.y(d[1]))
                 .attr("height", (d) => cell.y(d[0]) - cell.y(d[1]))
@@ -693,7 +689,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         .style("opacity", 0);
                 })
       });
-  
+
     }
 
     function getSuggestions(data) {
@@ -725,10 +721,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 .append("i")
                 .attr("class", "close material-icons")
                 .text("add")
-                .on("mousedown", (d) => { 
+                .on("mousedown", (d) => {
                     keywordInstance.addChip({tag: d});
                 });
- 
+
         };
         searchResult.send(JSON.stringify(keywords));
     }
@@ -759,7 +755,7 @@ document.addEventListener("DOMContentLoaded", function() {
         searchResult.onload = function() {
             message.style("display", "none");
             displayData(d3.csvParse(searchResult.response));
-            d3.select("#csv-download").attr("href", 
+            d3.select("#csv-download").attr("href",
                     URL.createObjectURL(
                         new Blob(["\ufeff", searchResult.response])));
             d3.select("#csv-download").attr("download", "grants.csv");
@@ -789,9 +785,9 @@ document.addEventListener("DOMContentLoaded", function() {
             .data((d) => {
                 return ["title", "date", "value", "division"].map((c) => {
                     if (c == "value") return { column: c, value: "$" + d3.format(",")(d[c]) };
-                    else if (c == "date") { 
+                    else if (c == "date") {
                         return { column: c, value: dateFormat(d[c]) }; }
-                    else return { column: c, value: d[c] }; 
+                    else return { column: c, value: d[c] };
                 });
             })
             .enter()
@@ -809,14 +805,14 @@ document.addEventListener("DOMContentLoaded", function() {
             if (tag.text() === "Grant Title") {
                 rows = rows.sort((a, b) => -1 * order * a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
             } else if (tag.text() === "Date") {
-                rows = rows.sort((a, b) => { 
+                rows = rows.sort((a, b) => {
                     if (a.date && b.date) return order*(a.date.getTime() - b.date.getTime());
                     else if (a.date) return order*1;
                     else if (b.date) return order*(-1);
                     else return 0;
                 });
             } else if (tag.text() === "Amount") {
-                rows = rows.sort((a, b) => { 
+                rows = rows.sort((a, b) => {
                     if (a.value && b.value) return order * (a.value - b.value);
                     else if (a.value) return order * 1;
                     else if (b.value) return order * (-1);

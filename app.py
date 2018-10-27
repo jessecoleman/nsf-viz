@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, abort
 from gensim.models.word2vec import Word2Vec
 import logging
 import json
-from functools32 import lru_cache
+from functools import lru_cache
 from collections import defaultdict
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, MultiSearch, Document, Date, Keyword, Text, Index, connections
@@ -11,44 +11,6 @@ from elasticsearch_dsl.query import MultiMatch
 
 app = Flask(__name__)
 es = Elasticsearch()
-
-#app.config["MYSQL_DATABASE_USER"] = "nsf"
-#app.config["MYSQL_DATABASE_PASSWORD"] = "!DLnsf333"
-#app.config["MYSQL_DATABASE_DB"] = "nsf"
-#app.config["MYSQL_DATABASE_HOST"] = "localhost"
-#mysql.init_app(app)
-
-#nsf = Index('nsf')
-#nsf.settings(
-#        number_of_shards=8,
-#        number_of_replicas=2,
-#    )
-#
-#@nsf.document
-#class Grant(Document):
-#    title = Text()
-#    abstract = Text()
-#    amount = Text()
-#    date = Date()
-#    division = Keyword()
-#
-#    class Index:
-#        name = "nsf"
-#
-#Grant.init()
-
-@app.route("/rolling")
-def rolling():
-    return open("rolling_10.csv", "r").read()
-
-
-@app.route("/women-philosophy")
-def women_phil():
-    return render_template("index_women.html")
-
-@app.route("/index2")
-def main2():
-    return render_template("index2.html")
 
 
 default_terms = [
@@ -74,13 +36,19 @@ default_terms = [
 @app.route("/<toggle>/<terms>")
 def main(toggle="any", terms=default_terms):
 
-    if toggle not in ("any", "all"): 
+    if toggle not in ("any", "all"):
         abort
 
-    if isinstance(terms, (unicode, str)):
+    if type(terms) is str:
         terms = terms.split(",")
 
-    return render_template("index.html", toggle=toggle, terms=terms)
+    with open("static/divisions.csv", "r") as divs:
+        divisions = [{
+                "name": d.strip()[:-2],
+                "default": d.strip()[-1] == "y"
+            } for i, d in enumerate(divs.readlines())]
+
+    return render_template("index.html", toggle=toggle, divisions=divisions, terms=terms)
 
 
 @app.route("/search/<toggle>/<terms>")
@@ -88,9 +56,9 @@ def search(toggle, terms):
 
     toggle = (toggle == "all")
 
-    if len(terms) == 0: 
+    if len(terms) == 0:
         return json.dumps(
-            [{"year": y, "data": 
+            [{"year": y, "data":
                 {"all": {
                     "total_amount": 0,
                     "total_grants": 0,
@@ -103,6 +71,7 @@ def search(toggle, terms):
     total = search_elastic(toggle)
     matched = search_elastic(toggle, terms)
     order = search_elastic(toggle, terms, sort=True)
+
     sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
     inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
 
@@ -148,9 +117,9 @@ def search(toggle, terms):
     return json.dumps(json_data)
 
 
-word_vecs = Word2Vec.load("nsf_w2v_model").wv
+#word_vecs = Word2Vec.load("nsf_w2v_model").wv
 
-@app.route("/suggestions", methods=['POST'])
+#@app.route("/suggestions", methods=['POST'])
 def suggestions():
     terms = []
     for t in request.get_json():
@@ -165,46 +134,23 @@ def suggestions():
         return ""
 
 
-@app.route("/grants", methods=['POST'])
-def grants():
-
-    j = request.get_json()
-
-    terms = j["terms"]
-    div = j["divisions"]
-    toggle = j["toggle"]
-
-    csv = "title,date,value,division\n" + grant_data(terms, div, toggle)
-    return csv
-
-
-@app.route("/defaults")
-def get_defaults():
-    return json.dumps({
-        "divisions": [{
-            "name": d.strip()[:-2],
-            "default": d.strip()[-1] == "y"
-        } for i, d in enumerate(open("static/divisions.csv", "r").readlines())
-    ]})
-
+query = lambda term: MultiMatch(query=term, fields=['title', 'abstract'], type="phrase")
 
 @lru_cache(maxsize=50)
 def search_elastic(toggle, terms=None, sort=False):
 
-    s = Search(using=es)
-
     if terms is not None:
         terms = terms.split(",")
-    
-        m = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type="phrase")
-        # take union of all matching queries
-        for t in terms:
-            if toggle:
-                m = m & MultiMatch(query=t, fields=['title', 'abstract'], type="phrase")
-            else:
-                m = m | MultiMatch(query=t, fields=['title', 'abstract'], type="phrase")
 
-        s = s.query(m)
+        q = query(terms.pop(0))
+        # take union of all matching queries
+        for term in terms:
+            if toggle:
+                q = q & query(term)
+            else:
+                q = q | query(term)
+
+        s = Search(using=es).query(q)
 
     if sort:
         s.aggs.bucket("per_division", "terms", field="division", order={"agg_grants": "desc"}, size=80) \
@@ -220,25 +166,30 @@ def search_elastic(toggle, terms=None, sort=False):
     return s.execute().aggregations
 
 
+@app.route("/grants", methods=['POST'])
 def grant_data(terms, divisions, toggle):
 
-    it = iter(terms)
+    j = request.get_json()
 
-    m = MultiMatch(query=next(it), fields=['title', 'abstract'], type="phrase")
+    q = query(terms.pop(0))
     # take union of all matching queries
-    for t in range(len(terms) - 1):
-        if toggle:
-            m = m & MultiMatch(query=next(it), fields=['title', 'abstract'], type="phrase")
+    for term in j["terms"]:
+        if j["toggle"]:
+            q = q & query(term)
         else:
-            m = m | MultiMatch(query=next(it), fields=['title', 'abstract'], type="phrase")
+            q = q | query(term)
 
-    s = Search(using=es).query(m)
+    s = Search(using=es).query(q)
 
-    matched = ["\"{}\",{},{},{}".format(r.title, r.date, r.amount, r.division) 
-            for r in s.scan() if r.division in divisions]
-
-    return "\n".join(matched)
+    return "title,date,value,division\n" + "\n".join([
+            ",".join(
+                    '"{}"'.format(r.title.replace('"', '""')),
+                    str(r.date),
+                    str(r.amount),
+                    r.division
+                ) for r in s.scan() if r.division in j["divisions"]
+        ])
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(host='127.0.0.1')
