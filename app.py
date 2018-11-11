@@ -8,6 +8,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, MultiSearch, Document, Date, Keyword, Text, Index, connections
 from elasticsearch_dsl.query import MultiMatch
 
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 es = Elasticsearch()
@@ -117,18 +118,37 @@ def search(toggle, terms):
     return json.dumps(json_data)
 
 
-#word_vecs = Word2Vec.load("nsf_w2v_model").wv
+word_vecs = Word2Vec.load("nsf_w2v_model").wv
 
-#@app.route("/suggestions", methods=['POST'])
-def suggestions():
+
+@app.route("/typeahead-keywords/<prefix>", methods=['GET'])
+def typeahead(prefix):
+    result = es.search(index="nsf-suggest", body={
+            "suggest": {
+                "gram-suggest": {
+                    "prefix": prefix,
+                    "completion": {
+                        "field": "suggest",
+                        "size": 15
+                    }
+                }
+            }
+        })
+
+    return ",".join([g["_source"]["gram"] for g in result["suggest"]["gram-suggest"][0]["options"]])
+
+
+@app.route("/related-keywords/<keywords>", methods=['GET'])
+def related(keywords):
     terms = []
-    for t in request.get_json():
+    for t in keywords.split(","):
         for t1 in t.split():
             if t1 in word_vecs.vocab:
                 terms.append(t1)
 
     if len(terms) > 0:
         related = word_vecs.most_similar(terms, [])
+        print(related)
         return ",".join([r[0] for r in related])
     else:
         return ""
@@ -139,18 +159,20 @@ query = lambda term: MultiMatch(query=term, fields=['title', 'abstract'], type="
 @lru_cache(maxsize=50)
 def search_elastic(toggle, terms=None, sort=False):
 
+    s = Search(using=es)
+
     if terms is not None:
         terms = terms.split(",")
 
-        q = query(terms.pop(0))
+        q = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type='phrase')
         # take union of all matching queries
         for term in terms:
             if toggle:
-                q = q & query(term)
+                q = q & MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
             else:
-                q = q | query(term)
+                q = q | MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
 
-        s = Search(using=es).query(q)
+        s = s.query(q)
 
     if sort:
         s.aggs.bucket("per_division", "terms", field="division", order={"agg_grants": "desc"}, size=80) \
@@ -167,28 +189,64 @@ def search_elastic(toggle, terms=None, sort=False):
 
 
 @app.route("/grants", methods=['POST'])
-def grant_data(terms, divisions, toggle):
+def grant_data():
 
     j = request.get_json()
+    terms, divisions, toggle = j["terms"], j["divisions"], j["toggle"]
 
-    q = query(terms.pop(0))
+    q = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type="phrase")
     # take union of all matching queries
     for term in j["terms"]:
         if j["toggle"]:
-            q = q & query(term)
+            q = q & MultiMatch(query=term, fields=['title', 'abstract'], type="phrase")
         else:
-            q = q | query(term)
+            q = q | MultiMatch(query=term, fields=['title', 'abstract'], type="phrase")
 
     s = Search(using=es).query(q)
 
-    return "title,date,value,division\n" + "\n".join([
-            ",".join(
+    return "title,date,value,division,id\n" + "\n".join([
+            ",".join([
                     '"{}"'.format(r.title.replace('"', '""')),
                     str(r.date),
                     str(r.amount),
-                    r.division
-                ) for r in s.scan() if r.division in j["divisions"]
+                    r.division,
+                    r.meta.id
+                ]) for r in s.scan() if r.division in j["divisions"]
         ])
+
+@app.route("/abstract/<_id>/<terms>", methods=["GET"])
+def get_abstract(_id, terms):
+    query = {
+            "query": {
+                "terms": {
+                    "_id": [_id]
+                }
+            },
+            "highlight": {
+                "number_of_fragments": 0,
+                "tags_schema": "styled",
+                "fields": {
+                    "abstract": {
+                        "highlight_query": {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match_phrase": {
+                                            "abstract": {
+                                                "query": term
+                                            }
+                                        }
+                                    }
+                                for term in terms.split(",")]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    response = es.search(index="nsf", body=query)
+    return response["hits"]["hits"][0]["highlight"]["abstract"][0]
 
 
 if __name__ == "__main__":

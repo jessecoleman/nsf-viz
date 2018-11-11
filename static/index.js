@@ -105,6 +105,8 @@ let visData = null;
 
 document.addEventListener("DOMContentLoaded", function() {
 
+    let svg = d3.select("#plot");
+
     let sidenav = document.querySelector("#side-bar");
     let modal = document.querySelector("#grant-data");
     let select = document.querySelector("#select-division");
@@ -229,6 +231,11 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    keywordInput.on("keyup", (e) => {
+        let prefix = keywordInput.node().value;
+        getTypeahead(prefix);
+    });
+
     let auto = document.querySelector("#divisions-autocomplete");
     let autoInstance = M.Autocomplete.init({data: {"test": null, "test2": null, "test3": null},
     limit: 20, minLength: 0});
@@ -242,10 +249,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
     divisionList = d3.select("#divisions-table tbody")
         .selectAll("tr")
-        .data(function () { return this.dataset; })
-        .enter().append("tr")
+        .datum(function () { 
+            return {
+                checked: this.dataset.default === "True",
+                name: this.dataset.name  
+            }
+        })
         .style("font-weight", d => {
-            if (d.checked = d.default) return "bold";
+            if (d.checked) return "bold";
             else return "normal";
         })
         .on("click", function(d) {
@@ -345,8 +356,6 @@ document.addEventListener("DOMContentLoaded", function() {
             return blue[i % blue.length];
         }
     }
-
-    let svg = d3.select("#viz").append("svg")
 
     let charts = svg.selectAll(".chart")
         .data(cells)
@@ -490,6 +499,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function reorder(data, val, order, p) {
 
+        console.log('reordering');
+
         if (!data.total_grants) return;
 
         if (val === "amount") {
@@ -540,8 +551,6 @@ document.addEventListener("DOMContentLoaded", function() {
             if (updateIdx && div && div.index > -1 && div.index < updateIdx) prev = d;
             return d.name;
         })
-
-        console.log(prev);
 
         cells.forEach((cell, i) => {
 
@@ -692,29 +701,32 @@ document.addEventListener("DOMContentLoaded", function() {
 
     }
 
-    function getSuggestions(data) {
-        if(data.length == 0) {
-            d3.select("#suggested-keywords")
+    function getTypeahead(prefix) {
+
+        if (prefix.length == 0) {
+            d3.select("#typeahead-keywords")
+                .style("display", "none")
                 .selectAll(".chip")
                 .remove();
             return;
         }
 
-        keywords = data.map(d => d.tag);
+        d3.select("#typeahead-keywords")
+            .style("display", "block")
 
         let searchResult = new XMLHttpRequest();
-        searchResult.open("POST", "/suggestions", true);
+        searchResult.open("GET", "/typeahead-keywords/" + prefix, true);
         searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         searchResult.onload = function() {
             let chips = searchResult.response.split(",");
 
-            let suggested = d3.select("#suggested-keywords")
+            let typeahead = d3.select("#typeahead-keywords")
                 .selectAll(".chip")
                 .data(chips, (d) => d);
 
-            suggested.exit().remove()
+            typeahead.exit().remove()
 
-            suggested.enter().append("div")
+            typeahead.enter().append("div")
                 .attr("class", "chip")
                 .attr("vertical-align", "middle")
                 .text((d) => d)
@@ -726,7 +738,46 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
 
         };
-        searchResult.send(JSON.stringify(keywords));
+
+        searchResult.send();
+    }
+
+    function getSuggestions(data) {
+        if(data.length == 0) {
+            d3.select("#related-keywords")
+                .selectAll(".chip")
+                .remove();
+            return;
+        }
+
+        keywords = data.map(d => d.tag);
+
+        let searchResult = new XMLHttpRequest();
+        let terms = keywordInstance.chipsData.map((c) => encodeURIComponent(c.tag)).join(",");
+        searchResult.open("GET", "/related-keywords/" + terms, true);
+        searchResult.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        searchResult.onload = function() {
+            let chips = searchResult.response.split(",");
+
+            let related = d3.select("#related-keywords")
+                .selectAll(".chip")
+                .data(chips, (d) => d);
+
+            related.exit().remove()
+
+            related.enter().append("div")
+                .attr("class", "chip")
+                .attr("vertical-align", "middle")
+                .text((d) => d)
+                .append("i")
+                .attr("class", "close material-icons")
+                .text("add")
+                .on("mousedown", (d) => {
+                    keywordInstance.addChip({tag: d});
+                });
+
+        };
+        searchResult.send();
     }
 
     function getGrants() {
@@ -780,6 +831,30 @@ document.addEventListener("DOMContentLoaded", function() {
             .data(data)
             .enter()
             .append("tr")
+            .on("click", function(d) {
+                d3.selectAll(".abstract").remove();
+                let terms = keywordInstance.chipsData.map((c) => encodeURIComponent(c.tag)).join(",");
+                let absRow = d3.select(this.parentNode.insertRow(this.rowIndex))
+                    .attr("class", "abstract");
+
+                let absRequest = new XMLHttpRequest();
+                absRequest.open("GET", `/abstract/${d.id}/${terms}`, true);
+                absRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        
+                absRequest.onload = function() {
+                    absRow.append("td")
+                        .attr("colspan", 4)
+                        .html(`<p>${absRequest.response}</p>`)
+                        //.attr("height", 0)
+                        //.transition().duration(200)
+                        //.attr("height", "initial");
+                };
+
+                absRequest.send();
+ 
+                d3.select(this.parentNode.insertRow(this.rowIndex))
+                    .attr("class", "abstract");
+            });
 
         rows.selectAll("td")
             .data((d) => {
@@ -795,6 +870,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .text((d) => d.value);
 
         d3.selectAll("#grant-table thead th").on("click", function() {
+            d3.selectAll(".abstract").remove();
             let tag = d3.select(this)
             d3.selectAll("#grant-table thead th").filter(function(d) { return this.innerText !== tag.text(); })
                 .classed("sort-asc sort-desc", false);

@@ -129,7 +129,12 @@ img {
 }
 
 #keywords-dropdown {
-    margin: -8px 8px 0px 0px;
+    margin-top: -8px;
+}
+
+#typeahead-keywords, #related-keywords {
+    margin: 0px 8px 0px 0px;
+    border-bottom: none;
     //margin-left: 8px;
     //margin-top: -8px;
 }
@@ -284,6 +289,10 @@ th {
 
 #credits img {
     height: 80px;
+}
+
+.hlt1 {
+    font-weight: bold;
 }
 
 @media only screen and (max-width: 768px) {

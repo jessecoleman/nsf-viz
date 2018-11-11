@@ -40,7 +40,9 @@
                 {% endfor %}
             </div>
             <div id="keywords-dropdown" class="dropdown card-panel">
-                <div id="suggested-keywords" class="card-content chips"></div>
+                <div id="typeahead-keywords" class="card-content chips" style="display: none"></div>
+                <p style="margin-top: 0; margin-bottom: 8px">related terms</p>
+                <div id="related-keywords" class="card-content chips"></div>
             </div>
         </div>
     </div>
@@ -62,6 +64,7 @@
                     </div>
                 </div>
             </div>
+            <svg id="plot"/>
           </div>
         <div class="grey lighten-5" id="controls">
             <div class="input-field" id="division-container">
