@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  VictoryVoronoiContainer,
-  VictoryChart, 
-  VictoryAxis,
-  VictoryStack, 
-  VictoryBar, 
-  VictoryTooltip, 
-} from 'victory';
+//import { 
+//  VictoryVoronoiContainer,
+//  VictoryChart, 
+//  VictoryAxis,
+//  VictoryStack, 
+//  VictoryBar, 
+//  VictoryTooltip, 
+//} from 'victory';
 
 import {
   BarChart,
@@ -397,44 +397,44 @@ const Chart: React.FC<{
     </ResponsiveContainer>
   );
 
-  return (
-    <VictoryChart
-      title={props.title}
-      domain={{
-//x: [xMin, xMax],
-        y: [0, yMax], //c.maxData
-      }}
-      domainPadding={24}
-    >
-      <VictoryAxis 
-        style={{tickLabels: {angle: 45}}}
-        label='year'
-      />
-      <VictoryAxis 
-        dependentAxis 
-        tickFormat={tickFormat}
-      />
-      <VictoryStack>
-        {props.perDivision.divisions.buckets.map((div, i) => (
-          <VictoryBar
-            key={div.key}
-            animate={{
-              duration: 1000,
-            }}
-            style={{data: {'fill': props.hue[(i % 9 + 1) * 100]}}}
-            data={div.years.buckets.map(year => ({
-              x: year.key_as_string,
-              y: (props.amount ? year.grant_amounts.value : year.doc_count),
-              label: `${year.key_as_string} ${div.key} (${props.amount ? d3.format('$,')(year.grant_amounts.value) : year.doc_count})`,
-            }))}
-            labelComponent={
-              <VictoryTooltip />
-            }
-          />
-         ))}
-      </VictoryStack>
-    </VictoryChart>
-  );
+  //return (
+  //  <VictoryChart
+  //    title={props.title}
+  //    domain={{
+////x: [xMin, xMax],
+  //      y: [0, yMax], //c.maxData
+  //    }}
+  //    domainPadding={24}
+  //  >
+  //    <VictoryAxis 
+  //      style={{tickLabels: {angle: 45}}}
+  //      label='year'
+  //    />
+  //    <VictoryAxis 
+  //      dependentAxis 
+  //      tickFormat={tickFormat}
+  //    />
+  //    <VictoryStack>
+  //      {props.perDivision.divisions.buckets.map((div, i) => (
+  //        <VictoryBar
+  //          key={div.key}
+  //          animate={{
+  //            duration: 1000,
+  //          }}
+  //          style={{data: {'fill': props.hue[(i % 9 + 1) * 100]}}}
+  //          data={div.years.buckets.map(year => ({
+  //            x: year.key_as_string,
+  //            y: (props.amount ? year.grant_amounts.value : year.doc_count),
+  //            label: `${year.key_as_string} ${div.key} (${props.amount ? d3.format('$,')(year.grant_amounts.value) : year.doc_count})`,
+  //          }))}
+  //          labelComponent={
+  //            <VictoryTooltip />
+  //          }
+  //        />
+  //       ))}
+  //    </VictoryStack>
+  //  </VictoryChart>
+  //);
 }
 
 const Charts: React.FC<{

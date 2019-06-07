@@ -1,13 +1,14 @@
 import React from 'react';
-import { HashRouter as Router, Route, Redirect } from 'react-router-dom';
 
 import logo from './logo.svg';
-import './App.css';
-
 import NavigationBar from 'app/components/NavigationBar'
 import Main from 'app/components/Main'
 
-const App: React.FC = () => {
+const App: React.FC<{
+  path: string,
+  terms?: string,
+}> = (props) => {
+  console.log(props.terms);
   return (
     <div style={{height: '100vh'}}>
       <NavigationBar />
@@ -15,5 +16,7 @@ const App: React.FC = () => {
     </div>
   );
 }
+
+//<Redirect noThrow from='/' to='data%20science,machine%20learning' />
 
 export default App;

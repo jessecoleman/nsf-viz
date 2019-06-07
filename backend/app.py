@@ -3,6 +3,7 @@ import aiofiles
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, StreamingResponse, FileResponse
 from starlette.requests import Request
+from starlette.exceptions import HTTPException
 from gensim.models.word2vec import Word2Vec
 import logging
 import json
@@ -88,7 +89,12 @@ async def search(request: Request):
 
     toggle = body.get('boolQuery')
     terms = body.get('terms')
+    divisions = body.get('divisions')
     dependent = body.get('dependant')
+
+    selected_divisions = [k for k, v in divisions.items() if v['selected']]
+
+    logger.info(selected_divisions)
 
     toggle = (toggle == 'all')
 
@@ -337,12 +343,15 @@ async def search_elastic(toggle, terms=None, fields=('title', 'abstract'), sort=
 async def grant_data(request: Request):
 
     body = await request.json()
+    idx = body['idx']
     terms = body['terms']
     fields = body['fields']
     divisions = body['divisions']
     toggle = body['boolQuery'] == 'all'
 
     grants = {
+            'size': 50,
+            'from': idx,
             'query': {
                 'bool': {
                     #'filter': [
@@ -362,34 +371,21 @@ async def grant_data(request: Request):
             }
         }
 
-    async def scan():
-        grants = []
-        async with Elasticsearch() as es:
-            async with Scan(es, index='nsf', query=grants) as scan:
-                logger.info(scan.total)
-                logger.info(scan)
-                async for hit in scan:
-                    doc = hit['_source']
-                    logger.info(doc['title'])
-                    grants.append(doc)
+    response = await aioes.search(index='nsf', body=grants)
 
-                return grants
-                #    doc = hit['_source']
-                #    #logger.info(doc['title'])
-                #    yield ','.join([
-                #            "'{}'".format(doc['title'].replace("'", "''")),
-                #            str(doc['date']),
-                #            str(doc['amount']),
-                #            doc['division'],
-                #           #doc.meta.id
-                #        ])
+    if response['hits']['total'] == 0:
+        raise HTTPException(404, detail='index out of bounds')
 
-    grants = await scan()
-    logger.info(grants)
-    #return StreamingResponse(scan(), media_type='text/html')
+    grants = []
+    for hit in response['hits']['hits']:
+        grants.append({
+                'score': hit['_score'],
+                'id': hit['_id'],
+                **hit['_source'],
+            })
+            
+    
     return JSONResponse(grants)
-
-
  
     #q = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type='phrase')
     ## take union of all matching queries

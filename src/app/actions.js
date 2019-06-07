@@ -28,24 +28,30 @@ export const getData = () => async (dispatch, getState) => {
   }
 }
 
-export const getGrants = () => async (dispatch, getState) => {
+export const getGrants = (idx) => async (dispatch, getState) => {
 
   const { filter } = getState();
 
   const response = await fetch('/data/grants', {
     method: 'POST',
-    body: JSON.stringify(filter),
+    body: JSON.stringify({ idx, ...filter }),
   });
   switch (response.status) {
     case 200:
-      //const grants = await response.body.getReader();
       const grants = await response.json();
-      //await grants.read();
-      console.log(grants);
+      console.log(idx);
       dispatch({
         type: 'LOADED_GRANTS',
         grants: grants,
       });
+      break;
+    case 404:
+    case 500:
+      console.log(idx, 'no more grants')
+      dispatch({
+        type: 'NO_MORE_GRANTS',
+      });
+      break;
     default:
       break;
   }

@@ -3,6 +3,8 @@ const dataState = {
   perDivision: null,
   grants: [],
   sumTotal: null,
+  noMoreGrants: false,
+  viewingAbstract: 10,
 };
 
 const filterState = {
@@ -115,7 +117,20 @@ export function dataReducer(state = dataState, action) {
     case 'LOADED_GRANTS':
       return {
         ...state,
-        grants: action.grants
+        grants: [
+          ...state.grants,
+          ...action.grants
+        ],
+      };
+    case 'NO_MORE_GRANTS':
+      return {
+        ...state,
+        noMoreGrants: true,
+      }
+    case 'SET_VIEWING': 
+      return {
+        ...state,
+        viewingAbstract: action.idx
       };
     default:
       return state;

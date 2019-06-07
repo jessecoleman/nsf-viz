@@ -2,20 +2,20 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import './index.css';
-import { ConnectedRouter } from 'connected-react-router';
+import { Router, Redirect } from '@reach/router';
+//import { ConnectedRouter } from 'connected-react-router';
 import * as serviceWorker from './serviceWorker';
 
 import App from './App';
 
-import configureStore, { history } from 'app/store';
-
-const store = configureStore();
+import store, { reachHistory } from 'app/store';
 
 ReactDOM.render(
   <Provider store={store}>
-    <ConnectedRouter history={history}>
-      <App />
-    </ConnectedRouter>
+    <Router history={reachHistory}>
+      <Redirect noThrow from='/' to='/data%20science,machine%20learning' />
+      <App path='/:terms' />
+    </Router>
   </Provider>,
   document.getElementById('root')
 );

@@ -4,22 +4,23 @@ import React, {
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import classNames from 'classnames';
-import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TablePagination from '@material-ui/core/TablePagination';
-import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
-import Checkbox from '@material-ui/core/Checkbox';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
-import DeleteIcon from '@material-ui/icons/Delete';
-import FilterListIcon from '@material-ui/icons/FilterList';
+import { Theme, makeStyles } from '@material-ui/core/styles';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  Toolbar,
+  Typography,
+  Paper,
+  Checkbox,
+  IconButton,
+  Tooltip
+} from '@material-ui/core';
+import { FilterList } from '@material-ui/icons';
 import { lighten } from '@material-ui/core/styles/colorManipulator';
 
 import GrantsDialog from 'app/components/GrantsDialog';
@@ -128,7 +129,7 @@ const EnhancedTableHead: React.FC<{
   );
 }
 
-const useToolbarStyles = makeStyles((theme: Theme) => createStyles({
+const useToolbarStyles = makeStyles((theme: Theme) => ({
   root: {
     paddingRight: theme.spacing(1),
   },
@@ -184,7 +185,7 @@ const EnhancedTableToolbar: React.FC<{
         ) : (
           <Tooltip title='Filter list'>
             <IconButton aria-label='Filter list'>
-              <FilterListIcon />
+              <FilterList />
             </IconButton>
           </Tooltip>
         )}
@@ -193,17 +194,19 @@ const EnhancedTableToolbar: React.FC<{
   );
 };
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     width: '100%',
-    marginTop: theme.spacing(3),
+    maxHeight: '80vh',
+    marginTop: theme.spacing(2),
+    display: 'flex',
+    flexDirection: 'column',
   },
   table: {
-//maxHeight: '100vh',
   },
   tableWrapper: {
-    overflowX: 'auto',
-    overflowY: 'auto',
+    flex: 1,
+    overflowY: 'scroll',
   },
 }));
 
