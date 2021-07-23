@@ -2,6 +2,7 @@ const dataState = {
   perYear: null,
   perDivision: null,
   grants: [],
+  suggestions: [],
   sumTotal: null,
   noMoreGrants: false,
   viewingAbstract: 10,
@@ -126,11 +127,22 @@ export function dataReducer(state = dataState, action) {
       return {
         ...state,
         noMoreGrants: true,
-      }
+      };
+    case 'SORTED_GRANTS':
+      return {
+        ...state,
+        sortBy: action.sortBy,
+        sort: action.sort,
+      };
     case 'SET_VIEWING': 
       return {
         ...state,
         viewingAbstract: action.idx
+      };
+    case 'LOADED_SUGGESTIONS':
+      return {
+        ...state,
+        suggestions: action.suggestions,
       };
     default:
       return state;

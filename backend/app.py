@@ -1,5 +1,4 @@
 import asyncio
-import aiofiles
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, StreamingResponse, FileResponse
 from starlette.requests import Request
@@ -9,11 +8,11 @@ import logging
 import json
 from functools import lru_cache
 from collections import defaultdict
-from elasticsearch import Elasticsearch as SyncElasticsearch
+#from elasticsearch import Elasticsearch as SyncElasticsearch
 from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
-from elasticsearch_dsl import Search, MultiSearch, Document, Date, Keyword, Text, Index, connections
-from elasticsearch_dsl.query import MultiMatch
+#from elasticsearch_dsl import Search, MultiSearch, Document, Date, Keyword, Text, Index, connections
+#from elasticsearch_dsl.query import MultiMatch
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('uvicorn')
@@ -22,18 +21,20 @@ app = Starlette()
 app.debug = True
 
 aioes = None
-es = None
+#es = None
+word_vecs = None
 
 @app.on_event('startup')
 async def startup():
-    global aioes, es
-    es = SyncElasticsearch()
+    global aioes, word_vecs
+    #es = SyncElasticsearch()
     aioes = Elasticsearch()
+    word_vecs = Word2Vec.load('assets/nsf_w2v_model').wv
 
 
 @app.on_event('shutdown')
 async def shutdown():
-    es.close()
+    #es.close()
     await aioes.close()
 
 
@@ -62,7 +63,7 @@ default_terms = [
 def main(toggle='any', terms=default_terms):
 
     if toggle not in ('any', 'all'):
-        abort
+        raise HTTPException(404, detail='toggle not valid')
 
     if type(terms) is str:
         terms = terms.split(',')
@@ -93,8 +94,6 @@ async def search(request: Request):
     dependent = body.get('dependant')
 
     selected_divisions = [k for k, v in divisions.items() if v['selected']]
-
-    logger.info(selected_divisions)
 
     toggle = (toggle == 'all')
 
@@ -168,11 +167,11 @@ async def search(request: Request):
     return JSONResponse(json_data)
 
 
-word_vecs = Word2Vec.load('assets/nsf_w2v_model').wv
-
-
 @app.route('/typeahead-keywords/{prefix}', methods=['GET'])
-async def typeahead(prefix):
+async def typeahead(request: Request):
+
+    prefix = request.path_params['prefix']
+ 
     result = await aioes.search(index='nsf-suggest', body={
             'suggest': {
                 'gram-suggest': {
@@ -198,17 +197,16 @@ def related(keywords):
 
     if len(terms) > 0:
         related = word_vecs.most_similar(terms, [])
-        print(related)
         return JSONResponse([r[0] for r in related])
     else:
         return JSONResponse([])
 
 
-query = lambda term: MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
+#query = lambda term: MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
 
 async def search_elastic(toggle, terms=None, fields=('title', 'abstract'), sort=False):
 
-    s = Search(using=es)
+    #s = Search(using=es)
 
     per_year = {
         'query': {
@@ -307,27 +305,27 @@ async def search_elastic(toggle, terms=None, fields=('title', 'abstract'), sort=
                 }
             }
     
-        q = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type='phrase')
-        # take union of all matching queries
-        for term in terms:
-            if toggle:
-                q = q & MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
-            else:
-                q = q | MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
+    #    q = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type='phrase')
+    #    # take union of all matching queries
+    #    for term in terms:
+    #        if toggle:
+    #            q = q & MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
+    #        else:
+    #            q = q | MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
 
-        s = s.query(q)
+    #    s = s.query(q)
 
 
-    if sort:
-        s.aggs.bucket('per_division', 'terms', field='division', order={'agg_grants': 'desc'}, size=80) \
-            .metric('agg_grants', 'value_count', field='date') \
-            .metric('agg_amount', 'sum', field='amount')
+    #if sort:
+    #    s.aggs.bucket('per_division', 'terms', field='division', order={'agg_grants': 'desc'}, size=80) \
+    #        .metric('agg_grants', 'value_count', field='date') \
+    #        .metric('agg_amount', 'sum', field='amount')
 
-    else:
-        s.aggs.bucket('per_year', 'date_histogram', field='date', interval='year') \
-            .bucket('per_division', 'terms', field='division', size=80) \
-            .metric('agg_grants', 'value_count', field='date') \
-            .metric('agg_amount', 'sum', field='amount')
+    #else:
+    #    s.aggs.bucket('per_year', 'date_histogram', field='date', interval='year') \
+    #        .bucket('per_division', 'terms', field='division', size=80) \
+    #        .metric('agg_grants', 'value_count', field='date') \
+    #        .metric('agg_amount', 'sum', field='amount')
 
     #return s.execute().aggregations
     #logger.info(json.dumps(s.to_dict(), indent=2))
@@ -344,6 +342,8 @@ async def grant_data(request: Request):
 
     body = await request.json()
     idx = body['idx']
+    order = body.get('order', 'desc')
+    order_by = body.get('orderBy', 'date')
     terms = body['terms']
     fields = body['fields']
     divisions = body['divisions']
@@ -368,7 +368,14 @@ async def grant_data(request: Request):
                         }
                     for term in terms]
                 }
-            }
+            },
+            'sort': [
+                {
+                    order_by: {
+                        'order': order
+                    }
+                }
+            ]
         }
 
     response = await aioes.search(index='nsf', body=grants)

@@ -1,5 +1,6 @@
 import 'whatwg-fetch';
 import queryString from 'query-string';
+import { createAsyncThunk } from '@reduxjs/toolkit';
 
 export const getData = () => async (dispatch, getState) => {
   //const route = queryString.stringify(query);
@@ -28,13 +29,13 @@ export const getData = () => async (dispatch, getState) => {
   }
 }
 
-export const getGrants = (idx) => async (dispatch, getState) => {
+export const getGrants = (idx, order, orderBy) => async (dispatch, getState) => {
 
   const { filter } = getState();
 
   const response = await fetch('/data/grants', {
     method: 'POST',
-    body: JSON.stringify({ idx, ...filter }),
+    body: JSON.stringify({ idx, order, orderBy, ...filter }),
   });
   switch (response.status) {
     case 200:
@@ -55,6 +56,10 @@ export const getGrants = (idx) => async (dispatch, getState) => {
     default:
       break;
   }
+}
+
+export const sortGrants = (sort, sortBy) => async (dispatch, getState) => {
+
 }
 
 export const getDivisions = () => async (dispatch, getState) => {
@@ -113,4 +118,14 @@ export const deleteChip = (chip, i) => async (dispatch, getState) => {
   });
 
   dispatch(getData());
+}
+
+export const getSuggestions = prefix => async (dispatch, getState) => {
+
+  const response = await fetch(`/data/typeahead-keywords/${prefix}`);
+  const suggestions = await response.json();
+  dispatch({
+    type: 'LOADED_SUGGESTIONS',
+    suggestions,
+  });
 }

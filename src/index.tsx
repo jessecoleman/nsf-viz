@@ -13,12 +13,13 @@ import store, { reachHistory } from 'app/store';
 ReactDOM.render(
   <Provider store={store}>
     <Router history={reachHistory}>
-      <Redirect noThrow from='/' to='/data%20science,machine%20learning' />
       <App path='/:terms' />
+      <App path='/' />
     </Router>
   </Provider>,
   document.getElementById('root')
 );
+//<Redirect noThrow from='/' to='/data%20science,machine%20learning' />
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

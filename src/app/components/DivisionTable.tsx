@@ -3,7 +3,6 @@ import React, {
   useEffect, 
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import classNames from 'classnames';
 import { Theme, makeStyles } from '@material-ui/core/styles';
 import { 
   Table,
@@ -160,11 +159,7 @@ const EnhancedTableToolbar: React.FC<{
   const { numSelected } = props;
 
   return (
-    <Toolbar
-      className={classNames(classes.root, {
-        //[classes.highlight]: numSelected > 0,
-      })}
-    >
+    <Toolbar className={classes.root}>
       <div className={classes.title}>
         {numSelected > 0 ? (
           <Typography color='inherit' variant='subtitle1'>
@@ -179,9 +174,7 @@ const EnhancedTableToolbar: React.FC<{
       <div className={classes.spacer} />
       <div className={classes.actions}>
         {numSelected > 0 ? (
-          <Tooltip title='view grant details'>
-            <GrantsDialog />
-          </Tooltip>
+          <GrantsDialog />
         ) : (
           <Tooltip title='Filter list'>
             <IconButton aria-label='Filter list'>
@@ -225,18 +218,18 @@ const EnhancedTable : React.FC<{}> = (props) => {
   const divisions: Division[] = useSelector(state => state.filter.divisions);
   const selectedDivisions: number = Object.values(divisions).filter(d => d.selected).length;
 
+  function handleRequestSort(event, property) {
+    const isDesc = orderBy === property && order === 'desc';
+    setOrder(isDesc ? 'asc' : 'desc');
+    setOrderBy(property);
+  }
+
   const select = key => () => dispatch(selectDivision(key));
   const selectAll = (selected) => dispatch(selectAllDivisions(selected));
 
   const total = useSelector(state => state.data.sumTotal);
   //if (!total) return null;
   //const divisions = total.divisions.buckets;
-
-  function handleRequestSort(event, property) {
-    const isDesc = orderBy === property && order === 'desc';
-    setOrder(isDesc ? 'asc' : 'desc');
-    setOrderBy(property);
-  }
 
   return (
     <Paper className={classes.root}>
