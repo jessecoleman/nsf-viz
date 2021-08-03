@@ -1,20 +1,17 @@
-import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import './index.css';
-import { Router, Redirect } from '@reach/router';
-//import { ConnectedRouter } from 'connected-react-router';
+import { BrowserRouter as Router } from 'react-router-dom';
 import * as serviceWorker from './serviceWorker';
 
 import App from './App';
 
-import store, { reachHistory } from 'app/store';
+import store from 'app/store';
 
 ReactDOM.render(
   <Provider store={store}>
-    <Router history={reachHistory}>
+    <Router>
       <App path='/:terms' />
-      <App path='/' />
     </Router>
   </Provider>,
   document.getElementById('root')

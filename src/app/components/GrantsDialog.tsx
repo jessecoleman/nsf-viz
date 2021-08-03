@@ -17,12 +17,14 @@ import {
 
 import { format, timeFormat, timeParse } from 'd3';
 
-import { getGrants } from 'app/actions';
+import { loadGrants } from 'app/actions';
 import { 
   GrantColumn, 
   GridSize,
   SortDirection,
-} from 'types.d';
+} from '../types';
+import { useAppDispatch, useAppSelector } from 'app/store';
+import { getGrant, getGrants, isViewingAbstract, loadingGrants, noMoreGrants } from 'app/selectors';
 
 const useStyles = makeStyles((theme: Theme) => ({
     root: {
@@ -40,7 +42,14 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
 }));
 
-const cols = [
+type Column = {
+  id: 'title' | 'date' | 'amount' | 'division',
+  format: (s: string) => string,
+  label: string,
+  gridSize: GridSize,
+}
+
+const cols: Column[] = [
   { id: 'title', format: t => t, label: 'Grant Title', gridSize: 7 },
   { id: 'date', format: d => timeFormat("%b %Y")(timeParse("%Y-%m-%d")(d)), label: 'Date', gridSize: 1 },
   { id: 'amount', format: format('$,'), label: 'Amount', gridSize: 1 },
@@ -52,21 +61,22 @@ const GrantsTable: React.FC = () => {
 
   const classes = useStyles();
 
-  const dispatch = useDispatch();
-  const grants = useSelector(state => state.data.grants);
-  const loadingGrants = useSelector(state => state.data.loadingGrants);
-  const noMoreGrants = useSelector(state => state.data.noMoreGrants);
-  const viewingAbstract = useSelector(state => state.data.viewingAbstract);
+  const dispatch = useAppDispatch();
+  const grants = useAppSelector(getGrants);
+  console.log(grants);
+  const loading = useAppSelector(loadingGrants);
+  const noMore = useAppSelector(noMoreGrants);
+  const viewingAbstract = useAppSelector(isViewingAbstract);
 
-  const loadGrants = (idx) => {
-    dispatch(getGrants(idx));
+  const handleLoadGrants = (idx) => {
+    dispatch(loadGrants({ idx }));
   }
 
-  const count = noMoreGrants ? grants.length : grants.length + 1;
-  const loadMore = loadingGrants ? () => {} : loadGrants;
-  const isLoaded = index => noMoreGrants || index < grants.length;
+  const count = noMore ? grants.length : grants.length + 1;
+  const loadMore = loading ? () => {} : handleLoadGrants;
+  const isLoaded = (idx: number) => noMore || idx < grants.length;
 
-  const getRowSize = idx => {
+  const getRowSize = (idx: number) => {
     if (idx === viewingAbstract) {
       return 144
     } else {
@@ -79,24 +89,18 @@ const GrantsTable: React.FC = () => {
   const setViewing = idx => {
     console.log(listRef);
     dispatch({ type: 'SET_VIEWING', idx: idx });
-    (listRef as any).current.resetAfterIndex(idx);
+    (listRef as any).current?.resetAfterIndex(idx);
   }
  
   const RowRenderer: React.FC<{
     index: number,
     style: any, 
   }> = (props) => {
-    // data,
-    // rowIndex,
-    // columnIndex,
-    // style,
-  //}) => {
   
     const { index, style } = props;
   
-    const dispatch = useDispatch();
-    const grant = useSelector(state => state.data.grants[index]);
-    const viewingAbstract = useSelector(state => state.data.viewingAbstract);
+    const grant = useAppSelector(state => getGrant(state, index));
+    const viewingAbstract = useAppSelector(isViewingAbstract);
 
     if (!isLoaded(index)) { console.log('not loaded'); return <div>Loading...</div> }
     if (!grant) return null;
@@ -111,7 +115,11 @@ const GrantsTable: React.FC = () => {
         style={style}
         onClick={() => setViewing(index)}
       >
-        {cols.map(c => <Grid item xs={(c.gridSize as GridSize)}>{c.format(grant[c.id])}</Grid>)}
+        {cols.map(({ gridSize, format, id }) => (
+          <Grid item xs={gridSize}>
+            {format(grant[id])}
+          </Grid>
+        ))}
         {index === viewingAbstract ?
           <Grid item xs={12}>Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract</Grid> : null
         }
@@ -156,12 +164,12 @@ const GrantsDialog: React.FC = () => {
     const isDesc = orderBy === property && order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
-    dispatch(getGrants(0, order, orderBy));
+    dispatch(loadGrants({ idx: 0, order, orderBy }));
   }
 
 
   const handleOpen = () => {
-    dispatch(getGrants(0, order, orderBy));
+    dispatch(loadGrants({ idx: 0, order, orderBy }));
     setOpen(true);
   }
 

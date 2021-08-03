@@ -30,13 +30,17 @@ import {
   Division,
   SortDirection,
   CheckboxCallback,
-} from 'types.d';
-
+} from '../types';
 import { 
-  getDivisions, 
   selectDivision, 
-  selectAllDivisions, 
-} from 'app/actions';
+  selectAllDivisions,
+} from '../filterReducer';
+import {
+  getTotal,
+  getDivisions, 
+} from 'app/selectors';
+import{ loadDivisions } from '../actions';
+import { useAppDispatch, useAppSelector } from 'app/store';
 
 const desc = (a, b, orderBy) => {
   if (b[orderBy] < a[orderBy]) {
@@ -207,15 +211,16 @@ const useStyles = makeStyles((theme: Theme) => ({
 const EnhancedTable : React.FC<{}> = (props) => {
 
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    dispatch(getDivisions());
+    dispatch(loadDivisions());
   }, []);
 
   const [ order, setOrder ] = useState<SortDirection>('desc');
   const [ orderBy, setOrderBy ] = useState<string>('doc_count');
-  const divisions: Division[] = useSelector(state => state.filter.divisions);
+  const divisions = useSelector(getDivisions);
+  console.log(divisions);
   const selectedDivisions: number = Object.values(divisions).filter(d => d.selected).length;
 
   function handleRequestSort(event, property) {
@@ -227,7 +232,7 @@ const EnhancedTable : React.FC<{}> = (props) => {
   const select = key => () => dispatch(selectDivision(key));
   const selectAll = (selected) => dispatch(selectAllDivisions(selected));
 
-  const total = useSelector(state => state.data.sumTotal);
+  const total = useAppSelector(getTotal);
   //if (!total) return null;
   //const divisions = total.divisions.buckets;
 
@@ -246,10 +251,10 @@ const EnhancedTable : React.FC<{}> = (props) => {
           />
           <TableBody>
             {stableSort(Object.values(divisions), getSorting(order, orderBy))
-              .map(div => (
+              .map((div: Division, idx: number) => (
                 <TableRow
                   hover
-                  onClick={select(div.title)}
+                  onClick={select(idx)}
                   role='checkbox'
                   aria-checked={div.selected}
                   tabIndex={-1}

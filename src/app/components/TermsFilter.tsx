@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { Theme, makeStyles } from '@material-ui/core/styles';
-import { fade } from '@material-ui/core/styles/colorManipulator';
+import { alpha } from '@material-ui/core/styles/colorManipulator';
 import { DebounceInput } from 'react-debounce-input';
 
 import {
@@ -22,10 +22,13 @@ import {
 } from '@material-ui/icons';
 
 import {
-  getSuggestions,
-  addChips,
-  deleteChip,
+  loadSuggestions,
+  loadData,
 } from 'app/actions';
+import { useAppSelector } from 'app/store';
+import { getSuggestions, getTerms } from 'app/selectors';
+import { addChips, deleteChip } from 'app/filterReducer';
+import { useParams } from 'react-router';
 
 const useStyles = makeStyles((theme: Theme) => ({
   title: {
@@ -38,9 +41,9 @@ const useStyles = makeStyles((theme: Theme) => ({
   search: {
     position: 'relative',
     borderRadius: theme.shape.borderRadius,
-    backgroundColor: fade(theme.palette.common.white, 0.15),
+    backgroundColor: alpha(theme.palette.common.white, 0.15),
     '&:hover': {
-      backgroundColor: fade(theme.palette.common.white, 0.25),
+      backgroundColor: alpha(theme.palette.common.white, 0.25),
     },
     marginLeft: 0,
     width: '100%',
@@ -89,32 +92,35 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 
 
-const TermsFilter: React.FC<{
-}> = (props) => {
+const TermsFilter = () => {
 
-  const classes = useStyles();
-  const terms = useSelector(state => state.filter.terms);
-  const suggestions = useSelector(state => state.data.suggestions);
+  const query = useParams();
+  console.log(query);
   const dispatch = useDispatch();
+  const classes = useStyles();
+  const terms = useAppSelector(getTerms);
+  const suggestions = useAppSelector(getSuggestions);
   const [ focused, setFocused ] = useState(false);
 
   const handleFocus = focused => () => {
     setFocused(focused);
   };
 
-  const handleInput = (e) => {
+  const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
     e.persist();
     if (e.target.value.length) {
-      dispatch(getSuggestions(e.target.value));
+      dispatch(loadSuggestions(e.target.value));
     }
   };
 
-  const handleAddChip = (chips) => {
+  const handleAddChip = (chips: string) => {
     dispatch(addChips(chips.split(',')));
+    dispatch(loadData());
   };
 
-  const handleDeleteChip = (chip, index) => {
-    dispatch(deleteChip(chip, index));
+  const handleDeleteChip = (chip: string, idx: number) => {
+    dispatch(deleteChip({ chip, idx }));
+    dispatch(loadData());
   };
 
   return (

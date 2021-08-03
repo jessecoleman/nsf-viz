@@ -1,21 +1,15 @@
 import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import useDimensions from 'react-use-dimensions';
 
 import * as d3 from 'd3';
 
-import { BarStack } from '@vx/shape';
-import { Group } from '@vx/group';
-import { AxisLeft, AxisBottom } from '@vx/axis';
-import { ScaleBand, ScaleLinear, ScaleOrdinal } from '@vx/axis';
-import { withTooltip, Tooltip } from '@vx/tooltip';
-
-
 import { green, lightGreen, teal } from '@material-ui/core/colors';
 import { makeStyles } from '@material-ui/core';
 
-import { getData } from 'app/actions';
+import { loadData } from 'app/actions';
 import Chart from 'app/components/Chart';
+import { getPerDivision, getTotal } from 'app/selectors';
+import { useAppDispatch, useAppSelector } from 'app/store';
 
 const cells = [
   {
@@ -122,25 +116,21 @@ const Charts: React.FC<{
 }> = (props) => {
 
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    dispatch(getData());
+    dispatch(loadData());
   }, [dispatch]);
 
   const [ ref, { width, height } ] = useDimensions();
 
-  const perYear = useSelector(state => state.data.perYear);
-  const perDivision = useSelector(state => state.data.perDivision);
-  const total = useSelector(state => state.data.sumTotal);
-
-  if (!perYear) return null;
+  const total = useAppSelector(getTotal);
 
   //{cells.map((c, i) => (
   const c = cells[0];
   return (
     <div ref={ref} className={classes.container}>
-      {width && height &&
+      {total && width && height &&
         <Chart
           width={width}
           height={height}
@@ -149,8 +139,6 @@ const Charts: React.FC<{
           amount={c.amount}
           filtered={c.filtered}
           hue={c.amount ? green : teal}
-          perYear={perYear}
-          perDivision={perDivision}
           divisions={total.divisions.buckets}
         />
       }

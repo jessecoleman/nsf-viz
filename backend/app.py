@@ -1,65 +1,65 @@
-import asyncio
-from starlette.applications import Starlette
-from starlette.responses import JSONResponse, StreamingResponse, FileResponse
-from starlette.requests import Request
-from starlette.exceptions import HTTPException
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import HTTPException
 from gensim.models.word2vec import Word2Vec
 import logging
 import json
 from functools import lru_cache
 from collections import defaultdict
-#from elasticsearch import Elasticsearch as SyncElasticsearch
 from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
-#from elasticsearch_dsl import Search, MultiSearch, Document, Date, Keyword, Text, Index, connections
-#from elasticsearch_dsl.query import MultiMatch
+
+from models import GrantsRequest, SearchRequest
+from queries import search_elastic
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('uvicorn')
 
-app = Starlette()
+app = FastAPI(servers=[{'url': '/data'}])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_methods=['*']
+)
 app.debug = True
 
 aioes = None
-#es = None
 word_vecs = None
 
 @app.on_event('startup')
 async def startup():
     global aioes, word_vecs
-    #es = SyncElasticsearch()
     aioes = Elasticsearch()
     word_vecs = Word2Vec.load('assets/nsf_w2v_model').wv
 
 
 @app.on_event('shutdown')
 async def shutdown():
-    #es.close()
     await aioes.close()
 
 
 default_terms = [
-      'data science',
-      'machine learning',
-      'artificial intelligence',
-      'deep learning',
-      'convolutional neural networks',
-      'recurrent neural network',
-      'stochastic gradient descent',
-      'support vector machines',
-      'unsupervised learning',
-      'supervised learning',
-      'reinforcement learning',
-      'generative adversarial networks',
-      'random forest',
-      'naive bayes',
-      'bayesian networks',
-      'big data'
+    'data science',
+    'machine learning',
+    'artificial intelligence',
+    'deep learning',
+    'convolutional neural networks',
+    'recurrent neural network',
+    'stochastic gradient descent',
+    'support vector machines',
+    'unsupervised learning',
+    'supervised learning',
+    'reinforcement learning',
+    'generative adversarial networks',
+    'random forest',
+    'naive bayes',
+    'bayesian networks',
+    'big data'
 ]
 
 
-@app.route('/')
-@app.route('/<toggle>/<terms>')
+@app.get('/')
+@app.get('/<toggle>/<terms>')
 def main(toggle='any', terms=default_terms):
 
     if toggle not in ('any', 'all'):
@@ -70,34 +70,32 @@ def main(toggle='any', terms=default_terms):
 
     with open('static/divisions.csv', 'r') as divs:
         divisions = [{
-                'name': d.strip()[:-2],
+                'title': d.strip()[:-2],
                 'default': d.strip()[-1] == 'y'
             } for i, d in enumerate(divs.readlines())]
 
-    return render_template('index.html', toggle=toggle, divisions=divisions, terms=terms)
+    # return render_template('index.html', toggle=toggle, divisions=divisions, terms=terms)
 
 
-@app.route('/divisions')
-async def divisions(request: Request):
-    return FileResponse('static/divisions.csv', media_type='text/html')
+@app.get('/divisions', operation_id='loadDivisions')
+async def divisions():
+    with open('assets/divisions.csv', 'r') as divs:
+        divisions = [{
+                'title': d.strip()[:-2],
+                'selected': d.strip()[-1] == 'y'
+            } for d in divs.readlines()]
+        
+        return divisions
 
 
-@app.route('/search', methods=['POST'])
-async def search(request: Request):
+@app.post('/search', operation_id='search')
+async def search(request: SearchRequest):
 
-    body = await request.json()
+    #dependent = body.get('dependant')
 
+    toggle = (request.boolQuery == 'all')
 
-    toggle = body.get('boolQuery')
-    terms = body.get('terms')
-    divisions = body.get('divisions')
-    dependent = body.get('dependant')
-
-    selected_divisions = [k for k, v in divisions.items() if v['selected']]
-
-    toggle = (toggle == 'all')
-
-    if terms is None:
+    if request.terms is None:
         return json.dumps({
             y: {
                 'year': y, 
@@ -112,15 +110,15 @@ async def search(request: Request):
             } for y in range(2007, 2018)
         })
 
-    per_year, per_division, sum_total = await search_elastic(toggle, terms)
-    return JSONResponse({
+    per_year, per_division, sum_total = await search_elastic(aioes, toggle, request.terms)
+    return {
             'per_year': per_year,
             'per_division': per_division,
             'sum_total': sum_total,
-        })
+        }
 
-    matched = await search_elastic(toggle, terms)
-    order = await search_elastic(toggle, terms, sort=True)
+    matched = await search_elastic(aioes, toggle, terms)
+    order = await search_elastic(aioes, toggle, terms, sort=True)
 
     sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
     inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
@@ -167,11 +165,9 @@ async def search(request: Request):
     return JSONResponse(json_data)
 
 
-@app.route('/typeahead-keywords/{prefix}', methods=['GET'])
-async def typeahead(request: Request):
+@app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead')
+async def typeahead(prefix: str):
 
-    prefix = request.path_params['prefix']
- 
     result = await aioes.search(index='nsf-suggest', body={
             'suggest': {
                 'gram-suggest': {
@@ -184,10 +180,13 @@ async def typeahead(request: Request):
             }
         })
 
-    return JSONResponse([g['_source']['gram'] for g in result['suggest']['gram-suggest'][0]['options']])
+    return [
+        g['_source']['gram']
+        for g in result['suggest']['gram-suggest'][0]['options']
+    ]
 
 
-@app.route('/related-keywords/{keywords}', methods=['GET'])
+@app.get('/keywords/related/{keywords}', operation_id='loadRelated')
 def related(keywords):
     terms = []
     for t in keywords.split(','):
@@ -197,182 +196,38 @@ def related(keywords):
 
     if len(terms) > 0:
         related = word_vecs.most_similar(terms, [])
-        return JSONResponse([r[0] for r in related])
+        return [r[0] for r in related]
     else:
-        return JSONResponse([])
+        return []
 
 
-#query = lambda term: MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
-
-async def search_elastic(toggle, terms=None, fields=('title', 'abstract'), sort=False):
-
-    #s = Search(using=es)
-
-    per_year = {
-        'query': {
-            'match_all': {},
-        },
-        'aggs': {
-            'years': {
-                'date_histogram': {
-                    'field': 'date',
-                    'interval': 'year',
-                    'format': 'yyyy',
-                },
-                'aggs': {
-                        'grant_amounts': {
-                            'sum': {
-                                'field': 'amount'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    per_division = {
-            'query': {
-                'match_all': {},
-            },
-#            'aggs': {
-#                'divisions': {
-#                    'terms': {
-#                        'field': 'division'
-#                    },
-            'aggs': {
-                'years': {
-                    'date_histogram': {
-                        'field': 'date',
-                        'interval': 'year',
-                        'format': 'yyyy',
-                    },
-                    'aggs': {
-                        'divisions': {
-                            'terms': {
-                                'field': 'division'
-                            },
-                            'aggs': {
-                                'grant_amounts': {
-                                    'sum': {
-                                        'field': 'amount'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    sum_total = {
-        'query': {
-            'match_all': {},
-        },
-        'aggs': {
-            'divisions': {
-                'terms': {
-                    'field': 'division',
-                    'min_doc_count': 0,
-                },
-                'aggs': {
-                    'grant_amounts_total': {
-                        'sum': {
-                            'field': 'amount',
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    if terms is not None:
-
-        per_division['query'] = \
-        per_year['query'] = \
-        sum_total['query'] = \
-            {
-                'bool': {
-                    ('must' if toggle else 'should'): [
-                        {
-                            'multi_match': {
-                                'fields': fields,
-                                'query': term,
-                                'type': 'phrase',
-                            }
-                        }
-                    for term in terms]
-                }
-            }
-    
-    #    q = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type='phrase')
-    #    # take union of all matching queries
-    #    for term in terms:
-    #        if toggle:
-    #            q = q & MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
-    #        else:
-    #            q = q | MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
-
-    #    s = s.query(q)
-
-
-    #if sort:
-    #    s.aggs.bucket('per_division', 'terms', field='division', order={'agg_grants': 'desc'}, size=80) \
-    #        .metric('agg_grants', 'value_count', field='date') \
-    #        .metric('agg_amount', 'sum', field='amount')
-
-    #else:
-    #    s.aggs.bucket('per_year', 'date_histogram', field='date', interval='year') \
-    #        .bucket('per_division', 'terms', field='division', size=80) \
-    #        .metric('agg_grants', 'value_count', field='date') \
-    #        .metric('agg_amount', 'sum', field='amount')
-
-    #return s.execute().aggregations
-    #logger.info(json.dumps(s.to_dict(), indent=2))
-
-    return await asyncio.gather(
-            aioes.search(index='nsf', body=per_year),
-            aioes.search(index='nsf', body=per_division),
-            aioes.search(index='nsf', body=sum_total),
-        )
-
-
-@app.route('/grants', methods=['POST'])
-async def grant_data(request: Request):
-
-    body = await request.json()
-    idx = body['idx']
-    order = body.get('order', 'desc')
-    order_by = body.get('orderBy', 'date')
-    terms = body['terms']
-    fields = body['fields']
-    divisions = body['divisions']
-    toggle = body['boolQuery'] == 'all'
+@app.post('/grants', operation_id='loadGrants')
+async def grant_data(request: GrantsRequest):
 
     grants = {
             'size': 50,
-            'from': idx,
+            'from': request.idx,
             'query': {
                 'bool': {
                     #'filter': [
                     #    {
                     #            
                     #],
-                    ('must' if toggle else 'should'): [
+                    ('must' if request.toggle else 'should'): [
                         {
                             'multi_match': {
-                                'fields': fields,
+                                'fields': request.fields,
                                 'query': term,
                                 'type': 'phrase',
                             }
                         }
-                    for term in terms]
+                    for term in request.terms]
                 }
             },
             'sort': [
                 {
-                    order_by: {
-                        'order': order
+                    request.order_by: {
+                        'order': request.order
                     }
                 }
             ]
@@ -391,31 +246,10 @@ async def grant_data(request: Request):
                 **hit['_source'],
             })
             
-    
-    return JSONResponse(grants)
+    return grants
  
-    #q = MultiMatch(query=terms.pop(0), fields=['title', 'abstract'], type='phrase')
-    ## take union of all matching queries
-    #for term in j['terms']:
-    #    if j['toggle']:
-    #        q = q & MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
-    #    else:
-    #        q = q | MultiMatch(query=term, fields=['title', 'abstract'], type='phrase')
 
-    #s = Search(using=es).query(q)
-
-    return 'title,date,value,division,id\n' + '\n'.join([
-            ','.join([
-                    "'{}'".format(r.title.replace("'", "''")),
-                    str(r.date),
-                    str(r.amount),
-                    r.division,
-                    r.meta.id
-                ]) for r in s.scan() if r.division in j['divisions']
-        ])
-
-
-@app.route('/abstract/{_id}/{terms}', methods=['GET'])
+@app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract')
 async def get_abstract(_id, terms):
     query = {
             'query': {
@@ -453,4 +287,6 @@ app.mount('/data', app)
 
 if __name__ == '__main__':
     import uvicorn
+    with open('api.json', 'w') as api:
+        json.dump(app.openapi(), api)
     uvicorn.run(app, host='localhost', port=8888, log_level='info')

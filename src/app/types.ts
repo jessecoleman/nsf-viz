@@ -1,10 +1,33 @@
-import { ChangeEvent } from 'react';
+export type Bucket = {
+  key: string
+  doc_count: number
+}
+
+export type Key = {
+  key_as_string: string
+  doc_count: number
+  divisions: {
+    buckets: Bucket[]
+  }
+}
+
+export type PerYear = {
+  years: {
+    buckets: Key[]
+  }
+}
+
+export type PerDivision = {
+  years: {
+    buckets: Key[]
+  }
+}
 
 export type Division = {
   title: string
-  selected: boolean
   count: number | ''
   amount: number | ''
+  selected: boolean
 }
 
 export type SortDirection = 'asc' | 'desc' | undefined;

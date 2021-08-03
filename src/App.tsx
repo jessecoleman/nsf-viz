@@ -1,21 +1,18 @@
-import React from 'react';
-
-import logo from './logo.svg';
 import NavigationBar from 'app/components/NavigationBar'
 import Main from 'app/components/Main'
+import { Box } from '@material-ui/core';
 
-const App: React.FC<{
+type AppProps = {
   path: string,
   terms?: string,
-}> = (props) => {
-  console.log(props.terms);
-  return (
-    <div style={{height: '100vh'}}>
-      <NavigationBar />
-      <Main />
-    </div>
-  );
 }
+
+const App = (props: AppProps) => (
+  <Box height='100vh' overflow='hidden'>
+    <NavigationBar />
+    <Main />
+  </Box>
+);
 
 //<Redirect noThrow from='/' to='data%20science,machine%20learning' />
 
