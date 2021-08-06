@@ -35,6 +35,6 @@ Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washing
       </Grid>
     </div>
   );
-}
+};
 
 export default Main;

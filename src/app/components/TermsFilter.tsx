@@ -160,6 +160,6 @@ const TermsFilter = () => {
       </div>
     </ClickAwayListener>
   );
-}
+};
 
 export default TermsFilter;

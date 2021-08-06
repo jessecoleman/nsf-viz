@@ -9,14 +9,7 @@ import { Bucket, Division, PerDivision, PerYear } from 'app/types';
 import { getPerDivision, getTotal } from 'app/selectors';
 import { useAppSelector } from 'app/store';
 
-const MyBar = (props) => {
-  console.log(props);
-  return <rect {...props} x={0} width={4} />
-}
-
-const Chart: React.FC<{
-  width: number,
-  height: number,
+type ChartProps = {
   title: any,
   percent: boolean,
   //value: string,
@@ -24,7 +17,9 @@ const Chart: React.FC<{
   filtered: boolean,
   hue: any,
   divisions: Bucket[],
-}> = (props) => {
+}
+
+const Chart = (props: ChartProps) => {
 
   const perYear = useAppSelector(getPerDivision)?.years.buckets;
   const perDivision = useAppSelector(getPerDivision)?.years.buckets;
@@ -34,15 +29,15 @@ const Chart: React.FC<{
 
   const handleClick = e => {
     console.log(e);
-  }
+  };
 
   const handleMouseLeave = e => {
-
-  }
+    // pass
+  };
 
   const handleMouseMove = e => {
-
-  }
+    // pass
+  };
 
   const divisions = props.divisions.map(d => d.key);
   const data = perDivision.map((b, idx) => ({
@@ -87,7 +82,7 @@ const Chart: React.FC<{
         ))}
       </BarChart>
     </ResponsiveContainer>
-  )
-}
+  );
+};
 
 export default Chart;
