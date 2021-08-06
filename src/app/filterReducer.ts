@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { loadDivisions, loadGrants } from "./actions";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { loadDivisions, loadGrants } from './actions';
 import { Division } from './types';
 
 type Field = 'title' | 'abstract';
@@ -18,9 +18,9 @@ const initialState: FilterState = {
   terms: ['data science', 'machine learning'],
   divisions: [],
   fields: ['title'] //, 'abstract'],
-}
+};
 
- const filterSlice = createSlice({
+const filterSlice = createSlice({
   name: 'filter',
   initialState,
   reducers: {
@@ -64,7 +64,7 @@ const initialState: FilterState = {
       div.selected = !div.selected;
     },
     selectAllDivisions: (state, action) => {
-      state.divisions.forEach(d => { d.selected = true })
+      state.divisions.forEach(d => { d.selected = true; });
     },
   },
   extraReducers: builder => {
@@ -75,12 +75,12 @@ const initialState: FilterState = {
         selected: div.selected,
         count: '',
         amount: '',
-      }))
+      }));
     }).addCase(loadGrants.fulfilled, (state, action) => {
-
+      // pass
     }).addCase(loadGrants.rejected, (state, action) => {
       // state.noM
-    })
+    });
   }
 });
 

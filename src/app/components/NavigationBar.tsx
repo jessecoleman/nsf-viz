@@ -101,6 +101,6 @@ const SearchAppBar: React.FC<{
       </AppBar>
     </div>
   );
-}
+};
 
 export default SearchAppBar;

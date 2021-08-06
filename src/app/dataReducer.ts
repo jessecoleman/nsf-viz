@@ -1,6 +1,6 @@
-import { createSlice } from "@reduxjs/toolkit";
-import { loadData, loadGrants, loadSuggestions } from "./actions";
-import { Bucket, PerDivision, PerYear } from "./types";
+import { createSlice } from '@reduxjs/toolkit';
+import { loadData, loadGrants, loadSuggestions } from './actions';
+import { Bucket, PerDivision, PerYear } from './types';
 
 type Grant = {
   abstract: string
@@ -71,7 +71,7 @@ const dataSlice = createSlice({
     }).addCase(loadGrants.rejected, (state, action) => {
       state.loadingGrants = false;
       state.noMoreGrants = true;
-    })
+    });
   }
 });
 

@@ -50,7 +50,7 @@ const desc = (a, b, orderBy) => {
     return 1;
   }
   return 0;
-}
+};
 
 const stableSort = (array, cmp) => {
   const stabilizedThis = array.map((el, index) => [el, index]);
@@ -60,11 +60,11 @@ const stableSort = (array, cmp) => {
     return a[1] - b[1];
   });
   return stabilizedThis.map(el => el[0]);
-}
+};
 
 const getSorting = (order, orderBy) => {
   return order === 'desc' ? (a, b) => desc(a, b, orderBy) : (a, b) => -desc(a, b, orderBy);
-}
+};
 
 const rows = [
   { id: 'title', numeric: false, disablePadding: true, label: 'Name' },
@@ -72,14 +72,16 @@ const rows = [
   { id: 'amount', numeric: false, disablePadding: true, label: 'Amount' },
 ];
 
-const EnhancedTableHead: React.FC<{
+type EnhancedTableHeadProps = {
   onSelectAllClick: CheckboxCallback,
   order: SortDirection,
   orderBy: string,
   numSelected: number,
   rowCount: number,
-  onRequestSort: Function,
-}> = (props) => {
+  onRequestSort: (string) => void,
+}
+
+const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
 
   const {
     onSelectAllClick,
@@ -90,8 +92,8 @@ const EnhancedTableHead: React.FC<{
     onRequestSort 
   } = props;
 
-  const handleSort = property => e => {
-    onRequestSort(e, property);
+  const handleSort = (property: string) => () => {
+    onRequestSort(property);
   };
 
   const allSelected = numSelected === rowCount;
@@ -130,21 +132,21 @@ const EnhancedTableHead: React.FC<{
       </TableRow>
     </TableHead>
   );
-}
+};
 
 const useToolbarStyles = makeStyles((theme: Theme) => ({
   root: {
     paddingRight: theme.spacing(1),
   },
   highlight: theme.palette.type === 'light'
-  ? {
-    color: theme.palette.secondary.main,
-    backgroundColor: lighten(theme.palette.secondary.light, 0.85),
-  }
-  : {
-    color: theme.palette.text.primary,
-    backgroundColor: theme.palette.secondary.dark,
-  },
+    ? {
+      color: theme.palette.secondary.main,
+      backgroundColor: lighten(theme.palette.secondary.light, 0.85),
+    }
+    : {
+      color: theme.palette.text.primary,
+      backgroundColor: theme.palette.secondary.dark,
+    },
   spacer: {
     flex: '1 1 100%',
   },
@@ -156,9 +158,11 @@ const useToolbarStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-const EnhancedTableToolbar: React.FC<{
+type EnhancedTableToolbarProps = {
   numSelected: number
-}> = (props) => {
+}
+
+const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
   const classes = useToolbarStyles();
   const { numSelected } = props;
 
@@ -208,7 +212,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 }));
 
 
-const EnhancedTable : React.FC<{}> = (props) => {
+const EnhancedTable = () => {
 
   const classes = useStyles();
   const dispatch = useAppDispatch();
@@ -223,7 +227,7 @@ const EnhancedTable : React.FC<{}> = (props) => {
   console.log(divisions);
   const selectedDivisions: number = Object.values(divisions).filter(d => d.selected).length;
 
-  function handleRequestSort(event, property) {
+  function handleRequestSort(property: string) {
     const isDesc = orderBy === property && order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
@@ -281,6 +285,6 @@ const EnhancedTable : React.FC<{}> = (props) => {
       </div>
     </Paper>
   );
-}
+};
 
 export default EnhancedTable;

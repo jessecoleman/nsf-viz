@@ -34,7 +34,6 @@
         "react-router": "^5.2.0",
         "react-router-dom": "^5.2.0",
         "react-scripts": "4.0.2",
-        "react-use-dimensions": "^1.2.1",
         "react-window": "^1.8.5",
         "react-window-infinite-loader": "^1.0.5",
         "recharts": "^1.8.5",
@@ -46,7 +45,8 @@
         "start": "react-scripts start",
         "build": "react-scripts build",
         "test": "react-scripts test",
-        "eject": "react-scripts eject"
+        "eject": "react-scripts eject",
+        "lint": "eslint . --ext .ts,.tsx"
     },
     "eslintConfig": {
         "extends": "react-app"
@@ -64,7 +64,12 @@
         ]
     },
     "devDependencies": {
+        "@types/react-window-infinite-loader": "^1.0.4",
         "@types/recharts": "^2.0.0",
+        "@typescript-eslint/eslint-plugin": "^4.29.0",
+        "@typescript-eslint/parser": "^4.29.0",
+        "eslint": "^7.32.0",
+        "eslint-plugin-react": "^7.24.0",
         "openapi-typescript-codegen": "^0.9.3"
     }
 }

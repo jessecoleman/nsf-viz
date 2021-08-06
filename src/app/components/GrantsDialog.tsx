@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, CSSProperties } from 'react';
+import { useDispatch } from 'react-redux';
 import { VariableSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
@@ -18,28 +18,24 @@ import {
 import { format, timeFormat, timeParse } from 'd3';
 
 import { loadGrants } from 'app/actions';
-import { 
-  GrantColumn, 
-  GridSize,
-  SortDirection,
-} from '../types';
+import { GridSize, SortDirection } from '../types';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getGrant, getGrants, isViewingAbstract, loadingGrants, noMoreGrants } from 'app/selectors';
 
 const useStyles = makeStyles((theme: Theme) => ({
-    root: {
-      padding: theme.spacing(2),
-      flexGrow: 1,
-    },
-    fab: {
-      marginRight: theme.spacing(1)
-      //position: 'fixed',
-      //bottom: theme.spacing(4),
-      //left: theme.spacing(4),
-    },
-    listItem: {
-      borderBottom: `1px solid ${theme.palette.grey[300]}`
-    },
+  root: {
+    padding: theme.spacing(2),
+    flexGrow: 1,
+  },
+  fab: {
+    marginRight: theme.spacing(1)
+    //position: 'fixed',
+    //bottom: theme.spacing(4),
+    //left: theme.spacing(4),
+  },
+  listItem: {
+    borderBottom: `1px solid ${theme.palette.grey[300]}`
+  },
 }));
 
 type Column = {
@@ -51,7 +47,7 @@ type Column = {
 
 const cols: Column[] = [
   { id: 'title', format: t => t, label: 'Grant Title', gridSize: 7 },
-  { id: 'date', format: d => timeFormat("%b %Y")(timeParse("%Y-%m-%d")(d)), label: 'Date', gridSize: 1 },
+  { id: 'date', format: d => timeFormat('%b %Y')(timeParse('%Y-%m-%d')(d)), label: 'Date', gridSize: 1 },
   { id: 'amount', format: format('$,'), label: 'Amount', gridSize: 1 },
   { id: 'division', format: d => d, label: 'Division', gridSize: 3 },
 ];
@@ -68,42 +64,41 @@ const GrantsTable: React.FC = () => {
   const noMore = useAppSelector(noMoreGrants);
   const viewingAbstract = useAppSelector(isViewingAbstract);
 
-  const handleLoadGrants = (idx) => {
-    dispatch(loadGrants({ idx }));
-  }
+  const handleLoadGrants = (startIndex: number, stopIndex: number) => (
+    // TODO why does this need to be returned?
+    dispatch(loadGrants({ idx: startIndex }))
+  );
 
   const count = noMore ? grants.length : grants.length + 1;
-  const loadMore = loading ? () => {} : handleLoadGrants;
+  const loadMore = loading ? () => null : handleLoadGrants;
   const isLoaded = (idx: number) => noMore || idx < grants.length;
 
-  const getRowSize = (idx: number) => {
-    if (idx === viewingAbstract) {
-      return 144
-    } else {
-      return 64
-    }
-  }
+  const getRowSize = (idx: number) => idx === viewingAbstract
+    ? 144
+    : 64;
 
-  let listRef;
+  let listRef: React.Ref<HTMLElement>;
 
-  const setViewing = idx => {
+  const setViewing = (idx: number) => {
     console.log(listRef);
-    dispatch({ type: 'SET_VIEWING', idx: idx });
-    (listRef as any).current?.resetAfterIndex(idx);
-  }
+    dispatch({ type: 'SET_VIEWING', idx });
+    (listRef as any).current?.resetAfterIndex(idx); // TODO
+  };
  
-  const RowRenderer: React.FC<{
-    index: number,
-    style: any, 
-  }> = (props) => {
+  type RowRendererProps = {
+    index: number
+    style: CSSProperties
+  }
+
+  const RowRenderer = (props: RowRendererProps) => {
   
     const { index, style } = props;
   
     const grant = useAppSelector(state => getGrant(state, index));
     const viewingAbstract = useAppSelector(isViewingAbstract);
 
-    if (!isLoaded(index)) { console.log('not loaded'); return <div>Loading...</div> }
-    if (!grant) return null;
+    if (!isLoaded(index)) return <div>Loading...</div>;
+    if (!grant) return <div>null</div>;
 
     return (
       <Grid 
@@ -115,8 +110,8 @@ const GrantsTable: React.FC = () => {
         style={style}
         onClick={() => setViewing(index)}
       >
-        {cols.map(({ gridSize, format, id }) => (
-          <Grid item xs={gridSize}>
+        {cols.map(({ gridSize, format, id }, idx: number) => (
+          <Grid item xs={gridSize} key={idx}>
             {format(grant[id])}
           </Grid>
         ))}
@@ -150,7 +145,7 @@ const GrantsTable: React.FC = () => {
       }}
     </InfiniteLoader>
   );
-}
+};
 
 const GrantsDialog: React.FC = () => {
   const classes = useStyles();
@@ -160,22 +155,21 @@ const GrantsDialog: React.FC = () => {
   const [ order, setOrder ] = useState<SortDirection>('desc');
   const [ orderBy, setOrderBy ] = useState<string>('date');
 
-  const handleRequestSort = property => event => {
+  const handleRequestSort = (property: string) => () => {
     const isDesc = orderBy === property && order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
     dispatch(loadGrants({ idx: 0, order, orderBy }));
-  }
-
+  };
 
   const handleOpen = () => {
     dispatch(loadGrants({ idx: 0, order, orderBy }));
     setOpen(true);
-  }
+  };
 
   const handleClose = () => {
     setOpen(false);
-  }
+  };
 
   return (
     <>
@@ -186,8 +180,8 @@ const GrantsDialog: React.FC = () => {
           className={classes.fab}
           onClick={handleOpen}
         >
-        GRANTS
-      </Button>
+          GRANTS
+        </Button>
       </Tooltip>
       <Dialog
         fullWidth={true}
@@ -219,6 +213,6 @@ const GrantsDialog: React.FC = () => {
       </Dialog>
     </>
   );
-}
+};
 
 export default GrantsDialog;
