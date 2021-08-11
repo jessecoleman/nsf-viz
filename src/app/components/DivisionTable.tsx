@@ -2,14 +2,12 @@ import React, {
   useState, 
   useEffect, 
 } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { Theme, makeStyles } from '@material-ui/core/styles';
 import { 
   Table,
   TableBody,
   TableCell,
   TableHead,
-  TablePagination,
   TableRow,
   TableSortLabel,
   Toolbar,
@@ -36,13 +34,12 @@ import {
   selectAllDivisions,
 } from '../filterReducer';
 import {
-  getTotal,
   getDivisions, 
 } from 'app/selectors';
 import{ loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 
-const desc = (a, b, orderBy) => {
+const desc = <T extends unknown>(a: T, b: T, orderBy: keyof T) => {
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -52,8 +49,8 @@ const desc = (a, b, orderBy) => {
   return 0;
 };
 
-const stableSort = (array, cmp) => {
-  const stabilizedThis = array.map((el, index) => [el, index]);
+const stableSort = <T extends unknown>(array: Array<T>, cmp) => {
+  const stabilizedThis = array.map((el, index): [T, number] => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
     if (order !== 0) return order;
@@ -62,8 +59,8 @@ const stableSort = (array, cmp) => {
   return stabilizedThis.map(el => el[0]);
 };
 
-const getSorting = (order, orderBy) => {
-  return order === 'desc' ? (a, b) => desc(a, b, orderBy) : (a, b) => -desc(a, b, orderBy);
+const getSorting = <T extends unknown>(order: SortDirection, orderBy: keyof T) => {
+  return order === 'desc' ? (a: T, b: T) => desc(a, b, orderBy) : (a: T, b: T) => -desc(a, b, orderBy);
 };
 
 const rows = [
@@ -223,9 +220,8 @@ const EnhancedTable = () => {
 
   const [ order, setOrder ] = useState<SortDirection>('desc');
   const [ orderBy, setOrderBy ] = useState<string>('doc_count');
-  const divisions = useSelector(getDivisions);
-  console.log(divisions);
-  const selectedDivisions: number = Object.values(divisions).filter(d => d.selected).length;
+  const divisions = useAppSelector(getDivisions);
+  const selectedDivisions = Object.values(divisions).filter(d => d.selected).length;
 
   function handleRequestSort(property: string) {
     const isDesc = orderBy === property && order === 'desc';
@@ -233,12 +229,8 @@ const EnhancedTable = () => {
     setOrderBy(property);
   }
 
-  const select = key => () => dispatch(selectDivision(key));
-  const selectAll = (selected) => dispatch(selectAllDivisions(selected));
-
-  const total = useAppSelector(getTotal);
-  //if (!total) return null;
-  //const divisions = total.divisions.buckets;
+  const select = (key: string) => () => dispatch(selectDivision(key));
+  const selectAll = (selected: boolean) => dispatch(selectAllDivisions(selected));
 
   return (
     <Paper className={classes.root}>
@@ -255,10 +247,10 @@ const EnhancedTable = () => {
           />
           <TableBody>
             {stableSort(Object.values(divisions), getSorting(order, orderBy))
-              .map((div: Division, idx: number) => (
+              .map((div: Division) => (
                 <TableRow
                   hover
-                  onClick={select(idx)}
+                  onClick={select(div.title)}
                   role='checkbox'
                   aria-checked={div.selected}
                   tabIndex={-1}

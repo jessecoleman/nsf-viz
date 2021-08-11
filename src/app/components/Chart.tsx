@@ -1,29 +1,24 @@
-import React from 'react';
 import * as d3 from 'd3';
-import { green, lightGreen, teal } from '@material-ui/core/colors';
+import { green } from '@material-ui/core/colors';
 
 import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { LineChart, Line } from 'recharts';
-import { scaleBand, scaleLinear, scaleOrdinal } from '@vx/scale';
-import { Bucket, Division, PerDivision, PerYear } from 'app/types';
-import { getPerDivision, getTotal } from 'app/selectors';
+import { getDivisions, getPerDivision } from 'app/selectors';
 import { useAppSelector } from 'app/store';
 
 type ChartProps = {
-  title: any,
+  title: string,
   percent: boolean,
   //value: string,
   amount: boolean,
   filtered: boolean,
-  hue: any,
-  divisions: Bucket[],
+  hue: Record<number | string, string>,
 }
 
 const Chart = (props: ChartProps) => {
 
   const perYear = useAppSelector(getPerDivision)?.years.buckets;
   const perDivision = useAppSelector(getPerDivision)?.years.buckets;
-  const total = useAppSelector(getTotal);
+  const divisions = useAppSelector(getDivisions);
   
   if (!(perYear && perDivision)) return null;
 
@@ -39,7 +34,6 @@ const Chart = (props: ChartProps) => {
     // pass
   };
 
-  const divisions = props.divisions.map(d => d.key);
   const data = perDivision.map((b, idx) => ({
     year: +b.key_as_string,
     v: idx,
@@ -49,14 +43,8 @@ const Chart = (props: ChartProps) => {
     }, {}),
   }));
 
-  const formatDate = date => d3.timeFormat('%Y%m%d')(d3.timeParse('%b %d')(date));
-
-  const margin = { top: 10, left: 10, bottom: 10, right: 10 };
-
-  const color = scaleOrdinal({
-    domain: divisions,
-    range: Object.values(green).slice(2, -3),
-  });
+  const color = d3.scaleOrdinal(Object.values(green).slice(2, -3))
+    .domain(divisions.map(d => d.title));
 
   return (
     <ResponsiveContainer width='100%' height='100%'>
@@ -71,13 +59,13 @@ const Chart = (props: ChartProps) => {
         />
         <YAxis />
         <Tooltip />
-        {divisions.map((d: string) => (
+        {divisions.filter(d => !props.filtered || d.selected).map(d => (
           <Bar
-            key={d}
-            dataKey={d}
+            key={d.title}
+            dataKey={d.title}
             stackId='a'
-            fill={color(d)}
-            name={d}
+            fill={color(d.title)}
+            name={d.title}
           />
         ))}
       </BarChart>

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { loadDivisions, loadGrants } from './actions';
+import { loadData, loadDivisions, loadGrants } from './actions';
 import { Division } from './types';
 
 type Field = 'title' | 'abstract';
@@ -58,13 +58,11 @@ const filterSlice = createSlice({
     //   };
     },
     selectDivision: (state, action) => {
-      console.log(action.payload);
-      // TODO key as array or object
-      const div = state.divisions[action.payload]; 
+      const div = state.divisions.find(o => action.payload === o.title)!; 
       div.selected = !div.selected;
     },
     selectAllDivisions: (state, action) => {
-      state.divisions.forEach(d => { d.selected = true; });
+      state.divisions.forEach(d => { d.selected = action.payload; });
     },
   },
   extraReducers: builder => {
@@ -76,6 +74,12 @@ const filterSlice = createSlice({
         count: '',
         amount: '',
       }));
+    }).addCase(loadData.fulfilled, (state, action) => {
+      action.payload.sumTotal.divisions.buckets.forEach(d => {
+        const div = state.divisions.find(o => d.key === o.title)!;
+        div.amount = d.grant_amounts_total.value;
+        div.count = d.doc_count;
+      });
     }).addCase(loadGrants.fulfilled, (state, action) => {
       // pass
     }).addCase(loadGrants.rejected, (state, action) => {

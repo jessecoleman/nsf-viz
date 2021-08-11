@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import * as d3 from 'd3';
 
-import { green, lightGreen, teal } from '@material-ui/core/colors';
-import { Box, makeStyles } from '@material-ui/core';
+import { green, teal } from '@material-ui/core/colors';
+import { Box } from '@material-ui/core';
 
 import { loadData } from 'app/actions';
 import Chart from 'app/components/Chart';
@@ -114,22 +114,17 @@ const Charts = (props: ChartProps) => {
     dispatch(loadData());
   }, [dispatch]);
 
-  const total = useAppSelector(getTotal);
-
   //{cells.map((c, i) => (
   const c = cells[0];
   return (
     <Box width='100%' height='100%'>
-      {total &&
-        <Chart
-          title={c.getTitle(props.percent)}
-          percent={props.percent}
-          amount={c.amount}
-          filtered={c.filtered}
-          hue={c.amount ? green : teal}
-          divisions={total.divisions.buckets}
-        />
-      }
+      <Chart
+        title={c.getTitle(props.percent)}
+        percent={props.percent}
+        amount={c.amount}
+        filtered={c.filtered}
+        hue={c.amount ? green : teal}
+      />
     </Box>
   );
 };

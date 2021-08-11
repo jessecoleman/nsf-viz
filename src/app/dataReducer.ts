@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { loadData, loadGrants, loadSuggestions } from './actions';
-import { Bucket, PerDivision, PerYear } from './types';
+import { PerDivision, PerYear } from './types';
 
 type Grant = {
   abstract: string
@@ -9,13 +9,9 @@ type Grant = {
 type GrantState = {
   perYear?: PerYear,
   perDivision?: PerDivision,
+  sumTotal?: PerYear,
   grants: Grant[],
   suggestions: string[],
-  sumTotal?: {
-    divisions: {
-      buckets: Bucket[],
-    }
-  },
   noMoreGrants: boolean,
   viewingAbstract: number,
   loadingData: boolean,
@@ -27,9 +23,9 @@ type GrantState = {
 const initialState: GrantState = {
   perYear: undefined,
   perDivision: undefined,
+  sumTotal: undefined,
   grants: [],
   suggestions: [],
-  sumTotal: undefined,
   noMoreGrants: false,
   viewingAbstract: 10,
   loadingData: false,
@@ -52,7 +48,7 @@ const dataSlice = createSlice({
   }, 
   extraReducers: builder => {
     builder.addCase(loadSuggestions.fulfilled, (state, action) => {
-      state.suggestions =action.payload.suggestions;
+      state.suggestions = action.payload.suggestions;
     }).addCase(loadData.pending, (state, action) => {
       state.loadingData = true; 
     }).addCase(loadData.fulfilled, (state, action) => {
