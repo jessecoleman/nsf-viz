@@ -40,14 +40,14 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 type Column = {
   id: 'title' | 'date' | 'amount' | 'division',
-  format: (s: string) => string,
+  format: (s: any) => string,
   label: string,
   gridSize: GridSize,
 }
 
 const cols: Column[] = [
   { id: 'title', format: t => t, label: 'Grant Title', gridSize: 7 },
-  { id: 'date', format: d => timeFormat('%b %Y')(timeParse('%Y-%m-%d')(d)), label: 'Date', gridSize: 1 },
+  { id: 'date', format: d => timeFormat('%b %Y')(timeParse('%Y-%m-%d')(d)!), label: 'Date', gridSize: 1 },
   { id: 'amount', format: format('$,'), label: 'Amount', gridSize: 1 },
   { id: 'division', format: d => d, label: 'Division', gridSize: 3 },
 ];

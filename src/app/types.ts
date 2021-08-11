@@ -12,7 +12,7 @@ export type Key = {
 }
 
 export type PerYear = {
-  years: {
+  divisions: {
     buckets: Key[]
   }
 }
