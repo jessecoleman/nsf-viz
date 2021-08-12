@@ -289,4 +289,4 @@ if __name__ == '__main__':
     import uvicorn
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
-    uvicorn.run(app, host='localhost', port=8888, log_level='info')
+    uvicorn.run(app, host='localhost', port=8000, log_level='info')

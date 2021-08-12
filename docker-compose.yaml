@@ -1,0 +1,33 @@
+version: '3'
+services:
+    backend:
+        build: ./backend
+        volumes:
+            - ./backend:/usr/local/src/app/backend
+        environment:
+            # This ensures that errors are printed as they occur, which
+            # makes debugging easier.
+            - PYTHONUNBUFFERED=1
+            - LOG_LEVEL=DEBUG
+        # command: ["main:app", "--host", "0.0.0.0", "--reload"]
+        ports:
+            - 8000:8000
+    ui:
+        build: ./ui
+        # We can't mount the entire UI directory, since JavaScript dependencies
+        # (`node_modules`) live at that location.
+        volumes:
+            - .ui/src:/usr/local/src/app/ui/src
+            - .ui/public:/usr/local/src/app/ui/public
+            - .ui/package.json:/usr/local/src/ui/app/package.json
+            - .ui/tsconfig.json:/usr/local/src/ui/app/tsconfig.json
+            - .ui/yarn.lock:/usr/local/src/ui/app/yarn.lock
+        ports:
+            - 3000:3000
+    proxy:
+        build: ./proxy
+        ports:
+            - 8080:80
+        depends_on:
+            - ui
+            - backend

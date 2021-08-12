@@ -1,0 +1,9 @@
+# Python cache files
+**.pyc
+**/__pycache__
+.dockerignore
+
+venv
+
+# Docker artifacts
+Dockerfile
