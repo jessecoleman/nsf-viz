@@ -11,7 +11,7 @@ services:
             - LOG_LEVEL=DEBUG
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
         ports:
-            - 8000:8000
+            - 8888:8888
     ui:
         build: ./ui
         # We can't mount the entire UI directory, since JavaScript dependencies
@@ -24,10 +24,10 @@ services:
             - .ui/yarn.lock:/usr/local/src/ui/app/yarn.lock
         ports:
             - 3000:3000
-    proxy:
-        build: ./proxy
-        ports:
-            - 8080:80
-        depends_on:
-            - ui
-            - backend
+    # proxy:
+    #     build: ./proxy
+    #     ports:
+    #         - 8080:80
+    #     depends_on:
+    #         - ui
+    #         - backend

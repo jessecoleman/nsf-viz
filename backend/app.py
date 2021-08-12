@@ -287,6 +287,12 @@ app.mount('/data', app)
 
 if __name__ == '__main__':
     import uvicorn
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default='localhost')
+    parser.add_argument("-p", "--port", type=int, default=8888)
+    parser.add_argument("--log-level", default='info')
+    args = parser.parse_args()
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
-    uvicorn.run(app, host='localhost', port=8000, log_level='info')
+    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
