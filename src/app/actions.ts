@@ -16,7 +16,6 @@ export const loadData = createAsyncThunk(
       divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
     });
     return {
-      type: 'LOADED_DATA',
       perYear: data.per_year.aggregations,
       perDivision: data.per_division.aggregations,
       sumTotal: data.sum_total.aggregations,
@@ -64,7 +63,15 @@ export const loadDivisions = createAsyncThunk(
   async () => await Service.loadDivisions()
 );
 
-export const loadSuggestions = createAsyncThunk(
-  'loadSuggestions',
+export const loadTypeahead = createAsyncThunk(
+  'loadTypeahead',
   async (prefix: string) => await Service.loadTypeahead(prefix)
+);
+
+export const loadRelated = createAsyncThunk(
+  'loadRelated',
+  async (_, thunkAPI) => {
+    const { filter } = thunkAPI.getState() as { filter: FilterState };
+    return await Service.loadRelated(filter.terms);
+  }
 );

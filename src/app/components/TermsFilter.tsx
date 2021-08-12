@@ -1,9 +1,7 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, ChangeEvent } from 'react';
 
 import { Theme, makeStyles } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles/colorManipulator';
-import { DebounceInput } from 'react-debounce-input';
 
 import {
   List,
@@ -13,6 +11,8 @@ import {
   Paper,
   Collapse,
   ClickAwayListener,
+  Divider,
+  ListSubheader,
 } from '@material-ui/core';
 
 import ChipInput from 'material-ui-chip-input';
@@ -22,13 +22,13 @@ import {
 } from '@material-ui/icons';
 
 import {
-  loadSuggestions,
   loadData,
+  loadRelated,
+  loadTypeahead,
 } from 'app/actions';
-import { useAppSelector } from 'app/store';
-import { getSuggestions, getTerms } from 'app/selectors';
+import { useAppDispatch, useAppSelector } from 'app/store';
+import { getRelated, getTerms, getTypeahead } from 'app/selectors';
 import { addChips, deleteChip } from 'app/filterReducer';
-import { useParams } from 'react-router';
 
 const useStyles = makeStyles((theme: Theme) => ({
   title: {
@@ -81,8 +81,11 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   dropdown: {
     position: 'absolute',
+    right: 0,
     marginTop: theme.spacing(.5),
-    width: '100%',
+    width: '25em',
+    maxHeight: 'calc(100vh - 64px)',
+    overflowY: 'auto',
     zIndex: 3,
   },
   listIcon: {
@@ -90,37 +93,53 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
+type TermsListProps = {
+  header: string
+  filter: string[]
+  terms: string[]
+  onAddChip: (term: string) => () => void
+}
 
+const TermsList = (props: TermsListProps) => (
+  <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
+    {props.terms.filter(t => props.filter.indexOf(t) === -1).map((t, i) => (
+      <ListItem key={i} dense button onClick={props.onAddChip(t)}>
+        <ListItemText>{t}</ListItemText>
+        <ListItemIcon><AddCircle /></ListItemIcon>
+      </ListItem>
+    ))}
+  </List>
+);
 
 const TermsFilter = () => {
 
-  const query = useParams();
-  console.log(query);
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const classes = useStyles();
   const terms = useAppSelector(getTerms);
-  const suggestions = useAppSelector(getSuggestions);
+  const typeahead = useAppSelector(getTypeahead);
+  const related = useAppSelector(getRelated);
   const [ focused, setFocused ] = useState(false);
 
-  const handleFocus = focused => () => {
+  const handleFocus = (focused: boolean) => () => {
     setFocused(focused);
   };
 
   const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
-    e.persist();
     if (e.target.value.length) {
-      dispatch(loadSuggestions(e.target.value));
+      dispatch(loadTypeahead(e.target.value));
     }
   };
 
-  const handleAddChip = (chips: string) => {
+  const handleAddChip = (chips: string) => () => {
     dispatch(addChips(chips.split(',')));
     dispatch(loadData());
+    dispatch(loadRelated());
   };
 
   const handleDeleteChip = (chip: string, idx: number) => {
     dispatch(deleteChip({ chip, idx }));
     dispatch(loadData());
+    dispatch(loadRelated());
   };
 
   return (
@@ -144,15 +163,22 @@ const TermsFilter = () => {
           newChipKeyCodes={[13, 188]}
         />
         <Collapse in={focused}>
-          {suggestions &&
+          {(related.length + typeahead.length) > 0 &&
             <Paper className={classes.dropdown}>
               <List>
-                {suggestions.map((t, i) => (
-                  <ListItem key={i} dense button onClick={() => handleAddChip(t)}>
-                    <ListItemText>{t}</ListItemText>
-                    <ListItemIcon className={classes.listIcon}><AddCircle /></ListItemIcon>
-                  </ListItem>
-                ))}
+                <TermsList
+                  header='autocomplete'
+                  filter={terms}
+                  terms={typeahead}
+                  onAddChip={handleAddChip}
+                />
+                <Divider />
+                <TermsList
+                  header='related terms'
+                  filter={terms}
+                  terms={related}
+                  onAddChip={handleAddChip}
+                />
               </List>
             </Paper>
           }
