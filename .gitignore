@@ -24,3 +24,5 @@ yarn-error.log*
 
 # TODO consider excluding this
 # src/api
+
+elasticsearch_data/*

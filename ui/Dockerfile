@@ -5,7 +5,7 @@
 FROM node:10.15.2
 
 # Setup a spot for our code
-WORKDIR /usr/local/src/app
+WORKDIR /usr/local/src/app/ui
 
 # Install dependencies
 COPY package.json yarn.lock ./
