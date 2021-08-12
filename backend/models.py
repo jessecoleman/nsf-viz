@@ -42,3 +42,8 @@ class GrantsRequest(BaseModel):
     class Config:
         pass
         # use_enum_values = True
+        
+
+class Term(BaseModel):
+    term: str
+    count: int

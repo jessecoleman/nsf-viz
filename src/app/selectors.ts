@@ -25,4 +25,6 @@ export const getGrant = createSelector(
 
 export const getTerms = (state: RootState) => state.filter.terms;
 
-export const getSuggestions = (state: RootState) => state.data.suggestions;
+export const getTypeahead = (state: RootState) => state.data.typeahead;
+
+export const getRelated = (state: RootState) => state.data.related;

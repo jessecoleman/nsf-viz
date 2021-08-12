@@ -2,14 +2,12 @@ import React from 'react';
 import { 
   AppBar,
   Toolbar,
-  IconButton,
   Typography,
-  InputBase,
+  Box,
 } from '@material-ui/core';
 
 import { alpha } from '@material-ui/core/styles/colorManipulator';
 import { Theme, makeStyles } from '@material-ui/core/styles';
-import MenuIcon from '@material-ui/icons/Menu';
 
 import TermsFilter from 'app/components/TermsFilter';
 
@@ -73,29 +71,20 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-const SearchAppBar: React.FC<{
-//path: string,
-}> = (props) => {
+const SearchAppBar = () => {
 
   const classes = useStyles();
   return (
     <div className={classes.root}>
       <AppBar position="static">
         <Toolbar>
-          { 
-          //<IconButton
-          //edge="start"
-          //className={classes.menuButton}
-          //color="inherit"
-          //aria-label="Open drawer"
-          //>
-          //<MenuIcon />
-          //</IconButton>
-          }
-          <img className={classes.logo} src={nsf} alt='national science foundation logo' />
-          <Typography className={classes.title} variant="h6" noWrap>
-            Grant Explorer
-          </Typography>
+          <Box minWidth='15em' display='flex' flexDirection='row'>
+            <img className={classes.logo} src={nsf} alt='national science foundation logo' />
+            <Typography className={classes.title} variant="h6" noWrap>
+              Grant Explorer
+            </Typography>
+          </Box>
+          <Box flexGrow={1} />
           <TermsFilter />
         </Toolbar>
       </AppBar>

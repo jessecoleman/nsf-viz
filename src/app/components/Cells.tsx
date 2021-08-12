@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import * as d3 from 'd3';
 
 import { green, teal } from '@material-ui/core/colors';
@@ -6,8 +6,7 @@ import { Box } from '@material-ui/core';
 
 import { loadData } from 'app/actions';
 import Chart from 'app/components/Chart';
-import { getPerDivision, getTotal } from 'app/selectors';
-import { useAppDispatch, useAppSelector } from 'app/store';
+import { useAppDispatch } from 'app/store';
 
 const cells = [
   {
@@ -114,7 +113,6 @@ const Charts = (props: ChartProps) => {
     dispatch(loadData());
   }, [dispatch]);
 
-  //{cells.map((c, i) => (
   const c = cells[0];
   return (
     <Box width='100%' height='100%'>

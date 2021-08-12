@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { loadData, loadGrants, loadSuggestions } from './actions';
+import { loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
 import { PerDivision, PerYear } from './types';
 
 type Grant = {
@@ -11,7 +11,8 @@ type GrantState = {
   perDivision?: PerDivision,
   sumTotal?: PerYear,
   grants: Grant[],
-  suggestions: string[],
+  typeahead: string[],
+  related: string[],
   noMoreGrants: boolean,
   viewingAbstract: number,
   loadingData: boolean,
@@ -25,7 +26,8 @@ const initialState: GrantState = {
   perDivision: undefined,
   sumTotal: undefined,
   grants: [],
-  suggestions: [],
+  typeahead: [],
+  related: [],
   noMoreGrants: false,
   viewingAbstract: 10,
   loadingData: false,
@@ -46,29 +48,37 @@ const dataSlice = createSlice({
       state.viewingAbstract = action.payload.idx;
     },
   }, 
-  extraReducers: builder => {
-    builder.addCase(loadSuggestions.fulfilled, (state, action) => {
-      state.suggestions = action.payload.suggestions;
-    }).addCase(loadData.pending, (state, action) => {
+  extraReducers: builder => builder
+    .addCase(loadTypeahead.fulfilled, (state, action) => {
+      state.typeahead = action.payload;
+    })
+    .addCase(loadRelated.fulfilled, (state, action) => {
+      state.related = action.payload;
+    })
+    .addCase(loadData.pending, (state) => {
       state.loadingData = true; 
-    }).addCase(loadData.fulfilled, (state, action) => {
+    })
+    .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
       state.perYear = action.payload.perYear;
       state.perDivision = action.payload.perDivision;
       state.sumTotal = action.payload.sumTotal;
-    }).addCase(loadData.rejected, (state, action) => {
+    })
+    .addCase(loadData.rejected, (state, action) => {
       state.loadingData = false;
-    }).addCase(loadGrants.pending, (state, action) => {
+    })
+    .addCase(loadGrants.pending, (state) => {
       state.loadingGrants = true;
-    }).addCase(loadGrants.fulfilled, (state, action) => {
+    })
+    .addCase(loadGrants.fulfilled, (state, action) => {
       state.loadingGrants = false;
       console.log(action);
       state.grants = state.grants.concat(action.payload);
-    }).addCase(loadGrants.rejected, (state, action) => {
+    })
+    .addCase(loadGrants.rejected, (state, action) => {
       state.loadingGrants = false;
       state.noMoreGrants = true;
-    });
-  }
+    })
 });
 
 export const {

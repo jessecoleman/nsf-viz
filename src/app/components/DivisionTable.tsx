@@ -25,7 +25,6 @@ import GrantsDialog from 'app/components/GrantsDialog';
 import { format } from 'd3';
 
 import { 
-  Division,
   SortDirection,
   CheckboxCallback,
 } from '../types';
@@ -247,7 +246,7 @@ const EnhancedTable = () => {
           />
           <TableBody>
             {stableSort(Object.values(divisions), getSorting(order, orderBy))
-              .map((div: Division) => (
+              .map(div => (
                 <TableRow
                   hover
                   onClick={select(div.title)}
