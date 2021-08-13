@@ -10,7 +10,7 @@ from collections import defaultdict
 from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
 
-from models import GrantsRequest, SearchRequest
+from models import GrantsRequest, SearchRequest, Term
 from queries import search_elastic
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -190,16 +190,15 @@ async def typeahead(prefix: str):
 
 
 @app.get('/keywords/related/{keywords}', operation_id='loadRelated')
-def related(keywords):
+def related(keywords: str):
     terms = []
-    for t in keywords.split(','):
-        for t1 in t.split():
-            if t1 in word_vecs.vocab:
-                terms.append(t1)
+    for term in keywords.split(','):
+        for word in term.split():
+            if word_vecs.key_to_index.get(word, False):
+                terms.append(word)
 
     if len(terms) > 0:
-        related = word_vecs.most_similar(terms, [])
-        return [r[0] for r in related]
+        return [w[0] for w in word_vecs.most_similar(terms, [], topn=15)]
     else:
         return []
 
