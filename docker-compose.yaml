@@ -13,16 +13,16 @@ services:
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
         ports:
             - 8888:8888
-    ui:
-        build: ./ui
+    frontend:
+        build: ./frontend
         # We can't mount the entire UI directory, since JavaScript dependencies
         # (`node_modules`) live at that location.
         volumes:
-            - ./ui/src:/usr/local/src/app/ui/src
-            - ./ui/public:/usr/local/src/app/ui/public
-            - ./ui/package.json:/usr/local/src/app/ui/package.json
-            - ./ui/tsconfig.json:/usr/local/src/app/ui/tsconfig.json
-            - ./ui/yarn.lock:/usr/local/src/app/ui/yarn.lock
+            - ./frontend/src:/usr/local/src/app/frontend/src
+            - ./frontend/public:/usr/local/src/app/frontend/public
+            - ./frontend/package.json:/usr/local/src/app/frontend/package.json
+            - ./frontend/tsconfig.json:/usr/local/src/app/frontend/tsconfig.json
+            - ./frontend/yarn.lock:/usr/local/src/app/frontend/yarn.lock
         environment: 
             - ELASTICSEARCH_HOST=elasticsearch
         ports:
@@ -32,7 +32,7 @@ services:
     #     ports:
     #         - 8080:80
     #     depends_on:
-    #         - ui
+    #         - frontend
     #         - backend
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2

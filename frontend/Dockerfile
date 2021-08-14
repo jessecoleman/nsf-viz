@@ -5,11 +5,12 @@
 FROM node:10.15.2
 
 # Setup a spot for our code
-WORKDIR /usr/local/src/app/ui
+WORKDIR /usr/local/src/app/frontend
 
 # Install dependencies
-COPY package.json yarn.lock ./
-RUN yarn install
+# COPY package.json yarn.lock ./
+COPY package.json ./
+RUN yarn install --network-timeout 100000
 
 # Copy in the source code
 COPY . .
