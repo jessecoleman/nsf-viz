@@ -1,10 +1,7 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
-import { PerDivision, PerYear } from './types';
-
-type Grant = {
-  abstract: string
-}
+import { createSlice, isAnyOf } from '@reduxjs/toolkit';
+import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
+import { selectAllDivisions, selectDivision, setGrantOrder } from './filterReducer';
+import { Grant, PerDivision, PerYear } from './types';
 
 type GrantState = {
   perYear?: PerYear,
@@ -14,9 +11,10 @@ type GrantState = {
   typeahead: string[],
   related: string[],
   noMoreGrants: boolean,
-  viewingAbstract: number,
+  selectedGrantId?: string,
   loadingData: boolean,
   loadingGrants: boolean,
+  selectedAbstract?: string,
   sort: boolean,
   sortBy: 'title' | 'abstract',
 }
@@ -29,7 +27,6 @@ const initialState: GrantState = {
   typeahead: [],
   related: [],
   noMoreGrants: false,
-  viewingAbstract: 10,
   loadingData: false,
   loadingGrants: false,
   sort: false,
@@ -44,9 +41,10 @@ const dataSlice = createSlice({
       state.sortBy = action.payload.sortBy;
       state.sort = action.payload.sort;
     },
-    setViewing: (state, action) => {
-      state.viewingAbstract = action.payload.idx;
-    },
+    dismissAbstractDialog: (state) => {
+      state.selectedGrantId = undefined;
+      state.selectedAbstract = undefined;
+    }
   }, 
   extraReducers: builder => builder
     .addCase(loadTypeahead.fulfilled, (state, action) => {
@@ -64,26 +62,35 @@ const dataSlice = createSlice({
       state.perDivision = action.payload.perDivision;
       state.sumTotal = action.payload.sumTotal;
     })
-    .addCase(loadData.rejected, (state, action) => {
+    .addCase(loadData.rejected, (state) => {
       state.loadingData = false;
     })
     .addCase(loadGrants.pending, (state) => {
       state.loadingGrants = true;
+      state.noMoreGrants = false;
     })
     .addCase(loadGrants.fulfilled, (state, action) => {
       state.loadingGrants = false;
-      console.log(action);
       state.grants = state.grants.concat(action.payload);
     })
-    .addCase(loadGrants.rejected, (state, action) => {
+    .addCase(loadGrants.rejected, (state) => {
       state.loadingGrants = false;
       state.noMoreGrants = true;
+    })
+    .addCase(loadAbstract.pending, (state, action) => {
+      state.selectedGrantId = action.meta.arg;
+    })
+    .addCase(loadAbstract.fulfilled, (state, action) => {
+      state.selectedAbstract = action.payload;
+    })
+    .addMatcher(isAnyOf(setGrantOrder, selectDivision, selectAllDivisions), (state) => {
+      state.grants = [];
     })
 });
 
 export const {
   sortedGrants,
-  setViewing, 
+  dismissAbstractDialog,
 } = dataSlice.actions;
 
 export default dataSlice.reducer;

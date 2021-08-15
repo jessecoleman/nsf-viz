@@ -1,9 +1,7 @@
 import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { SortDirection } from '@material-ui/core';
 import { Service } from 'api';
 import { FilterState } from './filterReducer';
-import { Division } from './types';
 
 export const loadData = createAsyncThunk(
   'loadData',
@@ -22,39 +20,29 @@ export const loadData = createAsyncThunk(
     };
   });
 
-type GrantParams = {
-  idx: number
-  order?: SortDirection
-  orderBy?: string
-}
-
 export const loadGrants = createAsyncThunk(
   'loadGrants',
-  async (payload: GrantParams, thunkAPI) => {
-    const { idx, order, orderBy } = payload;
+  async (payload: number, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
+    const { grantOrder, ...rest } = filter;
+    const [ order_by, order ] = grantOrder;
 
     return await Service.loadGrants({
-      idx,
-      order: order as string,
-      order_by: orderBy!,
+      idx: payload,
+      order,
+      order_by,
       toggle: false,
-      ...filter,
+      ...rest,
       divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
     });
   });
   
-
-type SortGrantsPayload = {
-  sort: SortDirection
-  sortBy: keyof Division
-}
-
-export const sortGrants = createAsyncThunk(
-  'sortGrants',
-  async (payload: SortGrantsPayload) => {
-    // pass
+export const loadAbstract = createAsyncThunk(
+  'loadAbstract',
+  async (payload: string, thunkAPI) => {
+    const { filter } = thunkAPI.getState() as { filter: FilterState };
+    return await Service.loadAbstract(payload, filter.terms);
   }
 );
 

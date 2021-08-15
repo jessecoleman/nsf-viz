@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
   },
   search: {
+    minWidth: '25em',
     position: 'relative',
     borderRadius: theme.shape.borderRadius,
     backgroundColor: alpha(theme.palette.common.white, 0.15),
@@ -97,13 +98,13 @@ type TermsListProps = {
   header: string
   filter: string[]
   terms: string[]
-  onAddChip: (term: string) => () => void
+  onAddChip: (term: string) => void
 }
 
 const TermsList = (props: TermsListProps) => (
   <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
     {props.terms.filter(t => props.filter.indexOf(t) === -1).map((t, i) => (
-      <ListItem key={i} dense button onClick={props.onAddChip(t)}>
+      <ListItem key={i} dense button onClick={() => props.onAddChip(t)}>
         <ListItemText>{t}</ListItemText>
         <ListItemIcon><AddCircle /></ListItemIcon>
       </ListItem>
@@ -126,11 +127,13 @@ const TermsFilter = () => {
 
   const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.value.length) {
+      console.log(e.target);
       dispatch(loadTypeahead(e.target.value));
     }
   };
 
-  const handleAddChip = (chips: string) => () => {
+  const handleAddChip = (chips: string) => {
+    console.log(chips);
     dispatch(addChips(chips.split(',')));
     dispatch(loadData());
     dispatch(loadRelated());

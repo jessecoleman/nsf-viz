@@ -1,15 +1,17 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { loadData, loadDivisions, loadGrants } from './actions';
-import { Division } from './types';
+import { loadData, loadDivisions } from './actions';
+import { Division, GrantOrder } from './types';
 
 type Field = 'title' | 'abstract';
+
 
 export type FilterState = {
   dependant: string,
   boolQuery: 'any' | 'all',
   terms: string[],
   divisions: Division[],
-  fields: Field[]
+  fields: Field[],
+  grantOrder: GrantOrder,
 }
 
 const initialState: FilterState = {
@@ -17,7 +19,8 @@ const initialState: FilterState = {
   boolQuery: 'any',
   terms: ['data science', 'machine learning'],
   divisions: [],
-  fields: ['title'] //, 'abstract'],
+  fields: ['title'], //, 'abstract'],
+  grantOrder: [ 'date', 'desc' ],
 };
 
 const filterSlice = createSlice({
@@ -39,6 +42,9 @@ const filterSlice = createSlice({
     setBoolQuery: (state, action) => {
       state.boolQuery = action.payload.boolQuery;
     },
+    setGrantOrder: (state, action) => {
+      state.grantOrder = action.payload;
+    },
     loadedData: (state, action) => {
     //   const divisions = action.payload.sumTotal.divisions.buckets.reduce((obj, div) => {
     //     obj[div.key] = div;
@@ -58,15 +64,15 @@ const filterSlice = createSlice({
     //   };
     },
     selectDivision: (state, action) => {
-      const div = state.divisions.find(o => action.payload === o.title)!; 
-      div.selected = !div.selected;
+      const div = state.divisions.find(o => action.payload === o.title); 
+      if (div) div.selected = !div.selected;
     },
     selectAllDivisions: (state, action) => {
       state.divisions.forEach(d => { d.selected = action.payload; });
     },
   },
-  extraReducers: builder => {
-    builder.addCase(loadDivisions.fulfilled, (state, action) => {
+  extraReducers: builder => builder
+    .addCase(loadDivisions.fulfilled, (state, action) => {
       console.log(action.payload);
       state.divisions = action.payload.map((div: Division) => ({
         title: div.title,
@@ -74,18 +80,17 @@ const filterSlice = createSlice({
         count: '',
         amount: '',
       }));
-    }).addCase(loadData.fulfilled, (state, action) => {
+    })
+    .addCase(loadData.fulfilled, (state, action) => {
+      // TODO at return type to OpenAPI spec
       action.payload.sumTotal.divisions.buckets.forEach(d => {
-        const div = state.divisions.find(o => d.key === o.title)!;
-        div.amount = d.grant_amounts_total.value;
-        div.count = d.doc_count;
+        const div = state.divisions.find(o => d.key === o.title);
+        if (div) {
+          div.amount = d.grant_amounts_total.value;
+          div.count = d.doc_count;
+        }
       });
-    }).addCase(loadGrants.fulfilled, (state, action) => {
-      // pass
-    }).addCase(loadGrants.rejected, (state, action) => {
-      // state.noM
-    });
-  }
+    })
 });
 
 export const {
@@ -93,6 +98,7 @@ export const {
   addChips,
   deleteChip,
   setBoolQuery,
+  setGrantOrder,
   loadedData,
   selectDivision,
   selectAllDivisions,

@@ -2,17 +2,12 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { logger } from 'redux-logger';
 
-// import { createReduxHistoryContext, reachify } from 'redux-first-history';
 import { createBrowserHistory } from 'history';
 import queryString from 'query-string';
 
 import filter from 'app/filterReducer';
 import data from 'app/dataReducer';
 
-
-// const { createReduxHistory, routerMiddleware, routerReducer } = createReduxHistoryContext({
-//   history: createBrowserHistory(),
-// });
 
 const store = configureStore({
   reducer: {

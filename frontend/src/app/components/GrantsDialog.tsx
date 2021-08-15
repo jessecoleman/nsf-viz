@@ -1,6 +1,6 @@
-import React, { useState, CSSProperties } from 'react';
+import React, { useState, CSSProperties, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { VariableSizeList } from 'react-window';
+import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
 import { Theme, makeStyles } from '@material-ui/core/styles';
@@ -13,19 +13,35 @@ import {
   Button,
   Tooltip,
   TableSortLabel,
+  DialogActions,
+  Collapse,
+  LinearProgress,
+  GridSize,
 } from '@material-ui/core';
 
 import { format, timeFormat, timeParse } from 'd3';
 
-import { loadGrants } from 'app/actions';
-import { GridSize, SortDirection } from '../types';
+import { loadAbstract, loadGrants } from 'app/actions';
+import { Grant } from '../types';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrant, getGrants, isViewingAbstract, loadingGrants, noMoreGrants } from 'app/selectors';
+import { getGrant, getGrantOrder, getNumGrants, getSelectedAbstract, getSelectedGrant, loadingGrants, noMoreGrants } from 'app/selectors';
+import { dismissAbstractDialog } from 'app/dataReducer';
+import { setGrantOrder } from 'app/filterReducer';
+import { useEffect } from 'react';
+import useWindowDimensions from 'app/hooks';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
     padding: theme.spacing(2),
     flexGrow: 1,
+  },
+  grantsTable: {
+    paddingLeft: 0,
+    paddingRight: 0,
+    overflowY: 'hidden'
+  },
+  grantCell: {
+    paddingLeft: '24px',
   },
   fab: {
     marginRight: theme.spacing(1)
@@ -34,16 +50,11 @@ const useStyles = makeStyles((theme: Theme) => ({
     //left: theme.spacing(4),
   },
   listItem: {
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(1),
     borderBottom: `1px solid ${theme.palette.grey[300]}`
   },
 }));
-
-type Column = {
-  id: 'title' | 'date' | 'amount' | 'division',
-  format: (s: any) => string,
-  label: string,
-  gridSize: GridSize,
-}
 
 const cols: Column[] = [
   { id: 'title', format: t => t, label: 'Grant Title', gridSize: 7 },
@@ -52,118 +63,164 @@ const cols: Column[] = [
   { id: 'division', format: d => d, label: 'Division', gridSize: 3 },
 ];
 
+type GrantRowProps = {
+  index: number
+  style: CSSProperties
+}
 
-const GrantsTable: React.FC = () => {
+const GrantRow = (props: GrantRowProps) => {
+
+  const { index, style } = props;
 
   const classes = useStyles();
+  const dispatch = useDispatch();
+  const grant = useAppSelector(state => getGrant(state, index));
 
-  const dispatch = useAppDispatch();
-  const grants = useAppSelector(getGrants);
-  console.log(grants);
-  const loading = useAppSelector(loadingGrants);
-  const noMore = useAppSelector(noMoreGrants);
-  const viewingAbstract = useAppSelector(isViewingAbstract);
+  if (!grant) return <div>Loading...</div>;
 
-  const handleLoadGrants = (startIndex: number, stopIndex: number) => (
-    // TODO why does this need to be returned?
-    dispatch(loadGrants({ idx: startIndex }))
-  );
-
-  const count = noMore ? grants.length : grants.length + 1;
-  const loadMore = loading ? () => null : handleLoadGrants;
-  const isLoaded = (idx: number) => noMore || idx < grants.length;
-
-  const getRowSize = (idx: number) => idx === viewingAbstract
-    ? 144
-    : 64;
-
-  let listRef: React.Ref<HTMLElement>;
-
-  const setViewing = (idx: number) => {
-    console.log(listRef);
-    dispatch({ type: 'SET_VIEWING', idx });
-    (listRef as any).current?.resetAfterIndex(idx); // TODO
-  };
- 
-  type RowRendererProps = {
-    index: number
-    style: CSSProperties
-  }
-
-  const RowRenderer = (props: RowRendererProps) => {
-  
-    const { index, style } = props;
-  
-    const grant = useAppSelector(state => getGrant(state, index));
-    const viewingAbstract = useAppSelector(isViewingAbstract);
-
-    if (!isLoaded(index)) return <div>Loading...</div>;
-    if (!grant) return <div>null</div>;
-
-    return (
-      <Grid 
-        container 
-        key={index}
-        direction='row' 
-        alignItems='center' 
-        className={classes.listItem}
-        style={style}
-        onClick={() => setViewing(index)}
-      >
-        {cols.map(({ gridSize, format, id }, idx: number) => (
-          <Grid item xs={gridSize} key={idx}>
-            {format(grant[id])}
-          </Grid>
-        ))}
-        {index === viewingAbstract ?
-          <Grid item xs={12}>Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract Abstract</Grid> : null
-        }
-      </Grid>
-    );
+  const setSelectedGrant = () => {
+    console.log(grant);
+    dispatch(loadAbstract(grant.id));
   };
 
   return (
+    <Grid 
+      container 
+      key={index}
+      direction='row' 
+      alignItems='center' 
+      className={classes.listItem}
+      style={style}
+      onClick={setSelectedGrant}
+    >
+      {cols.map(({ gridSize, format, id }, idx: number) => (
+        <Grid item xs={gridSize} key={idx}>
+          {format(grant[id])}
+        </Grid>
+      ))}
+    </Grid>
+  );
+};
+
+type Column = {
+  id: keyof Grant
+  format: (s: any) => string,
+  label: string,
+  gridSize: GridSize,
+}
+
+const GrantsTable = () => {
+
+  const dispatch = useAppDispatch();
+  const { height } = useWindowDimensions();
+  const hasMountedRef = useRef(false);
+  const grantsRef = useRef<InfiniteLoader>(null);
+  const numGrants = useAppSelector(getNumGrants);
+  const [ orderBy, order ] = useAppSelector(getGrantOrder);
+  const loading = useAppSelector(loadingGrants);
+  const noMore = useAppSelector(noMoreGrants);
+  
+  useEffect(() => {
+    if (hasMountedRef.current) {
+      if (grantsRef.current) {
+        grantsRef.current.resetloadMoreItemsCache();
+      }
+    }
+    hasMountedRef.current = true;
+  }, [ orderBy, order ]);
+
+  const handleLoadGrants = (startIndex: number, stopIndex: number) => {
+    console.log(loading);
+    if (!loading) {
+      return dispatch(loadGrants(startIndex));
+    } else {
+      return null;
+    }
+  };
+
+  const count = noMore ? numGrants : numGrants + 1;
+  const isLoaded = (idx: number) => noMore || idx < numGrants;
+
+
+  return (
     <InfiniteLoader
+      ref={grantsRef}
       isItemLoaded={isLoaded}
       itemCount={count}
-      loadMoreItems={loadMore}
+      loadMoreItems={handleLoadGrants}
     >
-      {({ onItemsRendered, ref }) => {
-        listRef = ref;
-        return (
-          <VariableSizeList
-            onItemsRendered={onItemsRendered}
-            height={600}
-            width='100%'
-            itemSize={getRowSize}
-            itemCount={count}
-            ref={ref}
-          >
-            {RowRenderer}
-          </VariableSizeList>
-        );
-      }}
+      {({ onItemsRendered, ref }) => (
+        <FixedSizeList
+          onItemsRendered={onItemsRendered}
+          height={height - 128}
+          width='100%'
+          itemSize={64}
+          itemCount={count}
+          ref={ref}
+        >
+          {GrantRow}
+        </FixedSizeList>
+      )}
     </InfiniteLoader>
   );
 };
 
-const GrantsDialog: React.FC = () => {
+const AbstractDialog = () => {
+  
+  const selectedGrant = useAppSelector(getSelectedGrant);
+  const selectedAbstract = useAppSelector(getSelectedAbstract);
+
+  const dispatch = useAppDispatch();
+
+  const dismissDialog = () => {
+    dispatch(dismissAbstractDialog());
+  };
+ 
+  return (
+    <Dialog
+      open={selectedGrant !== undefined}
+      onClose={dismissDialog}
+    >
+      <DialogTitle>
+        {selectedGrant?.title}
+      </DialogTitle>
+      <DialogContent>
+        {selectedAbstract === undefined && <LinearProgress />}
+        <Collapse in={selectedAbstract !== undefined}>
+          <div dangerouslySetInnerHTML={{
+            __html: selectedAbstract ?? ''
+          }} />
+        </Collapse>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={dismissDialog}>
+          Dismiss
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+const GrantsDialog = () => {
   const classes = useStyles();
 
   const dispatch = useDispatch();
   const [ open, setOpen ] = useState<boolean>(false);
-  const [ order, setOrder ] = useState<SortDirection>('desc');
-  const [ orderBy, setOrderBy ] = useState<string>('date');
+  const [ orderBy, order ] = useAppSelector(getGrantOrder);
 
-  const handleRequestSort = (property: string) => () => {
-    const isDesc = orderBy === property && order === 'desc';
-    setOrder(isDesc ? 'asc' : 'desc');
-    setOrderBy(property);
-    dispatch(loadGrants({ idx: 0, order, orderBy }));
+  const handleSort = (property: keyof Grant) => () => {
+    const newOrder = orderBy === property && order === 'desc' ? 'asc' : 'desc';
+
+    dispatch(setGrantOrder([ property, newOrder ]));
+    dispatch(loadGrants(0));
+  };
+
+  const handleDownload = () => {
+    window.alert('coming soon');
   };
 
   const handleOpen = () => {
-    dispatch(loadGrants({ idx: 0, order, orderBy }));
+    dispatch(loadGrants(0));
     setOpen(true);
   };
 
@@ -173,7 +230,7 @@ const GrantsDialog: React.FC = () => {
 
   return (
     <>
-      <Tooltip title='view grant detials'>
+      <Tooltip title='view grant details'>
         <Button 
           variant='text' 
           aria-label='grants' 
@@ -199,7 +256,7 @@ const GrantsDialog: React.FC = () => {
                 <TableSortLabel
                   active={orderBy === c.id}
                   direction={order}
-                  onClick={handleRequestSort(c.id)}
+                  onClick={handleSort(c.id)}
                 >
                   {c.label}
                 </TableSortLabel>
@@ -207,10 +264,20 @@ const GrantsDialog: React.FC = () => {
             ))}
           </Grid>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent className={classes.grantsTable}>
           <GrantsTable />
         </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDownload}>
+            Download
+          </Button>
+          <Button onClick={handleClose}>
+            Dismiss
+          </Button>
+        </DialogActions>
       </Dialog>
+      <AbstractDialog />
+
     </>
   );
 };
