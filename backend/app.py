@@ -1,4 +1,4 @@
-from typing import List
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
@@ -30,7 +30,9 @@ word_vecs = None
 @app.on_event('startup')
 async def startup():
     global aioes, word_vecs
-    aioes = Elasticsearch()
+    # look for the environment variable ELASTICSEARCH_HOST. if not set, use default 'localhost'
+    host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
+    aioes = Elasticsearch([{"host": host}])
     word_vecs = Word2Vec.load('assets/nsf_w2v_model').wv
 
 
@@ -287,6 +289,12 @@ app.mount('/data', app)
 
 if __name__ == '__main__':
     import uvicorn
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default='localhost')
+    parser.add_argument("-p", "--port", type=int, default=8888)
+    parser.add_argument("--log-level", default='info')
+    args = parser.parse_args()
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
-    uvicorn.run(app, host='localhost', port=8888, log_level='info')
+    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
