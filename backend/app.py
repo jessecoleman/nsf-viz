@@ -188,6 +188,11 @@ def related(keywords: str):
         return []
 
 
+@app.get('/keywords/count/{term}', operation_id='countTerm')
+async def count_term(term: str):
+    return await Q.term_freqs(aioes, term, ['title', 'abstract'])
+
+
 @app.post('/grants', operation_id='loadGrants')
 async def grant_data(request: GrantsRequest):
 

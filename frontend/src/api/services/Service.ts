@@ -116,11 +116,30 @@ export class Service {
      * @throws ApiError
      */
     public static async loadRelated(
-        keywords: any,
+        keywords: string,
     ): Promise<any> {
         const result = await __request({
             method: 'GET',
             path: `/keywords/related/${keywords}`,
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+        return result.body;
+    }
+
+    /**
+     * Count Term
+     * @param term
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static async countTerm(
+        term: string,
+    ): Promise<any> {
+        const result = await __request({
+            method: 'GET',
+            path: `/keywords/count/${term}`,
             errors: {
                 422: `Validation Error`,
             },

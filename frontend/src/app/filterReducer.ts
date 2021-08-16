@@ -1,14 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { loadData, loadDivisions } from './actions';
+import { loadData, loadDivisions, loadTermCounts } from './actions';
 import { Division, GrantOrder } from './types';
 
 type Field = 'title' | 'abstract';
 
+type Term = {
+  term: string,
+  count?: number,
+}
 
 export type FilterState = {
   dependant: string,
   boolQuery: 'any' | 'all',
-  terms: string[],
+  terms: Term[],
   divisions: Division[],
   fields: Field[],
   grantOrder: GrantOrder,
@@ -17,7 +21,7 @@ export type FilterState = {
 const initialState: FilterState = {
   dependant: 'divisions',
   boolQuery: 'any',
-  terms: ['data science', 'machine learning'],
+  terms: [{ term: 'data science' }, { term: 'machine learning' }],
   divisions: [],
   fields: ['title'], //, 'abstract'],
   grantOrder: [ 'date', 'desc' ],
@@ -28,40 +32,19 @@ const filterSlice = createSlice({
   initialState,
   reducers: {
     setTerms: (state, action) => {
-      state.terms = action.payload.terms;
+      state.terms = action.payload;
     },
     addChips: (state, action) => {
-      state.terms = state.terms.concat(action.payload);
+      state.terms = state.terms.concat(action.payload.map(t => ({ term: t })));
     },
     deleteChip: (state, action: PayloadAction<{ idx: number, chip: string }>) => {
-      console.log(action);
-      const { idx } = action.payload;
-      state.terms.splice(idx, 1);
-      console.log(JSON.stringify(state.terms));
+      state.terms.splice(action.payload.idx, 1);
     },
     setBoolQuery: (state, action) => {
       state.boolQuery = action.payload.boolQuery;
     },
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
-    },
-    loadedData: (state, action) => {
-    //   const divisions = action.payload.sumTotal.divisions.buckets.reduce((obj, div) => {
-    //     obj[div.key] = div;
-    //     return obj;
-    //   }, {});
-    //   return {
-    //     ...state,
-    //     divisions: Object.values(state.divisions).reduce((obj, div) => {
-    //       const bucket = divisions[div.title];
-    //       obj[div.title] = {
-    //         ...div,
-    //         count: bucket ? bucket.doc_count : 0,
-    //         amount: bucket ? bucket.grant_amounts_total.value : 0,
-    //       };
-    //       return obj;
-    //     }, {}),
-    //   };
     },
     selectDivision: (state, action) => {
       const div = state.divisions.find(o => action.payload === o.title); 
@@ -91,6 +74,13 @@ const filterSlice = createSlice({
         }
       });
     })
+    .addCase(loadTermCounts.fulfilled, (state, action) => {
+      console.log(action);
+      const term = state.terms.find(term => term.term === action.meta.arg);
+      if (term) {
+        term.count = action.payload.count;
+      }
+    })
 });
 
 export const {
@@ -99,7 +89,6 @@ export const {
   deleteChip,
   setBoolQuery,
   setGrantOrder,
-  loadedData,
   selectDivision,
   selectAllDivisions,
 } = filterSlice.actions;

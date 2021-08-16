@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import List
 
 from aioelasticsearch import Elasticsearch
@@ -115,29 +116,20 @@ async def year_division_aggregates(
             aioes.search(index='nsf', body=sum_total),
         )
 
-async def term_freqs(terms: List[str]):
 
-    freq_query = {
+async def term_freqs(aioes: Elasticsearch, term: str, fields: List[str]):
+
+    query = {
         'query': {
-            'match_all': {},
-        },
-        'aggs': {
-            'years': {
-                'date_histogram': {
-                    'field': 'date',
-                    'interval': 'year',
-                    'format': 'yyyy',
-                },
-                'aggs': {
-                        'grant_amounts': {
-                            'sum': {
-                                'field': 'amount'
-                            }
-                        }
-                    }
-                }
+            'multi_match': {
+                'fields': fields,
+                'query': term,
+                'type': 'phrase',
             }
-        }
+        },
+    }
+    
+    return await aioes.count(index='nsf', body=query)
 
     
 async def grants(aioes,
@@ -206,6 +198,7 @@ async def abstract(aioes, _id: str, terms: str):
             }
         },
         'highlight': {
+            # 'type':'fvh', // TODO
             'number_of_fragments': 0,
             'tags_schema': 'styled',
             'fields': {
@@ -229,6 +222,7 @@ async def abstract(aioes, _id: str, terms: str):
     }
 
     response = await aioes.search(index='nsf', body=query)
+    print(json.dumps(response, indent=2))
     return response['hits']['hits'][0]['highlight']['abstract'][0]
 
  
