@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -33,7 +33,7 @@ class GrantField(str, Enum):
 class GrantsRequest(BaseModel):
     idx: int
     order: str #Order,
-    order_by: str #OrderBy,
+    order_by: Optional[str] = 'title'
     terms: List[str]
     fields: List[str] # GrantField]
     divisions: List[str]

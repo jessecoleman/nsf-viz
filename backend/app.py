@@ -11,7 +11,7 @@ from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
 
 from models import GrantsRequest, SearchRequest, Term
-from queries import search_elastic
+import queries as Q
 
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('uvicorn')
@@ -113,15 +113,15 @@ async def search(request: SearchRequest):
             } for y in range(2007, 2018)
         })
 
-    per_year, per_division, sum_total = await search_elastic(aioes, toggle, request.terms)
+    per_year, per_division, sum_total = await Q.year_division_aggregates(aioes, toggle, request.terms)
     return {
             'per_year': per_year,
             'per_division': per_division,
             'sum_total': sum_total,
         }
 
-    matched = await search_elastic(aioes, toggle, terms)
-    order = await search_elastic(aioes, toggle, terms, sort=True)
+    matched = await Q.year_division_aggregates(aioes, toggle, terms)
+    order = await Q.year_division_aggregates(aioes, toggle, terms, sort=True)
 
     sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
     inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
@@ -171,22 +171,7 @@ async def search(request: SearchRequest):
 @app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead')
 async def typeahead(prefix: str):
 
-    result = await aioes.search(index='nsf-suggest', body={
-            'suggest': {
-                'gram-suggest': {
-                    'prefix': prefix,
-                    'completion': {
-                        'field': 'suggest',
-                        'size': 15
-                    }
-                }
-            }
-        })
-
-    return [
-        g['_source']['gram']
-        for g in result['suggest']['gram-suggest'][0]['options']
-    ]
+    return await Q.typeahead(aioes, prefix)
 
 
 @app.get('/keywords/related/{keywords}', operation_id='loadRelated')
@@ -206,84 +191,27 @@ def related(keywords: str):
 @app.post('/grants', operation_id='loadGrants')
 async def grant_data(request: GrantsRequest):
 
-    grants = {
-            'size': 50,
-            'from': request.idx,
-            'query': {
-                'bool': {
-                    #'filter': [
-                    #    {
-                    #            
-                    #],
-                    ('must' if request.toggle else 'should'): [
-                        {
-                            'multi_match': {
-                                'fields': request.fields,
-                                'query': term,
-                                'type': 'phrase',
-                            }
-                        }
-                    for term in request.terms]
-                }
-            },
-            'sort': [
-                {
-                    request.order_by: {
-                        'order': request.order
-                    }
-                }
-            ]
-        }
-
-    response = await aioes.search(index='nsf', body=grants)
-
-    if response['hits']['total'] == 0:
+    try:
+        return await Q.grants(
+            aioes,
+            request.idx,
+            request.toggle,
+            request.order_by,
+            request.order,
+            request.fields,
+            request.terms
+        )
+    except Exception:
         raise HTTPException(404, detail='index out of bounds')
-
-    grants = []
-    for hit in response['hits']['hits']:
-        grants.append({
-                'score': hit['_score'],
-                'id': hit['_id'],
-                **hit['_source'],
-            })
-            
-    return grants
- 
+        
 
 @app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract')
 async def get_abstract(_id, terms):
-    query = {
-            'query': {
-                'terms': {
-                    '_id': [_id]
-                }
-            },
-            'highlight': {
-                'number_of_fragments': 0,
-                'tags_schema': 'styled',
-                'fields': {
-                    'abstract': {
-                        'highlight_query': {
-                            'bool': {
-                                'should': [
-                                    {
-                                        'match_phrase': {
-                                            'abstract': {
-                                                'query': term
-                                            }
-                                        }
-                                    }
-                                for term in terms.split(',')]
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
-    response = await aioes.search(index='nsf', body=query)
-    return response['hits']['hits'][0]['highlight']['abstract'][0]
+    print(_id, terms)
+    
+    return await Q.abstract(aioes, _id, terms)
+
 
 app.mount('/data', app)
 

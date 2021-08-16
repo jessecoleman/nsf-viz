@@ -24,10 +24,7 @@ import GrantsDialog from 'app/components/GrantsDialog';
 
 import { format } from 'd3';
 
-import { 
-  SortDirection,
-  CheckboxCallback,
-} from '../types';
+import { SortDirection } from '../types';
 import { 
   selectDivision, 
   selectAllDivisions,
@@ -69,7 +66,7 @@ const rows = [
 ];
 
 type EnhancedTableHeadProps = {
-  onSelectAllClick: CheckboxCallback,
+  onSelectAllClick: (checked: boolean) => void,
   order: SortDirection,
   orderBy: string,
   numSelected: number,
