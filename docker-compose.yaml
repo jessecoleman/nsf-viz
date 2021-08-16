@@ -9,6 +9,7 @@ services:
             # makes debugging easier.
             - PYTHONUNBUFFERED=1
             - LOG_LEVEL=DEBUG
+            - DEV_MODE=1
             - ELASTICSEARCH_HOST=elasticsearch
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
         ports:
@@ -27,13 +28,13 @@ services:
             - ELASTICSEARCH_HOST=elasticsearch
         ports:
             - 3000:3000
-    # proxy:
-    #     build: ./proxy
-    #     ports:
-    #         - 8080:80
-    #     depends_on:
-    #         - frontend
-    #         - backend
+    proxy:
+        build: ./proxy
+        ports:
+            - 8080:80
+        depends_on:
+            - frontend
+            - backend
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
         volumes: 
