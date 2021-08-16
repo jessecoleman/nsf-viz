@@ -115,29 +115,20 @@ async def year_division_aggregates(
             aioes.search(index='nsf', body=sum_total),
         )
 
-async def term_freqs(terms: List[str]):
 
-    freq_query = {
+async def term_freqs(aioes: Elasticsearch, term: str, fields: List[str]):
+
+    query = {
         'query': {
-            'match_all': {},
-        },
-        'aggs': {
-            'years': {
-                'date_histogram': {
-                    'field': 'date',
-                    'interval': 'year',
-                    'format': 'yyyy',
-                },
-                'aggs': {
-                        'grant_amounts': {
-                            'sum': {
-                                'field': 'amount'
-                            }
-                        }
-                    }
-                }
+            'multi_match': {
+                'fields': fields,
+                'query': term,
+                'type': 'phrase',
             }
-        }
+        },
+    }
+    
+    return await aioes.count(index='nsf', body=query)
 
     
 async def grants(aioes,

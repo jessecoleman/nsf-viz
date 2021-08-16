@@ -13,31 +13,29 @@ import {
   ClickAwayListener,
   Divider,
   ListSubheader,
+  Chip,
+  IconButton,
+  Tooltip,
 } from '@material-ui/core';
 
 import ChipInput from 'material-ui-chip-input';
 import {
   Search,
   AddCircle,
+  ClearAll,
 } from '@material-ui/icons';
 
 import {
   loadData,
   loadRelated,
+  loadTermCounts,
   loadTypeahead,
 } from 'app/actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getRelated, getTerms, getTypeahead } from 'app/selectors';
-import { addChips, deleteChip } from 'app/filterReducer';
+import { addChips, deleteChip, setTerms } from 'app/filterReducer';
 
 const useStyles = makeStyles((theme: Theme) => ({
-  title: {
-    flexGrow: 1,
-    display: 'none',
-    [theme.breakpoints.up('sm')]: {
-      display: 'block',
-    },
-  },
   search: {
     minWidth: '25em',
     position: 'relative',
@@ -61,6 +59,23 @@ const useStyles = makeStyles((theme: Theme) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  chip: {
+    marginRight: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+  },
+  chipContent: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chipCount: {
+    color: theme.palette.text.primary,
+    backgroundColor: theme.palette.grey[400],
+    marginLeft: -theme.spacing(0.9),
+    marginRight: theme.spacing(1),
+    padding: theme.spacing(0.5),
+    borderRadius: 20,
   },
   chipRoot: {
     marginTop: theme.spacing(1),
@@ -92,6 +107,10 @@ const useStyles = makeStyles((theme: Theme) => ({
   listIcon: {
     minWidth: 0,
   },
+  clearButton: {
+    position: 'absolute',
+    right: 0,
+  }
 }));
 
 type TermsListProps = {
@@ -100,6 +119,18 @@ type TermsListProps = {
   terms: string[]
   onAddChip: (term: string) => void
 }
+
+type ChipRendererProps = {
+  value: any
+  text: any
+  chip: any
+  isFocused: any
+  isDisabled: any
+  isReadOnly: any
+  handleClick: any
+  handleDelete: any
+  className: any
+};
 
 const TermsList = (props: TermsListProps) => (
   <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
@@ -133,8 +164,8 @@ const TermsFilter = () => {
   };
 
   const handleAddChip = (chips: string) => {
-    console.log(chips);
     dispatch(addChips(chips.split(',')));
+    dispatch(loadTermCounts(chips));
     dispatch(loadData());
     dispatch(loadRelated());
   };
@@ -143,6 +174,27 @@ const TermsFilter = () => {
     dispatch(deleteChip({ chip, idx }));
     dispatch(loadData());
     dispatch(loadRelated());
+  };
+  
+  const chipRenderer = (props: ChipRendererProps, key: number) => {
+    return (
+      /* eslint-disable react/prop-types */
+      <Chip
+        label={
+          <span className={classes.chipContent}>
+            <span className={classes.chipCount}>{props.chip.count}</span>
+            {props.chip.term}
+          </span>
+        }
+        onDelete={props.handleDelete}
+        className={classes.chip}
+      />
+      /* eslint-enable react/prop-types */
+    );
+  };
+  
+  const handleClearTerms = () => {
+    dispatch(setTerms([]));
   };
 
   return (
@@ -159,26 +211,36 @@ const TermsFilter = () => {
             input: classes.chipInput,
           }}
           value={terms}
+          chipRenderer={chipRenderer}
           onFocus={handleFocus(true)}
           onUpdateInput={handleInput}
           onAdd={handleAddChip}
           onDelete={handleDeleteChip}
           newChipKeyCodes={[13, 188]}
         />
+        <Tooltip title='clear all terms'>
+          <IconButton
+            className={classes.clearButton}
+            color='inherit'
+            onClick={handleClearTerms}
+          >
+            <ClearAll />
+          </IconButton>
+        </Tooltip>
         <Collapse in={focused}>
           {(related.length + typeahead.length) > 0 &&
             <Paper className={classes.dropdown}>
               <List>
                 <TermsList
                   header='autocomplete'
-                  filter={terms}
+                  filter={terms.map(t => t.term)}
                   terms={typeahead}
                   onAddChip={handleAddChip}
                 />
                 <Divider />
                 <TermsList
                   header='related terms'
-                  filter={terms}
+                  filter={terms.map(t => t.term)}
                   terms={related}
                   onAddChip={handleAddChip}
                 />

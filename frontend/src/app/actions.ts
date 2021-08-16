@@ -8,9 +8,12 @@ export const loadData = createAsyncThunk(
   async (payload, thunkAPI) => {
     //const route = queryString.stringify(query);
     const { filter } = thunkAPI.getState() as { filter: FilterState };
+    const { terms, ...rest } = filter;
+    console.log(terms);
 
     const data = await Service.search({
-      ...filter,
+      terms: terms.map(t => t.term),
+      ...rest,
       divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
     });
     return {
@@ -25,7 +28,7 @@ export const loadGrants = createAsyncThunk(
   async (payload: number, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    const { grantOrder, ...rest } = filter;
+    const { grantOrder, terms, ...rest } = filter;
     const [ order_by, order ] = grantOrder;
 
     return await Service.loadGrants({
@@ -33,6 +36,7 @@ export const loadGrants = createAsyncThunk(
       order,
       order_by,
       toggle: false,
+      terms: terms.map(t => t.term),
       ...rest,
       divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
     });
@@ -51,6 +55,11 @@ export const loadDivisions = createAsyncThunk(
   async () => await Service.loadDivisions()
 );
 
+export const loadTermCounts = createAsyncThunk(
+  'loadTermCount',
+  async (payload: string) => await Service.countTerm(payload)
+);
+
 export const loadTypeahead = createAsyncThunk(
   'loadTypeahead',
   async (prefix: string) => await Service.loadTypeahead(prefix)
@@ -60,6 +69,6 @@ export const loadRelated = createAsyncThunk(
   'loadRelated',
   async (_, thunkAPI) => {
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    return await Service.loadRelated(filter.terms);
+    return await Service.loadRelated(filter.terms.join(','));
   }
 );
