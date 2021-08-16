@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import List
 
 from aioelasticsearch import Elasticsearch
@@ -197,6 +198,7 @@ async def abstract(aioes, _id: str, terms: str):
             }
         },
         'highlight': {
+            # 'type':'fvh', // TODO
             'number_of_fragments': 0,
             'tags_schema': 'styled',
             'fields': {
@@ -220,6 +222,7 @@ async def abstract(aioes, _id: str, terms: str):
     }
 
     response = await aioes.search(index='nsf', body=query)
+    print(json.dumps(response, indent=2))
     return response['hits']['hits'][0]['highlight']['abstract'][0]
 
  

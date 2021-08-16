@@ -46,7 +46,7 @@ export const loadAbstract = createAsyncThunk(
   'loadAbstract',
   async (payload: string, thunkAPI) => {
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    return await Service.loadAbstract(payload, filter.terms);
+    return await Service.loadAbstract(payload, filter.terms.map(t => t.term));
   }
 );
 
