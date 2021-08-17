@@ -22,7 +22,6 @@
         "history": "^4.9.0",
         "hoist-non-react-statics": "^3.3.0",
         "material-ui-chip-input": "^1.1.0",
-        "node-fetch": "^2.6.1",
         "query-string": "^6.5.0",
         "react": "^17.0.2",
         "react-debounce-input": "^3.2.0",
@@ -67,6 +66,7 @@
         "@typescript-eslint/parser": "^4.29.0",
         "eslint": "^7.32.0",
         "eslint-plugin-react": "^7.24.0",
+        "node-fetch": "^2.6.1",
         "openapi-typescript-codegen": "^0.9.3"
     }
 }
