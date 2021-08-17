@@ -218,6 +218,11 @@ async def get_abstract(_id, terms):
     return await Q.abstract(aioes, _id, terms)
 
 
+@app.get('/generate_openapi_json')
+def send_api_json():
+    return app.openapi()
+
+
 app.mount('/data', app)
 
 if __name__ == '__main__':

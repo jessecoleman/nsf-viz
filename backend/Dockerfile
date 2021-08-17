@@ -15,6 +15,8 @@ RUN poetry config virtualenvs.create false \
 # Copy over the source code
 COPY . .
 
+# RUN poetry run python app.py --generate-openapi-json ./api.json
+
 EXPOSE 8888
 
 # Kick things off
