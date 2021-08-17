@@ -15,6 +15,8 @@ RUN yarn install --network-timeout 100000
 # Copy in the source code
 COPY . .
 
+# RUN npx openapi-typescript-codegen --input ../backend/api.json --output ./src/api
+
 # This tells build scripts and libraries that we're in development, so they
 # can include stuff that's helpful for debugging even if it's a tad slower.
 ARG NODE_ENV=development
@@ -26,4 +28,4 @@ RUN yarn build
 EXPOSE 3000
 
 ENTRYPOINT [ "yarn" ]
-CMD [ "start" ]
+CMD [ "generateAndStart" ]

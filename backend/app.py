@@ -71,7 +71,7 @@ def main(toggle='any', terms=default_terms):
     if type(terms) is str:
         terms = terms.split(',')
 
-    with open('static/divisions.csv', 'r') as divs:
+    with open('assets/divisions.csv', 'r') as divs:
         divisions = [{
                 'title': d.strip()[:-2],
                 'default': d.strip()[-1] == 'y'
@@ -218,6 +218,11 @@ async def get_abstract(_id, terms):
     return await Q.abstract(aioes, _id, terms)
 
 
+@app.get('/generate_openapi_json')
+async def send_api_json():
+    return app.openapi()
+
+
 app.mount('/data', app)
 
 if __name__ == '__main__':
@@ -230,4 +235,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
-    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
+    dev_mode = os.environ.get('DEV_MODE')
+    if dev_mode:
+        uvicorn.run("app:app", host=args.host, port=args.port, log_level=args.log_level, reload=True)
+    else:
+        uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
