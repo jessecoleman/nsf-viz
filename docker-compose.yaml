@@ -24,6 +24,10 @@ services:
             - ./frontend/package.json:/usr/local/src/app/frontend/package.json
             - ./frontend/tsconfig.json:/usr/local/src/app/frontend/tsconfig.json
             - ./frontend/yarn.lock:/usr/local/src/app/frontend/yarn.lock
+            # We don't want to mount the codegen-generated api directory since it will
+            # be generated in Docker, so specify it as a persistent Docker named volume:
+            # https://stackoverflow.com/a/38601156
+            - docker_openapi:/usr/local/src/app/frontend/src/api
         environment: 
             - ELASTICSEARCH_HOST=elasticsearch
         ports:
@@ -46,3 +50,5 @@ services:
         ports: 
             - 9200:9200
             - 9300:9300
+volumes:
+    docker_openapi:

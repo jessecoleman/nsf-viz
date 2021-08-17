@@ -219,7 +219,7 @@ async def get_abstract(_id, terms):
 
 
 @app.get('/generate_openapi_json')
-def send_api_json():
+async def send_api_json():
     return app.openapi()
 
 
