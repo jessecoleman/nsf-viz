@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import FlipMove from 'react-flip-move';
 import { Theme, makeStyles } from '@material-ui/core/styles';
 import { 
   Table,
@@ -212,7 +213,6 @@ const EnhancedTable = () => {
   }, '?divisions');
 
   const selectedDivisions = new Set(query.divisions);
-  const numSelected = query.divisions?.length ?? 0;
 
   function handleRequestSort(property: string) {
     const isDesc = orderBy === property && order === 'desc';
@@ -238,11 +238,11 @@ const EnhancedTable = () => {
 
   return (
     <Paper className={classes.root}>
-      <EnhancedTableToolbar numSelected={numSelected} />
+      <EnhancedTableToolbar numSelected={selectedDivisions.size} />
       <div className={classes.tableWrapper}>
         <Table className={classes.table} aria-labelledby='tableTitle'>
           <EnhancedTableHead
-            numSelected={numSelected}
+            numSelected={selectedDivisions.size}
             order={order}
             orderBy={orderBy}
             onSelectAllClick={selectAll}
@@ -250,32 +250,34 @@ const EnhancedTable = () => {
             rowCount={Object.keys(divisions).length}
           />
           <TableBody>
-            {stableSort(Object.values(divisions), getSorting(order, orderBy))
-              .map(div => (
-                <TableRow
-                  hover
-                  onClick={select(div.key, selectedDivisions.has(div.key))}
-                  role='checkbox'
-                  aria-checked={selectedDivisions.has(div.key)}
-                  tabIndex={-1}
-                  key={div.key}
-                  selected={selectedDivisions.has(div.key)}
-                >
-                  <TableCell padding='checkbox'>
-                    <Checkbox checked={selectedDivisions.has(div.key)} />
-                  </TableCell>
-                  <TableCell component='th' scope='row' padding='none'>
-                    {div.name}
-                  </TableCell>
-                  <TableCell padding='checkbox'>
-                    {div.count > 0 ? div.count : '-'}
-                  </TableCell>
-                  <TableCell padding='checkbox'>
-                    {div.amount ? format('$.2s')(div.amount).replace(/G/,'B') : '-'}
-                  </TableCell>
-                </TableRow>
-              ))
-            }
+            <FlipMove>
+              {stableSort(Object.values(divisions), getSorting(order, orderBy))
+                .map(div => (
+                  <TableRow
+                    hover
+                    onClick={select(div.key, selectedDivisions.has(div.key))}
+                    role='checkbox'
+                    aria-checked={selectedDivisions.has(div.key)}
+                    tabIndex={-1}
+                    key={div.key}
+                    selected={selectedDivisions.has(div.key)}
+                  >
+                    <TableCell padding='checkbox'>
+                      <Checkbox checked={selectedDivisions.has(div.key)} />
+                    </TableCell>
+                    <TableCell padding='none'>
+                      {div.name}
+                    </TableCell>
+                    <TableCell padding='checkbox'>
+                      {div.count > 0 ? format('.2s')(div.count as number) : '-'}
+                    </TableCell>
+                    <TableCell padding='checkbox'>
+                      {div.amount ? format('$.2s')(div.amount).replace(/G/,'B') : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              }
+            </FlipMove>
           </TableBody>
         </Table>
       </div>

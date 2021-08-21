@@ -5,19 +5,19 @@ import { FilterState } from './filterReducer';
 
 type FilterParams = {
   divisions: string[],
+  terms: string[],
 }
 
 export const loadData = createAsyncThunk(
   'loadData',
-  async ({ divisions }: FilterParams, thunkAPI) => {
+  async ({ divisions, terms }: FilterParams, thunkAPI) => {
     //const route = queryString.stringify(query);
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    const { terms, ...rest } = filter;
     console.log(terms);
 
     const data = await Service.search({
-      terms: terms.map(t => t.term),
-      ...rest,
+      ...filter,
+      terms,
       divisions,
     });
     return {

@@ -1,5 +1,4 @@
 import { useState, CSSProperties, useRef } from 'react';
-import { useDispatch } from 'react-redux';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
@@ -24,20 +23,24 @@ import { format, timeFormat, timeParse } from 'd3';
 import { loadAbstract, loadGrants } from 'app/actions';
 import { Grant } from '../types';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrant, getGrantOrder, getNumGrants, getSelectedAbstract, getSelectedGrant, loadingGrants, noMoreGrants } from 'app/selectors';
-import { clearGrants, dismissAbstractDialog } from 'app/dataReducer';
+import { getGrant, getGrantOrder, getNumGrants, loadingGrants, noMoreGrants } from 'app/selectors';
+import { clearGrants } from 'app/dataReducer';
 import { setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
 import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
+import AbstractDialog from './AbstractDialog';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
     padding: theme.spacing(2),
     flexGrow: 1,
   },
-  grantsTable: {
+  grantsDialog: {
     paddingLeft: 0,
     paddingRight: 0,
+    overflowY: 'hidden'
+  },
+  grantsTable: {
     overflowY: 'hidden'
   },
   grantCell: {
@@ -50,9 +53,13 @@ const useStyles = makeStyles((theme: Theme) => ({
     //left: theme.spacing(4),
   },
   listItem: {
+    cursor: 'pointer',
     paddingLeft: theme.spacing(3),
     paddingRight: theme.spacing(1),
-    borderBottom: `1px solid ${theme.palette.grey[300]}`
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
+    ['&:hover']: {
+      backgroundColor: theme.palette.grey[100],
+    },
   },
 }));
 
@@ -73,10 +80,10 @@ const GrantRow = (props: GrantRowProps) => {
   const { index, style } = props;
 
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const grant = useAppSelector(state => getGrant(state, index));
 
-  if (!grant) return <div>Loading...</div>;
+  if (!grant) return null;
 
   const setSelectedGrant = () => {
     console.log(grant);
@@ -112,7 +119,7 @@ type Column = {
 const GrantsTable = () => {
 
   const dispatch = useAppDispatch();
-  const { divisions } = useQuery();
+  const query = useQuery();
   const { height } = useWindowDimensions();
   const hasMountedRef = useRef(false);
   const grantsRef = useRef<InfiniteLoader>(null);
@@ -130,9 +137,9 @@ const GrantsTable = () => {
     hasMountedRef.current = true;
   }, [ orderBy, order ]);
 
-  const handleLoadGrants = (startIndex: number, stopIndex: number) => {
+  const handleLoadGrants = (idx: number) => {
     if (!loading) {
-      return dispatch(loadGrants({ divisions, idx: startIndex }));
+      return dispatch(loadGrants({ ...query, idx }));
     } else {
       return null;
     }
@@ -152,7 +159,7 @@ const GrantsTable = () => {
       {({ onItemsRendered, ref }) => (
         <FixedSizeList
           onItemsRendered={onItemsRendered}
-          height={height - 128}
+          height={height - 256}
           width='100%'
           itemSize={64}
           itemCount={count}
@@ -165,49 +172,16 @@ const GrantsTable = () => {
   );
 };
 
-const AbstractDialog = () => {
-  
-  const selectedGrant = useAppSelector(getSelectedGrant);
-  const selectedAbstract = useAppSelector(getSelectedAbstract);
-
-  const dispatch = useAppDispatch();
-
-  const dismissDialog = () => {
-    dispatch(dismissAbstractDialog());
-  };
- 
-  return (
-    <Dialog
-      open={selectedGrant !== undefined}
-      onClose={dismissDialog}
-    >
-      <DialogTitle>
-        {selectedGrant?.title}
-      </DialogTitle>
-      <DialogContent>
-        {selectedAbstract === undefined && <LinearProgress />}
-        <Collapse in={selectedAbstract !== undefined}>
-          <div dangerouslySetInnerHTML={{
-            __html: selectedAbstract ?? ''
-          }} />
-        </Collapse>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={dismissDialog}>
-          Dismiss
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
 const GrantsDialog = () => {
   const classes = useStyles();
 
-  const { query: { divisions }} = useNavigate(() => {
+  const { query } = useNavigate(() => {
+    // TODO put this in reducer
     dispatch(clearGrants());
   }, '?divisions');
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const loading = useAppSelector(loadingGrants);
+  const numGrants = useAppSelector(getNumGrants);
   const [ open, setOpen ] = useState<boolean>(false);
   const [ orderBy, order ] = useAppSelector(getGrantOrder);
 
@@ -215,7 +189,7 @@ const GrantsDialog = () => {
     const newOrder = orderBy === property && order === 'desc' ? 'asc' : 'desc';
 
     dispatch(setGrantOrder([ property, newOrder ]));
-    dispatch(loadGrants({ divisions, idx: 0 }));
+    dispatch(loadGrants({ ...query, idx: 0 }));
   };
 
   const handleDownload = () => {
@@ -223,13 +197,15 @@ const GrantsDialog = () => {
   };
 
   const handleOpen = () => {
-    dispatch(loadGrants({ divisions, idx: 0 }));
+    dispatch(loadGrants({ ...query, idx: 0 }));
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
   };
+
+  console.log(numGrants > 0);
 
   return (
     <>
@@ -267,8 +243,11 @@ const GrantsDialog = () => {
             ))}
           </Grid>
         </DialogTitle>
-        <DialogContent className={classes.grantsTable}>
-          <GrantsTable />
+        <DialogContent className={classes.grantsDialog}>
+          <Collapse in={numGrants > 0} className={classes.grantsTable}>
+            <GrantsTable />
+          </Collapse>
+          {loading && <LinearProgress />}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDownload}>
@@ -280,7 +259,6 @@ const GrantsDialog = () => {
         </DialogActions>
       </Dialog>
       <AbstractDialog />
-
     </>
   );
 };

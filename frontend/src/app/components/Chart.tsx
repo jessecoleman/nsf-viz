@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { green } from '@material-ui/core/colors';
 
-import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Legend, Tooltip, Brush } from 'recharts';
 import { getDivisions, getPerDivision } from 'app/selectors';
 import { useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
@@ -72,6 +72,7 @@ const Chart = (props: ChartProps) => {
             name={d.name}
           />
         ))}
+        <Brush dataKey='year' />
       </BarChart>
     </ResponsiveContainer>
   );

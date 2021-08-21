@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from 'react';
+import { MouseEvent, useState, ChangeEvent, useEffect } from 'react';
 
 import { Theme, makeStyles } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles/colorManipulator';
@@ -16,6 +16,7 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from '@material-ui/core';
 
 import ChipInput, { ChipRendererArgs } from 'material-ui-chip-input';
@@ -23,6 +24,7 @@ import {
   Search,
   AddCircle,
   ClearAll,
+  HighlightOff,
 } from '@material-ui/icons';
 
 import {
@@ -35,8 +37,10 @@ import { useAppDispatch, useAppSelector } from 'app/store';
 import { getRelated, getTerms, getTypeahead } from 'app/selectors';
 import { addChips, deleteChip, setTerms, Term } from 'app/filterReducer';
 import { useNavigate, useQuery } from 'app/hooks';
+import { format } from 'd3';
+import TermChip, { TermChipProps } from './TermChip';
 
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles(theme => ({
   search: {
     minWidth: '25em',
     position: 'relative',
@@ -61,28 +65,9 @@ const useStyles = makeStyles((theme: Theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chip: {
-    marginRight: theme.spacing(1),
-    marginBottom: theme.spacing(1),
-  },
-  chipContent: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  chipCount: {
-    color: theme.palette.text.primary,
-    backgroundColor: theme.palette.grey[400],
-    marginLeft: -theme.spacing(0.9),
-    marginRight: theme.spacing(1),
-    padding: theme.spacing(0.5),
-    borderRadius: 20,
-  },
   chipRoot: {
     marginTop: theme.spacing(1),
     marginLeft: theme.spacing(8),
-  },
-  chipContainer: {
   },
   chipInput: {
     padding: theme.spacing(1, 1, 1, 1),
@@ -141,6 +126,8 @@ const TermsFilter = () => {
   const typeahead = useAppSelector(getTypeahead);
   const related = useAppSelector(getRelated);
   const [ focused, setFocused ] = useState(false);
+  const [ selected, setSelected ] = useState<Set<string>>(new Set());
+  console.log(selected);
 
   const { push } = useNavigate(({ query, firstLoad }) => {
     // only run on first load
@@ -152,6 +139,10 @@ const TermsFilter = () => {
     }
   }, '?terms');
 
+  useEffect(() => {
+    dispatch(loadData({ ...query, terms: [...selected] }));
+  }, [selected]);
+
   const handleFocus = (focused: boolean) => () => {
     setFocused(focused);
   };
@@ -160,6 +151,14 @@ const TermsFilter = () => {
     if (e.target.value.length) {
       dispatch(loadTypeahead(e.target.value));
     }
+  };
+
+  const handleClickChip = (e: MouseEvent, key: string) => {
+    e.preventDefault();
+    // setFocused(false);
+    setSelected(s => new Set(
+      s.has(key) ? [...s].filter(k => k !== key) : s.add(key)
+    ));
   };
 
   const handleAddChip = (chips: string) => {
@@ -184,32 +183,20 @@ const TermsFilter = () => {
     dispatch(loadData(query));
     dispatch(loadRelated());
   };
-  
-  const chipRenderer = (props: ChipRendererArgs, key: number) => {
-    /* eslint-disable react/prop-types */
-    return (
-      <Chip
-        key={key}
-        label={
-          <span className={classes.chipContent}>
-            <span className={classes.chipCount}>{props.chip.count}</span>
-            {props.chip.term}
-          </span>
-        }
-        onDelete={props.handleDelete}
-        className={classes.chip}
-      />
-    );
-    /* eslint-enable react/prop-types */
-  };
-  
+ 
   const handleClearTerms = () => {
-    push({
-      component: 'terms',
-      action: 'set',
-      payload: [],
-    });
-    dispatch(setTerms([]));
+    if (selected.size > 0) {
+      setSelected(new Set());
+      dispatch(loadData(query));
+    } else {
+      push({
+        component: 'terms',
+        action: 'set',
+        payload: [],
+      });
+      dispatch(setTerms([]));
+      dispatch(loadData({ ...query, terms: [] }));
+    }
   };
 
   return (
@@ -222,24 +209,33 @@ const TermsFilter = () => {
           disableUnderline
           classes={{
             root: classes.chipRoot,
-            chipContainer: classes.chipContainer,
             input: classes.chipInput,
           }}
           value={terms}
-          chipRenderer={chipRenderer}
+          chipRenderer={(props: TermChipProps, key) => (
+            <TermChip
+              key={key}
+              {...props}
+              selected={selected.has(props.chip.term)}
+              onClick={handleClickChip}
+            />
+          )}
           onFocus={handleFocus(true)}
           onUpdateInput={handleInput}
           onAdd={handleAddChip}
           onDelete={handleDeleteChip}
           newChipKeyCodes={[13, 188]}
         />
-        <Tooltip title='clear all terms'>
+        <Tooltip title={selected.size === 0 ? 'clear all terms' : 'clear selection'}>
           <IconButton
             className={classes.clearButton}
             color='inherit'
             onClick={handleClearTerms}
           >
-            <ClearAll />
+            {selected.size === 0
+              ? <ClearAll />
+              : <HighlightOff />
+            }
           </IconButton>
         </Tooltip>
         <Collapse in={focused}>
