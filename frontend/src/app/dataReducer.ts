@@ -1,6 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
-import { setGrantOrder } from './filterReducer';
+import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
 import { Grant, PerDivision, PerYear } from './types';
 
 type GrantState = {
@@ -33,13 +33,13 @@ const dataSlice = createSlice({
   name: 'data',
   initialState,
   reducers: {
+    clearGrants: (state) => {
+      state.grants = [];
+    },
     dismissAbstractDialog: (state) => {
       state.selectedGrantId = undefined;
       state.selectedAbstract = undefined;
     },
-    clearGrants: (state) => {
-      state.grants = [];
-    }
   }, 
   extraReducers: builder => builder
     .addCase(loadTypeahead.fulfilled, (state, action) => {
@@ -78,7 +78,7 @@ const dataSlice = createSlice({
     })
     .addCase(loadAbstract.fulfilled, (state, action) => {
       state.selectedAbstract = action.payload;
-    }).addCase(setGrantOrder, (state) => {
+    }).addMatcher(isAnyOf(setGrantOrder, setTerms, addChips, deleteChip), (state) => {
       state.grants = [];
     })
 });
