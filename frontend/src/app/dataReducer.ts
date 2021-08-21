@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
+import { setGrantOrder } from './filterReducer';
 import { Grant, PerDivision, PerYear } from './types';
 
 type GrantState = {
@@ -14,8 +15,6 @@ type GrantState = {
   loadingData: boolean,
   loadingGrants: boolean,
   selectedAbstract?: string,
-  sort: boolean,
-  sortBy: 'title' | 'abstract',
 }
 
 const initialState: GrantState = {
@@ -28,18 +27,12 @@ const initialState: GrantState = {
   noMoreGrants: false,
   loadingData: false,
   loadingGrants: false,
-  sort: false,
-  sortBy: 'title',
 };
 
 const dataSlice = createSlice({
   name: 'data',
   initialState,
   reducers: {
-    sortGrants: (state, action) => {
-      state.sortBy = action.payload.sortBy;
-      state.sort = action.payload.sort;
-    },
     dismissAbstractDialog: (state) => {
       state.selectedGrantId = undefined;
       state.selectedAbstract = undefined;
@@ -73,6 +66,7 @@ const dataSlice = createSlice({
     })
     .addCase(loadGrants.fulfilled, (state, action) => {
       state.loadingGrants = false;
+      // TODO this needs to run conditionally on reorder
       state.grants = state.grants.concat(action.payload);
     })
     .addCase(loadGrants.rejected, (state) => {
@@ -84,11 +78,12 @@ const dataSlice = createSlice({
     })
     .addCase(loadAbstract.fulfilled, (state, action) => {
       state.selectedAbstract = action.payload;
+    }).addCase(setGrantOrder, (state) => {
+      state.grants = [];
     })
 });
 
 export const {
-  sortGrants,
   clearGrants,
   dismissAbstractDialog,
 } = dataSlice.actions;
