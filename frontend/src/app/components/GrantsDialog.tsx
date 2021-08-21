@@ -25,10 +25,10 @@ import { loadAbstract, loadGrants } from 'app/actions';
 import { Grant } from '../types';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getGrant, getGrantOrder, getNumGrants, getSelectedAbstract, getSelectedGrant, loadingGrants, noMoreGrants } from 'app/selectors';
-import { dismissAbstractDialog } from 'app/dataReducer';
+import { clearGrants, dismissAbstractDialog } from 'app/dataReducer';
 import { setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
-import { useQuery, useWindowDimensions } from 'app/hooks';
+import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -131,7 +131,6 @@ const GrantsTable = () => {
   }, [ orderBy, order ]);
 
   const handleLoadGrants = (startIndex: number, stopIndex: number) => {
-    console.log(loading);
     if (!loading) {
       return dispatch(loadGrants({ divisions, idx: startIndex }));
     } else {
@@ -205,7 +204,9 @@ const AbstractDialog = () => {
 const GrantsDialog = () => {
   const classes = useStyles();
 
-  const { divisions } = useQuery();
+  const { query: { divisions }} = useNavigate(() => {
+    dispatch(clearGrants());
+  }, '?divisions');
   const dispatch = useDispatch();
   const [ open, setOpen ] = useState<boolean>(false);
   const [ orderBy, order ] = useAppSelector(getGrantOrder);
