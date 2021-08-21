@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
+from fastapi.responses import FileResponse
 from gensim.models.word2vec import Word2Vec
 import logging
 import json
@@ -82,13 +83,7 @@ def main(toggle='any', terms=default_terms):
 
 @app.get('/divisions', operation_id='loadDivisions')
 async def divisions():
-    with open('assets/divisions.csv', 'r') as divs:
-        divisions = [{
-                'title': d.strip()[:-2],
-                'selected': d.strip()[-1] == 'y'
-            } for d in divs.readlines()]
-        
-        return divisions
+    return FileResponse('assets/divisions.json')
 
 
 @app.post('/search', operation_id='search')
@@ -99,7 +94,7 @@ async def search(request: SearchRequest):
     toggle = (request.boolQuery == 'all')
 
     if request.terms is None:
-        return json.dumps({
+        return {
             y: {
                 'year': y, 
                 'data': {
@@ -111,7 +106,7 @@ async def search(request: SearchRequest):
                     }
                 }
             } for y in range(2007, 2018)
-        })
+        }
 
     per_year, per_division, sum_total = await Q.year_division_aggregates(aioes, toggle, request.terms)
     return {
@@ -228,6 +223,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--port", type=int, default=8888)
     parser.add_argument("--log-level", default='info')
     args = parser.parse_args()
+    app.servers = [{ 'url': 'http://localhost:8888' }]
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
     uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)

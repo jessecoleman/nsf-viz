@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent } from 'react';
 
 import { Theme, makeStyles } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles/colorManipulator';
@@ -18,7 +18,7 @@ import {
   Tooltip,
 } from '@material-ui/core';
 
-import ChipInput from 'material-ui-chip-input';
+import ChipInput, { ChipRendererArgs } from 'material-ui-chip-input';
 import {
   Search,
   AddCircle,
@@ -33,7 +33,8 @@ import {
 } from 'app/actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getRelated, getTerms, getTypeahead } from 'app/selectors';
-import { addChips, deleteChip, setTerms } from 'app/filterReducer';
+import { addChips, deleteChip, setTerms, Term } from 'app/filterReducer';
+import { useNavigate, useQuery } from 'app/hooks';
 
 const useStyles = makeStyles((theme: Theme) => ({
   search: {
@@ -120,18 +121,6 @@ type TermsListProps = {
   onAddChip: (term: string) => void
 }
 
-type ChipRendererProps = {
-  value: any
-  text: any
-  chip: any
-  isFocused: any
-  isDisabled: any
-  isReadOnly: any
-  handleClick: any
-  handleDelete: any
-  className: any
-};
-
 const TermsList = (props: TermsListProps) => (
   <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
     {props.terms.filter(t => props.filter.indexOf(t) === -1).map((t, i) => (
@@ -147,10 +136,21 @@ const TermsFilter = () => {
 
   const dispatch = useAppDispatch();
   const classes = useStyles();
+  const query = useQuery();
   const terms = useAppSelector(getTerms);
   const typeahead = useAppSelector(getTypeahead);
   const related = useAppSelector(getRelated);
   const [ focused, setFocused ] = useState(false);
+
+  const { push } = useNavigate(({ query, firstLoad }) => {
+    // only run on first load
+    if (query.terms && firstLoad) {
+      dispatch(setTerms(query.terms.map(t => ({ term: t, count: 0 }))));
+      query.terms.map(t => {
+        dispatch(loadTermCounts(t));
+      });
+    }
+  }, '?terms');
 
   const handleFocus = (focused: boolean) => () => {
     setFocused(focused);
@@ -164,22 +164,33 @@ const TermsFilter = () => {
   };
 
   const handleAddChip = (chips: string) => {
+    push({
+      component: 'terms',
+      action: 'add',
+      payload: chips.split(','),
+    });
     dispatch(addChips(chips.split(',')));
     dispatch(loadTermCounts(chips));
-    dispatch(loadData());
+    dispatch(loadData(query));
     dispatch(loadRelated());
   };
 
-  const handleDeleteChip = (chip: string, idx: number) => {
+  const handleDeleteChip = (chip: Term, idx: number) => {
+    push({
+      component: 'terms',
+      action: 'remove',
+      payload: [chip.term],
+    });
     dispatch(deleteChip({ chip, idx }));
-    dispatch(loadData());
+    dispatch(loadData(query));
     dispatch(loadRelated());
   };
   
-  const chipRenderer = (props: ChipRendererProps, key: number) => {
+  const chipRenderer = (props: ChipRendererArgs, key: number) => {
+    /* eslint-disable react/prop-types */
     return (
-      /* eslint-disable react/prop-types */
       <Chip
+        key={key}
         label={
           <span className={classes.chipContent}>
             <span className={classes.chipCount}>{props.chip.count}</span>
@@ -189,11 +200,16 @@ const TermsFilter = () => {
         onDelete={props.handleDelete}
         className={classes.chip}
       />
-      /* eslint-enable react/prop-types */
     );
+    /* eslint-enable react/prop-types */
   };
   
   const handleClearTerms = () => {
+    push({
+      component: 'terms',
+      action: 'set',
+      payload: [],
+    });
     dispatch(setTerms([]));
   };
 

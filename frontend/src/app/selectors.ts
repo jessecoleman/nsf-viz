@@ -24,10 +24,7 @@ export const getSelectedGrantId = (state: RootState) => state.data.selectedGrant
 export const getSelectedGrant = createSelector(
   getGrants,
   getSelectedGrantId,
-  (grants, id) => {
-    console.log(id, grants, grants.find(grant => grant.id === id));
-    return id ? grants.find(grant => grant.id === id) : undefined;
-  }
+  (grants, id) => id ? grants.find(grant => grant.id === id) : undefined
 );
 
 export const getSelectedAbstract = (state: RootState) => state.data.selectedAbstract;
