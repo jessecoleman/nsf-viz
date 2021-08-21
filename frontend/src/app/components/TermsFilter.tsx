@@ -158,7 +158,6 @@ const TermsFilter = () => {
 
   const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.value.length) {
-      console.log(e.target);
       dispatch(loadTypeahead(e.target.value));
     }
   };
