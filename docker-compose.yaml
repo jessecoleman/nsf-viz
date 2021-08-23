@@ -12,8 +12,8 @@ services:
             - DEV_MODE=1
             - ELASTICSEARCH_HOST=elasticsearch
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
-        ports:
-            - 8888:8888
+        # ports:
+        #     - 8888:8888
     frontend:
         build: ./frontend
         # We can't mount the entire UI directory, since JavaScript dependencies
@@ -30,8 +30,8 @@ services:
             - docker_openapi:/usr/local/src/app/frontend/src/api
         environment: 
             - ELASTICSEARCH_HOST=elasticsearch
-        ports:
-            - 3000:3000
+        # ports:
+        #     - 3000:3000
         depends_on: 
             - backend
     proxy:
@@ -47,8 +47,8 @@ services:
             - ./elasticsearch_data:/usr/share/elasticsearch/data
         environment: 
             - discovery.type=single-node
-        ports: 
-            - 9200:9200
-            - 9300:9300
+        # ports: 
+        #     - 9200:9200
+        #     - 9300:9300
 volumes:
     docker_openapi:

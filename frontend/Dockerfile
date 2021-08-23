@@ -25,7 +25,7 @@ ENV NODE_ENV $NODE_ENV
 # Build the UI
 RUN yarn build
 
-EXPOSE 3000
+# EXPOSE 3000
 
 ENTRYPOINT [ "yarn" ]
 CMD [ "generateAndStart" ]
