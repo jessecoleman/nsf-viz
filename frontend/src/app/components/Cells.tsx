@@ -7,6 +7,7 @@ import { Box } from '@material-ui/core';
 import { loadData } from 'app/actions';
 import Chart from 'app/components/Chart';
 import { useAppDispatch } from 'app/store';
+import { useQuery } from 'app/hooks';
 
 const cells = [
   {
@@ -108,9 +109,10 @@ type ChartProps = {
 const Charts = (props: ChartProps) => {
 
   const dispatch = useAppDispatch();
+  const query = useQuery();
 
   useEffect(() => {
-    dispatch(loadData());
+    dispatch(loadData(query));
   }, [dispatch]);
 
   const c = cells[0];
