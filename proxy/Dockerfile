@@ -5,4 +5,4 @@ COPY nginx.conf /etc/nginx/nginx.conf
 ARG CONF_FILE=local.conf
 COPY $CONF_FILE /etc/nginx/conf.d/default.conf
 
-COPY dist /var/www/ui/
+COPY dist /var/www/frontend/

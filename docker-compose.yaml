@@ -9,6 +9,7 @@ services:
             # makes debugging easier.
             - PYTHONUNBUFFERED=1
             - LOG_LEVEL=DEBUG
+            - DEV_MODE=1
             - ELASTICSEARCH_HOST=elasticsearch
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
         ports:
@@ -23,17 +24,23 @@ services:
             - ./frontend/package.json:/usr/local/src/app/frontend/package.json
             - ./frontend/tsconfig.json:/usr/local/src/app/frontend/tsconfig.json
             - ./frontend/yarn.lock:/usr/local/src/app/frontend/yarn.lock
+            # We don't want to mount the codegen-generated api directory since it will
+            # be generated in Docker, so specify it as a persistent Docker named volume:
+            # https://stackoverflow.com/a/38601156
+            - docker_openapi:/usr/local/src/app/frontend/src/api
         environment: 
             - ELASTICSEARCH_HOST=elasticsearch
         ports:
             - 3000:3000
-    # proxy:
-    #     build: ./proxy
-    #     ports:
-    #         - 8080:80
-    #     depends_on:
-    #         - frontend
-    #         - backend
+        depends_on: 
+            - backend
+    proxy:
+        build: ./proxy
+        ports:
+            - 8080:80
+        depends_on:
+            - frontend
+            - backend
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
         volumes: 
@@ -43,3 +50,5 @@ services:
         ports: 
             - 9200:9200
             - 9300:9300
+volumes:
+    docker_openapi:

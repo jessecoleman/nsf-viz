@@ -72,7 +72,7 @@ def main(toggle='any', terms=default_terms):
     if type(terms) is str:
         terms = terms.split(',')
 
-    with open('static/divisions.csv', 'r') as divs:
+    with open('assets/divisions.csv', 'r') as divs:
         divisions = [{
                 'title': d.strip()[:-2],
                 'default': d.strip()[-1] == 'y'
@@ -91,7 +91,6 @@ async def search(request: SearchRequest):
 
     toggle = (request.boolQuery == 'all')
 
-    print(request.terms)
     if len(request.terms) == 0:
         return SearchResponse(
             per_year=[],
@@ -101,7 +100,6 @@ async def search(request: SearchRequest):
 
     per_year, per_division, sum_total = await Q.year_division_aggregates(aioes, toggle, request.terms)
 
-    print(sum_total['aggregations']['divisions']['buckets'])
     return SearchResponse(
         per_year=per_year['aggregations']['years']['buckets'],
         per_division=per_division['aggregations']['years']['buckets'],
@@ -207,6 +205,11 @@ async def get_abstract(_id, terms):
     return await Q.abstract(aioes, _id, terms)
 
 
+@app.get('/generate_openapi_json')
+async def send_api_json():
+    return app.openapi()
+
+
 app.mount('/data', app)
 
 if __name__ == '__main__':
@@ -220,4 +223,8 @@ if __name__ == '__main__':
     app.servers = [{ 'url': 'http://localhost:8888' }]
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
-    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
+    dev_mode = os.environ.get('DEV_MODE')
+    if dev_mode:
+        uvicorn.run("app:app", host=args.host, port=args.port, log_level=args.log_level, reload=True)
+    else:
+        uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
