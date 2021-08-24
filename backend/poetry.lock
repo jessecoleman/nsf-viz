@@ -11,6 +11,14 @@ aiohttp = ">=3.5.0,<4.0.0"
 elasticsearch = ">=7.0.0"
 
 [[package]]
+name = "aiofiles"
+version = "0.7.0"
+description = "File support for asyncio."
+category = "main"
+optional = false
+python-versions = ">=3.6,<4.0"
+
+[[package]]
 name = "aiohttp"
 version = "3.7.4.post0"
 description = "Async http client/server framework (asyncio)"
@@ -426,12 +434,16 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "53a1b41bb774103f3853aca023988abc444a586dfd0e9c3228686f7604dc17b7"
+content-hash = "9e1d0ea9379210dc5a0787a630b4a4656be12763325719a023488627bb0feb96"
 
 [metadata.files]
 aioelasticsearch = [
     {file = "aioelasticsearch-0.7.0-py3-none-any.whl", hash = "sha256:80b5edb56252c3b3636358837783efd6db878aa7336e13117913080f9189df6c"},
     {file = "aioelasticsearch-0.7.0.tar.gz", hash = "sha256:68763ddd7659fd3ea19115daeb01c7d6aca279062dacc51ad96ee37f9708fccc"},
+]
+aiofiles = [
+    {file = "aiofiles-0.7.0-py3-none-any.whl", hash = "sha256:c67a6823b5f23fcab0a2595a289cec7d8c863ffcb4322fb8cd6b90400aedfdbc"},
+    {file = "aiofiles-0.7.0.tar.gz", hash = "sha256:a1c4fc9b2ff81568c83e21392a82f344ea9d23da906e4f6a52662764545e19d4"},
 ]
 aiohttp = [
     {file = "aiohttp-3.7.4.post0-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:3cf75f7cdc2397ed4442594b935a11ed5569961333d49b7539ea741be2cc79d5"},
