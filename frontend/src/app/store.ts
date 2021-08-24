@@ -1,5 +1,5 @@
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
+import { AnyAction, configureStore, ThunkAction } from '@reduxjs/toolkit';
 import { logger } from 'redux-logger';
 
 import filter from 'app/filterReducer';

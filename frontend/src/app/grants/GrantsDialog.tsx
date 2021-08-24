@@ -2,7 +2,7 @@ import { useState, CSSProperties, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
-import { Theme, makeStyles } from '@material-ui/core/styles';
+import { styled } from '@material-ui/core/styles';
 
 import { 
   Dialog,
@@ -30,38 +30,27 @@ import { useEffect } from 'react';
 import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
 import AbstractDialog from './AbstractDialog';
 
-const useStyles = makeStyles((theme: Theme) => ({
-  root: {
-    padding: theme.spacing(2),
-    flexGrow: 1,
-  },
-  grantsDialog: {
-    paddingLeft: 0,
-    paddingRight: 0,
-    overflowY: 'hidden'
-  },
-  grantsTable: {
-    overflowY: 'hidden'
-  },
-  grantCell: {
-    paddingLeft: '24px',
-  },
-  fab: {
-    marginRight: theme.spacing(1)
-    //position: 'fixed',
-    //bottom: theme.spacing(4),
-    //left: theme.spacing(4),
-  },
-  listItem: {
-    cursor: 'pointer',
-    paddingLeft: theme.spacing(3),
-    paddingRight: theme.spacing(1),
-    borderBottom: `1px solid ${theme.palette.grey[300]}`,
-    ['&:hover']: {
-      backgroundColor: theme.palette.grey[100],
-    },
-  },
-}));
+const GrantsDialogContent = styled(DialogContent)(({ theme }) => `
+  padding-left: 0;
+  padding-right: 0;
+  overflow-y: hidden;
+`);
+
+
+const GrantsCollapse = styled(Collapse)(({ theme }) => `
+  overflow-y: hidden;
+`);
+
+
+const GrantListItem = styled(Grid)(({ theme }) => `
+    cursor: pointer;
+    padding-left: ${theme.spacing(3)};
+    padding-right: ${theme.spacing(1)};
+    border-bottom: 1px solid ${theme.palette.grey[300]};
+    &:hover: {
+      backgroundColor: ${theme.palette.grey[100]};
+    }
+`);
 
 const cols: Column[] = [
   { id: 'title', format: t => t, label: 'Grant Title', gridSize: 7 },
@@ -79,7 +68,6 @@ const GrantRow = (props: GrantRowProps) => {
 
   const { index, style } = props;
 
-  const classes = useStyles();
   const dispatch = useAppDispatch();
   const grant = useAppSelector(state => getGrant(state, index));
 
@@ -91,12 +79,11 @@ const GrantRow = (props: GrantRowProps) => {
   };
 
   return (
-    <Grid 
+    <GrantListItem 
       container 
       key={index}
       direction='row' 
       alignItems='center' 
-      className={classes.listItem}
       style={style}
       onClick={setSelectedGrant}
     >
@@ -105,7 +92,7 @@ const GrantRow = (props: GrantRowProps) => {
           {format(grant[id])}
         </Grid>
       ))}
-    </Grid>
+    </GrantListItem>
   );
 };
 
@@ -148,7 +135,6 @@ const GrantsTable = () => {
   const count = noMore ? numGrants : numGrants + 1;
   const isLoaded = (idx: number) => noMore || idx < numGrants;
 
-
   return (
     <InfiniteLoader
       ref={grantsRef}
@@ -173,7 +159,6 @@ const GrantsTable = () => {
 };
 
 const GrantsDialog = () => {
-  const classes = useStyles();
 
   const { query } = useNavigate(() => {
     // TODO put this in reducer
@@ -205,15 +190,12 @@ const GrantsDialog = () => {
     setOpen(false);
   };
 
-  console.log(numGrants > 0);
-
   return (
     <>
       <Tooltip title='view grant details'>
         <Button 
           variant='text' 
           aria-label='grants' 
-          className={classes.fab}
           onClick={handleOpen}
         >
           GRANTS
@@ -243,12 +225,12 @@ const GrantsDialog = () => {
             ))}
           </Grid>
         </DialogTitle>
-        <DialogContent className={classes.grantsDialog}>
-          <Collapse in={numGrants > 0} className={classes.grantsTable}>
+        <GrantsDialogContent>
+          <GrantsCollapse in={numGrants > 0}>
             <GrantsTable />
-          </Collapse>
+          </GrantsCollapse>
           {loading && <LinearProgress />}
-        </DialogContent>
+        </GrantsDialogContent>
         <DialogActions>
           <Button onClick={handleDownload}>
             Download

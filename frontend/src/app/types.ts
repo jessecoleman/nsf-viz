@@ -13,27 +13,40 @@ export type GrantOrder = [ keyof Grant, SortDirection ];
 export type Bucket = {
   key: string
   doc_count: number
+  grant_amounts: { value: number }
 }
 
 export type Key = {
   key_as_string: string
   doc_count: number
+  grant_amounts: { value: number }
   divisions: {
     buckets: Bucket[]
   }
 }
 
-export type PerYear = {
-  divisions: {
-    buckets: Key[]
-  }
-}
+export type PerYear = Array<{
+  key?: string
+  key_as_string: string
+  doc_count: number
+  grant_amounts: {
+    value: number
+  },
+}>
 
-export type PerDivision = {
-  years: {
-    buckets: Key[]
+export type PerDivision = Array<{
+  key_as_string: string
+  doc_count: number
+  grant_amounts: {
+    value: number
+  },
+  divisions: {
+    buckets: Array<{
+      key: string
+      doc_count: number
+    }>
   }
-}
+}>
 
 export type Division = {
   key: string

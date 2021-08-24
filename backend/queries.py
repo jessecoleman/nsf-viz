@@ -1,6 +1,7 @@
 import asyncio
 import json
-from typing import List
+from datetime import datetime
+from typing import List, Tuple
 
 from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
@@ -16,6 +17,7 @@ async def year_division_aggregates(
         aioes: Elasticsearch,
         toggle: bool,
         terms: List[str] = None,
+        date_range: Tuple[datetime, datetime] = None,
         fields = ('title', 'abstract'),
         sort = False
     ):
@@ -87,7 +89,7 @@ async def year_division_aggregates(
                     'min_doc_count': 0,
                 },
                 'aggs': {
-                    'grant_amounts_total': {
+                    'grant_amounts': {
                         'sum': {
                             'field': 'amount',
                         }
@@ -124,9 +126,9 @@ async def year_division_aggregates(
         )
 
 
-async def term_freqs(aioes: Elasticsearch, term: str, fields: List[str]):
+async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):
 
-    query = {
+    queries = [{
         'query': {
             'multi_match': {
                 'fields': fields,
@@ -134,9 +136,12 @@ async def term_freqs(aioes: Elasticsearch, term: str, fields: List[str]):
                 'type': 'phrase',
             }
         },
-    }
+    } for term in terms]
     
-    return await aioes.count(index='nsf', body=query)
+    return await asyncio.gather(*(
+        aioes.count(index='nsf', body=query)
+        for query in queries
+    ))
 
     
 async def grants(aioes,
@@ -229,8 +234,11 @@ async def abstract(aioes, _id: str, terms: str):
     }
 
     response = await aioes.search(index='nsf', body=query)
-    print(json.dumps(response, indent=2))
-    return response['hits']['hits'][0]['highlight']['abstract'][0]
+    hit = response['hits']['hits'][0]
+    if hit.get('highlight'):
+        return hit['highlight']['abstract'][0]
+    else:
+        return hit['_source']['abstract']
 
  
 async def typeahead(aioes, prefix: str):
@@ -240,12 +248,17 @@ async def typeahead(aioes, prefix: str):
                     'prefix': prefix,
                     'completion': {
                         'field': 'suggest',
-                        'size': 15
+                        'size': 10
                     }
-                }
+                },
+                # 'highlight': {
+                #     'pre_tag': '<em>',
+                #     'post_tag': '</em>',
+                # }
             }
         })
 
+    print(json.dumps(result['suggest']['gram-suggest'], indent=2))
     return [
         g['_source']['gram']
         for g in result['suggest']['gram-suggest'][0]['options']

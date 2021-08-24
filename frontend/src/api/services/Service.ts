@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type { GrantsRequest } from '../models/GrantsRequest';
 import type { SearchRequest } from '../models/SearchRequest';
+import type { SearchResponse } from '../models/SearchResponse';
 import { request as __request } from '../core/request';
 
 export class Service {
@@ -73,12 +74,12 @@ export class Service {
     /**
      * Search
      * @param requestBody
-     * @returns any Successful Response
+     * @returns SearchResponse Successful Response
      * @throws ApiError
      */
     public static async search(
         requestBody: SearchRequest,
-    ): Promise<any> {
+    ): Promise<SearchResponse> {
         const result = await __request({
             method: 'POST',
             path: `/search`,
@@ -130,16 +131,16 @@ export class Service {
 
     /**
      * Count Term
-     * @param term
+     * @param terms
      * @returns any Successful Response
      * @throws ApiError
      */
     public static async countTerm(
-        term: string,
+        terms: string,
     ): Promise<any> {
         const result = await __request({
             method: 'GET',
-            path: `/keywords/count/${term}`,
+            path: `/keywords/count/${terms}`,
             errors: {
                 422: `Validation Error`,
             },
