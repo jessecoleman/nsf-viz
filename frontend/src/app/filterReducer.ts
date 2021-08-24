@@ -4,7 +4,7 @@ import { Division, GrantOrder } from './types';
 
 type Field = 'title' | 'abstract';
 
-type Term = {
+export type Term = {
   term: string,
   count?: number,
 }
@@ -37,7 +37,7 @@ const filterSlice = createSlice({
     addChips: (state, action) => {
       state.terms = state.terms.concat(action.payload.map(t => ({ term: t })));
     },
-    deleteChip: (state, action: PayloadAction<{ idx: number, chip: string }>) => {
+    deleteChip: (state, action: PayloadAction<{ idx: number, chip: Term }>) => {
       state.terms.splice(action.payload.idx, 1);
     },
     setBoolQuery: (state, action) => {
@@ -46,28 +46,21 @@ const filterSlice = createSlice({
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
     },
-    selectDivision: (state, action) => {
-      const div = state.divisions.find(o => action.payload === o.title); 
-      if (div) div.selected = !div.selected;
-    },
-    selectAllDivisions: (state, action) => {
-      state.divisions.forEach(d => { d.selected = action.payload; });
-    },
   },
   extraReducers: builder => builder
     .addCase(loadDivisions.fulfilled, (state, action) => {
       console.log(action.payload);
       state.divisions = action.payload.map((div: Division) => ({
-        title: div.title,
-        selected: div.selected,
+        key: div.key,
+        name: div.name,
         count: '',
         amount: '',
       }));
     })
     .addCase(loadData.fulfilled, (state, action) => {
-      // TODO at return type to OpenAPI spec
-      action.payload.sumTotal.divisions.buckets.forEach(d => {
-        const div = state.divisions.find(o => d.key === o.title);
+      // TODO add return type to OpenAPI spec
+      action.payload.sumTotal.divisions.buckets.forEach((d: any) => {
+        const div = state.divisions.find(o => d.key === o.name);
         if (div) {
           div.amount = d.grant_amounts_total.value;
           div.count = d.doc_count;
@@ -89,8 +82,6 @@ export const {
   deleteChip,
   setBoolQuery,
   setGrantOrder,
-  selectDivision,
-  selectAllDivisions,
 } = filterSlice.actions;
 
 export default filterSlice.reducer;

@@ -36,10 +36,10 @@ export type PerDivision = {
 }
 
 export type Division = {
-  title: string
+  key: string
+  name: string
   count: number | ''
   amount: number | ''
-  selected: boolean
 }
 
 export type SortDirection = 'asc' | 'desc';

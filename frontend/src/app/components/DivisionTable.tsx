@@ -1,7 +1,4 @@
-import React, { 
-  useState, 
-  useEffect, 
-} from 'react';
+import { useState } from 'react';
 import { Theme, makeStyles } from '@material-ui/core/styles';
 import { 
   Table,
@@ -25,15 +22,10 @@ import GrantsDialog from 'app/components/GrantsDialog';
 import { format } from 'd3';
 
 import { SortDirection } from '../types';
-import { 
-  selectDivision, 
-  selectAllDivisions,
-} from '../filterReducer';
-import {
-  getDivisions, 
-} from 'app/selectors';
+import { getDivisions } from 'app/selectors';
 import{ loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
+import { useNavigate } from 'app/hooks';
 
 const desc = <T extends unknown>(a: T, b: T, orderBy: keyof T) => {
   if (b[orderBy] < a[orderBy]) {
@@ -71,7 +63,7 @@ type EnhancedTableHeadProps = {
   orderBy: string,
   numSelected: number,
   rowCount: number,
-  onRequestSort: (string) => void,
+  onRequestSort: (key: string) => void,
 }
 
 const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
@@ -209,15 +201,18 @@ const EnhancedTable = () => {
 
   const classes = useStyles();
   const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    dispatch(loadDivisions());
-  }, []);
-
   const [ order, setOrder ] = useState<SortDirection>('desc');
   const [ orderBy, setOrderBy ] = useState<string>('doc_count');
   const divisions = useAppSelector(getDivisions);
-  const selectedDivisions = Object.values(divisions).filter(d => d.selected).length;
+
+  const { query, push } = useNavigate(({ firstLoad }) => {
+    if (firstLoad) {
+      dispatch(loadDivisions());
+    }
+  }, '?divisions');
+
+  const selectedDivisions = new Set(query.divisions);
+  const numSelected = query.divisions?.length ?? 0;
 
   function handleRequestSort(property: string) {
     const isDesc = orderBy === property && order === 'desc';
@@ -225,16 +220,29 @@ const EnhancedTable = () => {
     setOrderBy(property);
   }
 
-  const select = (key: string) => () => dispatch(selectDivision(key));
-  const selectAll = (selected: boolean) => dispatch(selectAllDivisions(selected));
+  const select = (key: string, selected: boolean) => () => {
+    push({
+      component: 'divisions',
+      action: selected ? 'remove' : 'add',
+      payload: [key]
+    });
+  };
+
+  const selectAll = (selected: boolean) => {
+    push({
+      component: 'divisions',
+      action: 'set',
+      payload: selected ? divisions.map(d => d.key) : [] 
+    });
+  };
 
   return (
     <Paper className={classes.root}>
-      <EnhancedTableToolbar numSelected={selectedDivisions} />
+      <EnhancedTableToolbar numSelected={numSelected} />
       <div className={classes.tableWrapper}>
         <Table className={classes.table} aria-labelledby='tableTitle'>
           <EnhancedTableHead
-            numSelected={selectedDivisions}
+            numSelected={numSelected}
             order={order}
             orderBy={orderBy}
             onSelectAllClick={selectAll}
@@ -246,24 +254,24 @@ const EnhancedTable = () => {
               .map(div => (
                 <TableRow
                   hover
-                  onClick={select(div.title)}
+                  onClick={select(div.key, selectedDivisions.has(div.key))}
                   role='checkbox'
-                  aria-checked={div.selected}
+                  aria-checked={selectedDivisions.has(div.key)}
                   tabIndex={-1}
-                  key={div.title}
-                  selected={div.selected}
+                  key={div.key}
+                  selected={selectedDivisions.has(div.key)}
                 >
                   <TableCell padding='checkbox'>
-                    <Checkbox checked={div.selected} />
+                    <Checkbox checked={selectedDivisions.has(div.key)} />
                   </TableCell>
                   <TableCell component='th' scope='row' padding='none'>
-                    {div.title}
+                    {div.name}
                   </TableCell>
                   <TableCell padding='checkbox'>
                     {div.count > 0 ? div.count : '-'}
                   </TableCell>
                   <TableCell padding='checkbox'>
-                    {div.amount ? format('$.2s')(div.amount) : '-'}
+                    {div.amount ? format('$.2s')(div.amount).replace(/G/,'B') : '-'}
                   </TableCell>
                 </TableRow>
               ))

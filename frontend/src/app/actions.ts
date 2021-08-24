@@ -3,9 +3,13 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { Service } from 'api';
 import { FilterState } from './filterReducer';
 
+type FilterParams = {
+  divisions: string[],
+}
+
 export const loadData = createAsyncThunk(
   'loadData',
-  async (payload, thunkAPI) => {
+  async ({ divisions }: FilterParams, thunkAPI) => {
     //const route = queryString.stringify(query);
     const { filter } = thunkAPI.getState() as { filter: FilterState };
     const { terms, ...rest } = filter;
@@ -14,7 +18,7 @@ export const loadData = createAsyncThunk(
     const data = await Service.search({
       terms: terms.map(t => t.term),
       ...rest,
-      divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
+      divisions,
     });
     return {
       perYear: data.per_year.aggregations,
@@ -23,22 +27,26 @@ export const loadData = createAsyncThunk(
     };
   });
 
+type LoadGrantsParams = FilterParams & {
+  idx: number,
+}
+
 export const loadGrants = createAsyncThunk(
   'loadGrants',
-  async (payload: number, thunkAPI) => {
+  async ({ divisions, idx }: LoadGrantsParams, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
     const { grantOrder, terms, ...rest } = filter;
-    const [ order_by, order ] = grantOrder;
+    const [ orderBy, order ] = grantOrder;
 
     return await Service.loadGrants({
-      idx: payload,
+      idx,
       order,
-      order_by,
+      order_by: orderBy === 'title' ? 'title.keyword' : orderBy,
       toggle: false,
       terms: terms.map(t => t.term),
       ...rest,
-      divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
+      divisions,
     });
   });
   

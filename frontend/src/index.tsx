@@ -11,7 +11,7 @@ import store from 'app/store';
 ReactDOM.render(
   <Provider store={store}>
     <Router>
-      <App path='/:terms' />
+      <App />
     </Router>
   </Provider>,
   document.getElementById('root')

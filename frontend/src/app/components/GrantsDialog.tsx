@@ -1,4 +1,4 @@
-import React, { useState, CSSProperties, useRef } from 'react';
+import { useState, CSSProperties, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
@@ -25,10 +25,10 @@ import { loadAbstract, loadGrants } from 'app/actions';
 import { Grant } from '../types';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getGrant, getGrantOrder, getNumGrants, getSelectedAbstract, getSelectedGrant, loadingGrants, noMoreGrants } from 'app/selectors';
-import { dismissAbstractDialog } from 'app/dataReducer';
+import { clearGrants, dismissAbstractDialog } from 'app/dataReducer';
 import { setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
-import useWindowDimensions from 'app/hooks';
+import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -112,6 +112,7 @@ type Column = {
 const GrantsTable = () => {
 
   const dispatch = useAppDispatch();
+  const { divisions } = useQuery();
   const { height } = useWindowDimensions();
   const hasMountedRef = useRef(false);
   const grantsRef = useRef<InfiniteLoader>(null);
@@ -130,9 +131,8 @@ const GrantsTable = () => {
   }, [ orderBy, order ]);
 
   const handleLoadGrants = (startIndex: number, stopIndex: number) => {
-    console.log(loading);
     if (!loading) {
-      return dispatch(loadGrants(startIndex));
+      return dispatch(loadGrants({ divisions, idx: startIndex }));
     } else {
       return null;
     }
@@ -204,6 +204,9 @@ const AbstractDialog = () => {
 const GrantsDialog = () => {
   const classes = useStyles();
 
+  const { query: { divisions }} = useNavigate(() => {
+    dispatch(clearGrants());
+  }, '?divisions');
   const dispatch = useDispatch();
   const [ open, setOpen ] = useState<boolean>(false);
   const [ orderBy, order ] = useAppSelector(getGrantOrder);
@@ -212,7 +215,7 @@ const GrantsDialog = () => {
     const newOrder = orderBy === property && order === 'desc' ? 'asc' : 'desc';
 
     dispatch(setGrantOrder([ property, newOrder ]));
-    dispatch(loadGrants(0));
+    dispatch(loadGrants({ divisions, idx: 0 }));
   };
 
   const handleDownload = () => {
@@ -220,7 +223,7 @@ const GrantsDialog = () => {
   };
 
   const handleOpen = () => {
-    dispatch(loadGrants(0));
+    dispatch(loadGrants({ divisions, idx: 0 }));
     setOpen(true);
   };
 

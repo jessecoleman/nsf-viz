@@ -4,6 +4,13 @@ from typing import List
 
 from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
+from elasticsearch_dsl import query
+
+
+with open('assets/divisions.json') as div_file:
+    divisions = json.load(div_file)
+    div_map = {d['name']: d['key'] for d in divisions}
+
 
 async def year_division_aggregates(
         aioes: Elasticsearch,

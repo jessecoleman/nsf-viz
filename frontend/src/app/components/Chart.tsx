@@ -4,6 +4,7 @@ import { green } from '@material-ui/core/colors';
 import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { getDivisions, getPerDivision } from 'app/selectors';
 import { useAppSelector } from 'app/store';
+import { useQuery } from 'app/hooks';
 
 type ChartProps = {
   title: string,
@@ -16,6 +17,7 @@ type ChartProps = {
 
 const Chart = (props: ChartProps) => {
 
+  const query = useQuery();
   const perYear = useAppSelector(getPerDivision)?.years.buckets;
   const perDivision = useAppSelector(getPerDivision)?.years.buckets;
   const divisions = useAppSelector(getDivisions);
@@ -23,7 +25,7 @@ const Chart = (props: ChartProps) => {
   if (!(perYear && perDivision)) return null;
 
   const handleClick = e => {
-    console.log(e);
+    // pass
   };
 
   const handleMouseLeave = e => {
@@ -42,9 +44,11 @@ const Chart = (props: ChartProps) => {
       return obj;
     }, {}),
   }));
+  
+  const selectedDivisions = new Set(query.divisions);
 
   const color = d3.scaleOrdinal(Object.values(green).slice(2, -3))
-    .domain(divisions.map(d => d.title));
+    .domain(divisions.map(d => d.key));
 
   return (
     <ResponsiveContainer width='100%' height='100%'>
@@ -59,13 +63,13 @@ const Chart = (props: ChartProps) => {
         />
         <YAxis />
         <Tooltip />
-        {divisions.filter(d => !props.filtered || d.selected).map(d => (
+        {divisions.filter(d =>!props.filtered || selectedDivisions.has(d.key)).map(d => (
           <Bar
-            key={d.title}
-            dataKey={d.title}
+            key={d.key}
+            dataKey={d.name}
             stackId='a'
-            fill={color(d.title)}
-            name={d.title}
+            fill={color(d.key)}
+            name={d.name}
           />
         ))}
       </BarChart>
