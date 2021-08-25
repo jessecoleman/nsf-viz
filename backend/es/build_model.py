@@ -2,6 +2,7 @@ from collections import Counter, defaultdict
 from itertools import chain
 from tqdm import tqdm
 import numpy as np
+from matplotlib import pyplot as plt
 from gensim.models import Word2Vec, FastText
 from gensim.models.phrases import Phrases, ENGLISH_CONNECTOR_WORDS
 from gensim.models.callbacks import CallbackAny2Vec
@@ -11,15 +12,20 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.stem import WordNetLemmatizer
 import mysql.connector
 
-# if not nltk.data.find('tokenizers/punkt.zip'):
-#     nltk.download('stopwords')
-#     nltk.download('punkt')
+
+def nltk_download():
+    nltk.download('stopwords')
+    nltk.download('punkt')
+    nltk.download('wordnet')
+
+
 word_tokenizer = nltk.RegexpTokenizer(r'\w+')
 lemmatizer = WordNetLemmatizer()
 stop = set(stopwords.words('english'))
 stop.add(',')
 stop.add('.')
 stop.add('this')
+stop.add('also')
  
 filter_stop = lambda w: w.lower() not in stop
 norm_word = lambda w: lemmatizer.lemmatize(w.lower())
@@ -73,9 +79,6 @@ def get_data(data_file: str):
     )
     sentences = [quadgram_model[s] for s in t_sentences]
 
-    for sentence in sentences[:20]:
-        print([w for w in sentence if '_' in w])
-    
     with open(data_file, 'w') as data:
         data.write('\n'.join(' '.join(s) for s in sentences))
 
@@ -83,22 +86,27 @@ def get_data(data_file: str):
 def count_phrases(data):
     counter = Counter()
     normed = []
-    model = Word2Vec.load('nsf_fasttext_model')
+    model = Word2Vec.load('../assets/nsf_fasttext_model')
     with open(data) as d:
         lines = list(d)
-        for i, l in enumerate(tqdm(lines)):
-            words = Counter(l.split(' '))
-            counter.update(**words)
+        for l in tqdm(lines):
+            counter.update(**Counter(l.split(' ')))
 
-        for w, f in counter.most_common(3000):
-            if w not in stop and len(w) > 3:
+    for w, f in counter.most_common():
+        if w not in stop and len(w) > 3 and f > 50:
+            if w in model.wv:
+                norm = np.linalg.norm(model.wv[w])
+                normed.append((w, f, norm, np.log(f) * np.log(norm)))
 
-                if w in model.wv:
-                    normed.append((w, np.linalg.norm(model.wv[w])))
+    # words, freqs, mags = zip(*normed)
+    with open('../assets/terms.txt', 'w') as out:
+        for w, f, n, a in sorted(normed, key=lambda x: x[3], reverse=True):
+            out.write(f'{a} {w}\n')
 
-        for w, n in sorted(normed, key=lambda x: x[1], reverse=True)[:200]:
-            print(n, w)
-
+    # for i, d in enumerate((freqs, mags)):
+    #     plt.hist(np.log(d))
+    #     plt.savefig(f'{i}.png')
+ 
 
 class callback(CallbackAny2Vec):
     def __init__(self):
@@ -115,7 +123,7 @@ class callback(CallbackAny2Vec):
 
 
 def train_model(data_file: str):
-    model = Word2Vec(
+    model = FastText(
         vector_size=64,
         window=5,
         min_count=5,
@@ -135,8 +143,8 @@ def test_model(model):
             print(similar)
 
 
-data_file = 'data.txt'
-get_data(data_file)
+data_file = '../assets/data.txt'
+#get_data(data_file)
 model = train_model(data_file)
-count_phrases(data_file)
+#count_phrases(data_file)
 #test_model(model)

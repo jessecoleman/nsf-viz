@@ -13,6 +13,7 @@ uvicorn = "^0.14.0"
 mysql-connector = "^2.2.9"
 elasticsearch-dsl = "^7.4.0"
 aiofiles = "^0.7.0"
+matplotlib = "^3.4.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

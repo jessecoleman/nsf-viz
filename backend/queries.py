@@ -1,4 +1,5 @@
 import asyncio
+import re
 import json
 from datetime import datetime
 from typing import List, Tuple
@@ -7,6 +8,7 @@ from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import query
 
+INDEX = 'nsf-dev'
 
 with open('assets/divisions.json') as div_file:
     divisions = json.load(div_file)
@@ -120,9 +122,9 @@ async def year_division_aggregates(
             }
     
     return await asyncio.gather(
-            aioes.search(index='nsf', body=per_year),
-            aioes.search(index='nsf', body=per_division),
-            aioes.search(index='nsf', body=sum_total),
+            aioes.search(index=INDEX, body=per_year),
+            aioes.search(index=INDEX, body=per_division),
+            aioes.search(index=INDEX, body=sum_total),
         )
 
 
@@ -139,7 +141,7 @@ async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):
     } for term in terms]
     
     return await asyncio.gather(*(
-        aioes.count(index='nsf', body=query)
+        aioes.count(index=INDEX, body=query)
         for query in queries
     ))
 
@@ -152,7 +154,7 @@ async def grants(aioes,
         fields: List[str],
         terms: List[str],
     ):
-
+    
     query = {
         'size': 50,
         'from': idx,
@@ -183,7 +185,7 @@ async def grants(aioes,
     }
         
     try:
-        response = await aioes.search(index='nsf', body=query)
+        response = await aioes.search(index=INDEX, body=query)
     except RequestError as e:
         print(e.info)
 
@@ -210,7 +212,7 @@ async def abstract(aioes, _id: str, terms: str):
             }
         },
         'highlight': {
-            # 'type':'fvh', // TODO
+            'type':'unified',
             'number_of_fragments': 0,
             'tags_schema': 'styled',
             'fields': {
@@ -226,17 +228,19 @@ async def abstract(aioes, _id: str, terms: str):
                                     }
                                 }
                             for term in terms.split(',')]
-                        }
+                        },
                     }
                 }
-            }
+            },
+            'pre_tags': ['<em>']
         }
     }
 
-    response = await aioes.search(index='nsf', body=query)
+    response = await aioes.search(index=INDEX, body=query)
     hit = response['hits']['hits'][0]
     if hit.get('highlight'):
-        return hit['highlight']['abstract'][0]
+        highlight = hit['highlight']['abstract'][0]
+        return re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
     else:
         return hit['_source']['abstract']
 
@@ -258,8 +262,8 @@ async def typeahead(aioes, prefix: str):
             }
         })
 
-    print(json.dumps(result['suggest']['gram-suggest'], indent=2))
+    print(json.dumps(result, indent=2))
     return [
-        g['_source']['gram']
+        g['_source']['term']
         for g in result['suggest']['gram-suggest'][0]['options']
     ]

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel
 
 
@@ -15,17 +15,21 @@ class SearchRequest(BaseModel):
     fields: List[str]
 
 
+class GrantAmounts(BaseModel):
+    value: int
+
+
 class Bucket(BaseModel):
     key: str
     doc_count: int
-    grant_amounts: Dict[str, int]
+    grant_amounts: GrantAmounts
 
 
 class Aggregate(BaseModel):
     key: Optional[str]
     key_as_string: Optional[str]
     doc_count: int
-    grant_amounts: Optional[Dict[str, int]]
+    grant_amounts: Optional[GrantAmounts]
 
 
 class DivisionBuckets(BaseModel):
