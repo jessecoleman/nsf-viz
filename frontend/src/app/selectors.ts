@@ -13,6 +13,8 @@ export const getGrants = (state: RootState) => state.data.grants;
 
 export const getNumGrants = (state: RootState) => state.data.grants.length;
 
+export const getLegendFilters = (state: RootState) => state.filter.legendFilters;
+
 export const getGrantOrder = (state: RootState) => state.filter.grantOrder;
 
 export const loadingGrants = (state: RootState) => state.data.loadingGrants;

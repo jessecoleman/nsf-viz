@@ -24,7 +24,7 @@ import {
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getSelectedTerms, getTerms } from 'app/selectors';
 import { addChips, clearTermSelection, deleteChip, selectTerm, setTerms, Term } from 'app/filterReducer';
-import { useNavigate, useQuery } from 'app/hooks';
+import { useDebouncedSearch, useNavigate, useQuery } from 'app/hooks';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
 
@@ -64,7 +64,11 @@ const TermsFilter = () => {
 
   const dispatch = useAppDispatch();
   const query = useQuery();
-  const [ searchInput, setSearchInput ] = useState('');
+  const { input, setInput } = useDebouncedSearch((input) => {
+    if (input.length) {
+      dispatch(loadTypeahead(input));
+    }
+  }, 300);
   const terms = useAppSelector(getTerms);
   const selected = useAppSelector(getSelectedTerms);
 
@@ -72,9 +76,8 @@ const TermsFilter = () => {
     // only run on first load
     if (query.terms && firstLoad) {
       dispatch(setTerms(query.terms.map(t => ({ term: t, count: 0 }))));
-      query.terms.map(t => {
-        dispatch(loadTermCounts(t));
-      });
+      dispatch(loadTermCounts(query.terms.join(',')));
+      dispatch(loadRelated());
     }
   }, '?terms');
 
@@ -87,10 +90,8 @@ const TermsFilter = () => {
   }, [selected]);
 
   const handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
-    if (e.target.value.length) {
-      dispatch(loadTypeahead(e.target.value));
-    }
+    console.log(e.target.value);
+    setInput(e.target.value);
   };
 
   const handleClickChip = (e: MouseEvent, key: string) => {
@@ -99,7 +100,7 @@ const TermsFilter = () => {
   };
 
   const handleAddChip = (chipString: string) => {
-    setSearchInput('');
+    setInput('');
     const chips = chipString.split(',').filter(c => c.length > 0); 
     if (terms.find(t => chips.includes(t.term))) {
       return;
@@ -141,7 +142,7 @@ const TermsFilter = () => {
       dispatch(loadData({ ...query, terms: [] }));
     }
   };
-
+  
   return (
     <SearchContainer>
       <SearchIcon>
@@ -160,7 +161,7 @@ const TermsFilter = () => {
           ))}
         </FlipMove>
         <TermsInput 
-          value={searchInput}
+          value={input}
           onChange={handleChangeInput}
           onAddChip={handleAddChip}
           onDeleteLastChip={handleDeleteChip(terms.length - 1)}

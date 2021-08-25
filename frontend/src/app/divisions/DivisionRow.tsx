@@ -8,7 +8,7 @@ const StyledBox = styled(Box)(({ theme }) => `
 `);
 
 const NumberBox = styled(StyledBox)(({ theme }) => `
-  width: 3em;
+  width: 4em;
   color: ${theme.palette.grey[100]};
   background-color: ${props => props.fill};
 `);

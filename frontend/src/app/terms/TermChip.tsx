@@ -1,4 +1,4 @@
-import { alpha, Chip, CircularProgress } from '@material-ui/core';
+import { Chip, CircularProgress } from '@material-ui/core';
 import { styled } from '@material-ui/core/styles';
 import { format } from 'd3';
 import { Term } from 'app/filterReducer';
@@ -30,11 +30,14 @@ const ChipContent = styled('span')(({ theme }) => `
     background-color: ${theme.palette.grey[400]};
     margin-left: -${theme.spacing(0.9)};
     margin-right: ${theme.spacing(1)};
-    padding: ${theme.spacing(0.5)};
+    padding: ${theme.spacing(0.25, 0.5)};
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 20px;
+    border-radius: ${theme.spacing(1.5)};
+    &:hover {
+      background-color: ${theme.palette.grey[500]};
+    }
   };
 `);
 

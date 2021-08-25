@@ -17,6 +17,10 @@ export type FilterState = {
   divisions: Division[],
   fields: Field[],
   grantOrder: GrantOrder,
+  legendFilters: {
+    counts: boolean,
+    amounts: boolean,
+  },
 }
 
 const initialState: FilterState = {
@@ -26,6 +30,10 @@ const initialState: FilterState = {
   divisions: [],
   fields: ['title'], //, 'abstract'],
   grantOrder: [ 'date', 'desc' ],
+  legendFilters: {
+    counts: true,
+    amounts: true,
+  }
 };
 
 const filterSlice = createSlice({
@@ -58,6 +66,12 @@ const filterSlice = createSlice({
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
     },
+    setLegendFilters: (state, action) => {
+      state.legendFilters = {
+        ...state.legendFilters,
+        ...action.payload,
+      };
+    }
   },
   extraReducers: builder => builder
     .addCase(loadDivisions.fulfilled, (state, action) => {
@@ -69,10 +83,12 @@ const filterSlice = createSlice({
       }));
     })
     .addCase(loadTermCounts.fulfilled, (state, action) => {
-      const term = state.terms.find(term => term.term === action.meta.arg);
-      if (term) {
-        term.count = action.payload[0];
-      }
+      action.meta.arg.split(',').forEach((t, i) => {
+        const term = state.terms.find(term => term.term === t);
+        if (term) {
+          term.count = action.payload[i];
+        }
+      });
     })
 });
 
@@ -84,6 +100,7 @@ export const {
   deleteChip,
   setBoolQuery,
   setGrantOrder,
+  setLegendFilters,
 } = filterSlice.actions;
 
 export default filterSlice.reducer;

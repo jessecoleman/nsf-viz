@@ -16,12 +16,15 @@
         "@types/react-dom": "^17.0.9",
         "@types/react-router-dom": "^4.3.3",
         "@types/redux-logger": "^3.0.9",
+        "autosuggest-highlight": "^3.1.1",
+        "awesome-debounce-promise": "^2.1.0",
         "classnames": "^2.2.6",
         "d3": "^5.9.2",
         "history": "^4.9.0",
         "hoist-non-react-statics": "^3.3.0",
         "query-string": "^7.0.1",
         "react": "^17.0.2",
+        "react-async-hook": "^3.6.2",
         "react-debounce-input": "^3.2.0",
         "react-dom": "^17.0.2",
         "react-flip-move": "^3.0.4",
@@ -33,7 +36,8 @@
         "react-window-infinite-loader": "^1.0.7",
         "recharts": "^2.0.10",
         "redux-logger": "^3.0.6",
-        "typescript": "^4.2.4"
+        "typescript": "^4.2.4",
+        "use-constant": "^1.1.0"
     },
     "scripts": {
         "start": "react-scripts start",
@@ -59,6 +63,7 @@
         ]
     },
     "devDependencies": {
+        "@types/autosuggest-highlight": "^3.1.1",
         "@types/react-window-infinite-loader": "^1.0.4",
         "@types/recharts": "^2.0.0",
         "@typescript-eslint/eslint-plugin": "^4.29.0",

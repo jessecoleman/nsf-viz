@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { green, deepPurple } from '@material-ui/core/colors';
 
 import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Tooltip, Brush, Legend } from 'recharts';
-import { getDivisions, getDivisionsMap, getPerDivision } from 'app/selectors';
+import { getDivisions, getDivisionsMap, getLegendFilters, getPerDivision } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
 import { format } from 'd3';
@@ -11,7 +11,6 @@ import { format } from 'd3';
 import ChartTooltip from './ChartTooltip';
 import { loadData } from 'app/actions';
 import ChartLegend from './ChartLegend';
-import { FormEvent } from 'react';
 
 
 type ChartProps = {
@@ -31,6 +30,7 @@ const Chart = (props: ChartProps) => {
     dispatch(loadData(query));
   }, [dispatch]);
 
+  const { counts, amounts } = useAppSelector(getLegendFilters);
   const perYear = useAppSelector(getPerDivision);
   const perDivision = useAppSelector(getPerDivision);
   const divisionsMap = useAppSelector(getDivisionsMap);
@@ -93,7 +93,7 @@ const Chart = (props: ChartProps) => {
         <Tooltip<number, string>
           content={(props) => <ChartTooltip {...props} />}
         />
-        {filteredDivisions.map(d => (
+        {counts && filteredDivisions.map(d => (
           <Bar
             key={`${d.key}-count`}
             yAxisId='count'
@@ -103,7 +103,7 @@ const Chart = (props: ChartProps) => {
             name={`${d.name}-count`}
           />
         ))}
-        {filteredDivisions.map(d => (
+        {amounts && filteredDivisions.map(d => (
           <Bar
             key={d.key}
             yAxisId='amount'
@@ -117,13 +117,11 @@ const Chart = (props: ChartProps) => {
           dataKey='year'
           onChange={handleChangeBrush}
         />
-        {/*
         <Legend
           align='left'
           verticalAlign='top'
           content={<ChartLegend />}
         />
-        */}
       </BarChart>
     </ResponsiveContainer>
   );

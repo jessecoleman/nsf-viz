@@ -1,5 +1,5 @@
-import { FocusEvent, KeyboardEvent, useState } from 'react';
-import { alpha, Box, ClickAwayListener, Collapse, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
+import { FocusEvent, KeyboardEvent, useRef, useState } from 'react';
+import { alpha, Box, ClickAwayListener, Collapse, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
 import TermsList from './TermsList';
 import { Divider } from '@material-ui/core';
 import { useAppSelector } from 'app/store';
@@ -37,6 +37,7 @@ type TermsInputProps = {
 
 const TermsInput = (props: InputBaseProps & TermsInputProps) => {
 
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [ focused, setFocused ] = useState(false);
   const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
   const terms = useAppSelector(getTerms);
@@ -45,16 +46,18 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
 
   const handleFocus = (e: FocusEvent) => {
     setFocused(true);
-    console.log(e.currentTarget);
     if (e.currentTarget) {
-      setAnchorEl(e.currentTarget as HTMLElement);
+      setAnchorEl(e.currentTarget
+        .parentElement
+        ?.parentElement
+        ?.parentElement
+        ?.parentElement as HTMLElement);
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
     console.log(e.key);
     switch(e.key) {
-    case ',':
     case 'Enter':
       props.onAddChip(props.value);
       break;
@@ -63,17 +66,25 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
         props.onDeleteLastChip();
       }
       break;
+    case 'Escape':
+      handleClickAway();
+      break;
     }
   };
 
   const handleClickAway = () => {
     setFocused(false);
+    console.log(inputRef);
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
   };
 
   return (
     <ClickAwayListener onClickAway={handleClickAway}>
       <Box flexGrow={1}>
         <ChipInput
+          inputRef={inputRef}
           {...props}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
@@ -82,28 +93,31 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
           open={focused}
           anchorEl={anchorEl}
           placement='bottom-end'
+          transition
         >
-          <Collapse in={focused}>
-            {(related.length + typeahead.length) > 0 &&
-            <Dropdown>
-              <List>
-                <TermsList
-                  header='autocomplete'
-                  filter={terms.map(t => t.term)}
-                  terms={typeahead}
-                  onAddChip={props.onAddChip}
-                />
-                <Divider />
-                <TermsList
-                  header='related terms'
-                  filter={terms.map(t => t.term)}
-                  terms={related}
-                  onAddChip={props.onAddChip}
-                />
-              </List>
-            </Dropdown>
-            }
-          </Collapse>
+          {({ TransitionProps }) => (
+            <Fade {...TransitionProps} timeout={350}>
+              <Dropdown>
+                <List>
+                  <TermsList
+                    input={props.value}
+                    header='autocomplete'
+                    filter={terms.map(t => t.term)}
+                    terms={typeahead}
+                    onAddChip={props.onAddChip}
+                  />
+                  <Divider />
+                  <TermsList
+                    input={props.value}
+                    header='related terms'
+                    filter={terms.map(t => t.term)}
+                    terms={related}
+                    onAddChip={props.onAddChip}
+                  />
+                </List>
+              </Dropdown>
+            </Fade>
+          )}
         </Popper>
       </Box>
     </ClickAwayListener>

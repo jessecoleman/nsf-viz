@@ -43,7 +43,7 @@ export const loadGrants = createAsyncThunk(
       ...rest,
       idx,
       order,
-      order_by: orderBy === 'title' ? 'title.keyword' : orderBy,
+      order_by: orderBy === 'title' ? 'title.raw' : orderBy,
       toggle: false,
       terms, //: selected.length ? selected : terms,
       divisions,
