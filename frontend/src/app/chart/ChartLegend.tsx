@@ -22,7 +22,7 @@ const Label = styled('div')(({ theme }) => `
 const ChartLegend = () => {
   
   const dispatch = useAppDispatch();
-  const { counts, amounts } = useAppSelector(getLegendFilters);
+  const { counts, amounts, bool } = useAppSelector(getLegendFilters);
 
   const handleChangeFilters = (e: ChangeEvent, checked: boolean) => {
     console.log(e, checked);
@@ -31,46 +31,75 @@ const ChartLegend = () => {
       [name]: checked
     }));
   };
+  
+  const handleChangeBool = (e: ChangeEvent) => {
+    const { value } = e.currentTarget as HTMLInputElement;
+    dispatch(setLegendFilters({
+      bool: value
+    }));
+  };
+
+  const units = [
+    {
+      value: 'counts',
+      label: 'Grants',
+      checked: counts,
+      icon: InsertDriveFile
+    },
+    {
+      value: 'amounts',
+      label: 'Amounts',
+      checked: amounts,
+      icon: AttachMoney,
+    }
+  ];
+
+  const radio = [
+    {
+      value: 'any',
+      label: 'Any',
+    },
+    {
+      value: 'all',
+      label: 'All',
+    }
+  ];
 
   return (
     <Container>
       <FormGroup>
-        <FormControlLabel 
-          control={
-            <Checkbox
-              name='counts'
-              color='primary'
-              checked={counts}
-              onChange={handleChangeFilters}
-            />}
-          label={<Label><InsertDriveFile fontSize='small'/>Grants</Label>}
-        />
-        <FormControlLabel 
-          control={
-            <Checkbox
-              name='amounts'
-              color='secondary'
-              checked={amounts}
-              onChange={handleChangeFilters}
-            />
-          }
-          label={<Label><AttachMoney fontSize='small'/>Award</Label>}
-        />
+        {units.map(u => (
+          <FormControlLabel 
+            key={u.value}
+            control={
+              <Checkbox
+                name={u.value}
+                color='primary'
+                checked={u.checked}
+                onChange={handleChangeFilters}
+              />}
+            label={<Label><u.icon fontSize='small' />{u.label}</Label>}
+          />
+        ))}
       </FormGroup>
       <RadioGroup
         aria-label='bool toggle'
         name='boolToggle'
+        value={bool}
       >
-        <FormControlLabel 
-          value='any'
-          control={<Radio color='primary' />}
-          label='Any'
-        />
-        <FormControlLabel 
-          value='all'
-          control={<Radio color='primary' />}
-          label='All'
-        />
+        {radio.map(r => (
+          <FormControlLabel 
+            key={r.value}
+            value={r.value}
+            control={
+              <Radio
+                color='primary'
+                onChange={handleChangeBool}
+              />
+            }
+            label={r.label}
+          />
+        ))}
       </RadioGroup>
     </Container>
   );

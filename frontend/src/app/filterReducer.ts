@@ -18,6 +18,7 @@ export type FilterState = {
   fields: Field[],
   grantOrder: GrantOrder,
   legendFilters: {
+    bool: 'any' | 'all'
     counts: boolean,
     amounts: boolean,
   },
@@ -31,6 +32,7 @@ const initialState: FilterState = {
   fields: ['title'], //, 'abstract'],
   grantOrder: [ 'date', 'desc' ],
   legendFilters: {
+    bool: 'any',
     counts: true,
     amounts: true,
   }

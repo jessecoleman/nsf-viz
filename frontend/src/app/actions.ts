@@ -17,10 +17,12 @@ export const loadData = createAsyncThunk<
   async ({ divisions, terms }, thunkAPI) => {
     //const route = queryString.stringify(query);
     const { filter } = thunkAPI.getState();
+    const { legendFilters, ...rest } = filter;
     // const selected = getSelectedTerms(thunkAPI.getState() as any);
 
     return await Service.search({
-      ...filter,
+      ...rest,
+      boolQuery: legendFilters.bool,
       terms, //: selected.length ? selected : terms,
       divisions,
     });
@@ -36,7 +38,7 @@ export const loadGrants = createAsyncThunk(
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
     // const selected = getSelectedTerms(thunkAPI.getState() as any);
-    const { grantOrder, ...rest } = filter;
+    const { grantOrder, legendFilters, ...rest } = filter;
     const [ orderBy, order ] = grantOrder;
 
     return await Service.loadGrants({
@@ -44,7 +46,7 @@ export const loadGrants = createAsyncThunk(
       idx,
       order,
       order_by: orderBy === 'title' ? 'title.raw' : orderBy,
-      toggle: false,
+      toggle: legendFilters.bool === 'all',
       terms, //: selected.length ? selected : terms,
       divisions,
     });

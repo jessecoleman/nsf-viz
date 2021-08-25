@@ -158,6 +158,9 @@ async def grants(aioes,
     query = {
         'size': 50,
         'from': idx,
+        '_source': {
+            'exclude': ['abstract']
+        },
         'query': {
             'bool': {
                 #'filter': [
