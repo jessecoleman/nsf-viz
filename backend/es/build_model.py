@@ -2,7 +2,6 @@ from collections import Counter
 from itertools import chain
 from tqdm import tqdm
 import numpy as np
-from matplotlib import pyplot as plt
 from gensim.models import Word2Vec, FastText
 from gensim.models.phrases import Phrases, ENGLISH_CONNECTOR_WORDS
 from gensim.models.callbacks import CallbackAny2Vec
@@ -93,7 +92,9 @@ def count_phrases(data, explore=False):
             counter.update(**Counter(l.split(' ')))
 
     for w, f in counter.most_common():
-        if w not in stop and len(w) > 3 and f > 50:
+        if f < 50:
+            break
+        if w not in stop and len(w) > 3:
             if w in model.wv:
                 norm = np.linalg.norm(model.wv[w])
                 combined = np.log(f) * np.log(norm)
@@ -104,6 +105,8 @@ def count_phrases(data, explore=False):
             out.write(f'{c} {w}\n')
 
     if explore:
+        from matplotlib import pyplot as plt
+
         words, freqs, mags = zip(*normed)
         for i, d in enumerate((freqs, mags)):
             plt.hist(np.log(d))
@@ -135,7 +138,7 @@ def train_model(data_file: str):
         callbacks=[callback()]
     )
 
-    model.save("nsf_fasttext_model")
+    model.save('nsf_fasttext_model')
     return model
 
 

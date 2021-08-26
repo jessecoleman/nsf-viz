@@ -77,7 +77,8 @@ def get_data():
         
     
 def build_index():
-    nsf.delete()
+    if nsf.exists():
+        nsf.delete()
     nsf.create()
 
     bulk(es, get_data())

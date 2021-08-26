@@ -1,6 +1,25 @@
-from elasticsearch import Elasticsearch, helpers
+from elasticsearch import helpers
+from elasticsearch_dsl import (
+    Document,
+    Keyword,
+    Index,
+    Completion,
+    connections,
+)
 
-es = Elasticsearch()
+es = connections.create_connection(hosts=['localhost'], timeout=20)
+
+suggestions = Index('nsf-suggestions')
+suggestions.settings(
+    number_of_shards=8,
+    number_of_replicas=2,
+)
+
+@suggestions.document
+class Suggestion(Document):
+    suggest = Completion()
+    term = Keyword()
+
 
 def ngrams(input, n):
     output = []
@@ -16,41 +35,26 @@ def get_data():
             term = term.replace('_', ' ')
             words = term.split()
         
-            input = [*words, *ngrams(words, 2), *ngrams(words, 3), term]
-            # incase the full word is already in the set of ngrams
-            s = sorted(set(input), key=input.index)
+            input = [*words, *ngrams(words, 2), *ngrams(words, 3)]
+            if term not in input:
+                input.append(term)
             
-            yield {
-                'term': term,
-                'suggest': {
+            yield Suggestion(
+                term=term,
+                suggest={
                     'weight': int(float(weight) * 100),
-                    'input': s,
+                    'input': input,
                 }
-            }
+            ).to_dict(True)
           
       
 def build_index():
-    # TODO use ES-DSL for this?
-    n_gram_mapping = {
-            'mappings': {
-                'properties': {
-                    'suggest': {
-                        'type': 'completion'
-                    },
-                    'term': {
-                        'type': 'keyword'
-                    }
-                }
-            }
-        }
+    if suggestions.exists():
+        suggestions.delete()
+    suggestions.create()
 
-    es.indices.delete('nsf-suggest')
-    es.indices.create('nsf-suggest', body=n_gram_mapping)
 
-    helpers.bulk(es, ({
-        '_index': 'nsf-suggest',
-        '_source': source
-    } for source in get_data()))
+    helpers.bulk(es, get_data())
 
         
 if __name__ == '__main__':
