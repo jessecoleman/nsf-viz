@@ -1,3 +1,4 @@
+import os
 from elasticsearch import helpers
 from elasticsearch_dsl import (
     Document,
@@ -7,7 +8,8 @@ from elasticsearch_dsl import (
     connections,
 )
 
-es = connections.create_connection(hosts=['localhost'], timeout=20)
+host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
+es = connections.create_connection(hosts=[host], timeout=20)
 
 suggestions = Index('nsf-suggestions')
 suggestions.settings(

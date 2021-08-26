@@ -1,19 +1,21 @@
+import os
 from elasticsearch_dsl import (
     Document,
     Date,
     Keyword,
     Text,
+    Integer,
     Index,
     connections,
     analyzer
 )
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl.analysis import token_filter
-from elasticsearch_dsl.field import Integer
 from tqdm import tqdm
 import mysql.connector as conn
 
-es = connections.create_connection(hosts=['localhost'], timeout=20)
+host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
+es = connections.create_connection(hosts=[host], timeout=20)
 
 nsf = Index('nsf-dev')
 nsf.settings(
