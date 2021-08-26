@@ -1,5 +1,5 @@
 import { FocusEvent, KeyboardEvent, useRef, useState } from 'react';
-import { alpha, Box, ClickAwayListener, Collapse, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
+import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
 import TermsList from './TermsList';
 import { Divider } from '@material-ui/core';
 import { useAppSelector } from 'app/store';
@@ -74,10 +74,7 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
 
   const handleClickAway = () => {
     setFocused(false);
-    console.log(inputRef);
-    if (inputRef.current) {
-      inputRef.current.blur();
-    }
+    inputRef.current?.blur();
   };
 
   return (

@@ -1,4 +1,4 @@
-import { MouseEvent, useState, ChangeEvent, useEffect } from 'react';
+import { MouseEvent, ChangeEvent, useEffect } from 'react';
 
 import FlipMove from 'react-flip-move';
 import { styled } from '@material-ui/core/styles';
@@ -23,7 +23,7 @@ import {
 } from 'app/actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getSelectedTerms, getTerms } from 'app/selectors';
-import { addChips, clearTermSelection, deleteChip, selectTerm, setTerms, Term } from 'app/filterReducer';
+import { addChips, clearTermSelection, deleteChip, selectTerm, setTerms } from 'app/filterReducer';
 import { useDebouncedSearch, useNavigate, useQuery } from 'app/hooks';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';

@@ -38,7 +38,7 @@ const ChipContent = styled('span')(({ theme }) => `
     &:hover {
       background-color: ${theme.palette.grey[500]};
     }
-  };
+  }
 `);
 
 export type TermChipProps = {

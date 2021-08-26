@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import Counter
 from itertools import chain
 from tqdm import tqdm
 import numpy as np
@@ -8,7 +8,7 @@ from gensim.models.phrases import Phrases, ENGLISH_CONNECTOR_WORDS
 from gensim.models.callbacks import CallbackAny2Vec
 import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.tokenize import sent_tokenize
 from nltk.stem import WordNetLemmatizer
 import mysql.connector
 
@@ -19,7 +19,7 @@ def nltk_download():
     nltk.download('wordnet')
 
 
-word_tokenizer = nltk.RegexpTokenizer(r'\w+')
+word_tokenizer = nltk.RegexpTokenizer(r'\w+') # TODO do we like this tokenizer?
 lemmatizer = WordNetLemmatizer()
 stop = set(stopwords.words('english'))
 stop.add(',')
@@ -83,7 +83,7 @@ def get_data(data_file: str):
         data.write('\n'.join(' '.join(s) for s in sentences))
 
 
-def count_phrases(data):
+def count_phrases(data, explore=False):
     counter = Counter()
     normed = []
     model = Word2Vec.load('../assets/nsf_fasttext_model')
@@ -96,16 +96,18 @@ def count_phrases(data):
         if w not in stop and len(w) > 3 and f > 50:
             if w in model.wv:
                 norm = np.linalg.norm(model.wv[w])
-                normed.append((w, f, norm, np.log(f) * np.log(norm)))
+                combined = np.log(f) * np.log(norm)
+                normed.append((w, f, norm, combined))
 
-    # words, freqs, mags = zip(*normed)
     with open('../assets/terms.txt', 'w') as out:
-        for w, f, n, a in sorted(normed, key=lambda x: x[3], reverse=True):
-            out.write(f'{a} {w}\n')
+        for w, f, n, c in sorted(normed, key=lambda x: x[3], reverse=True):
+            out.write(f'{c} {w}\n')
 
-    # for i, d in enumerate((freqs, mags)):
-    #     plt.hist(np.log(d))
-    #     plt.savefig(f'{i}.png')
+    if explore:
+        words, freqs, mags = zip(*normed)
+        for i, d in enumerate((freqs, mags)):
+            plt.hist(np.log(d))
+            plt.savefig(f'{i}.png')
  
 
 class callback(CallbackAny2Vec):

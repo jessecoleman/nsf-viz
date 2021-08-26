@@ -13,15 +13,7 @@ import { loadData } from 'app/actions';
 import ChartLegend from './ChartLegend';
 
 
-type ChartProps = {
-  // title: string,
-  // percent: boolean,
-  // amount: boolean,
-  // filtered: boolean,
-  // hue: Record<number | string, string>,
-}
-
-const Chart = (props: ChartProps) => {
+const Chart = () => {
 
   const dispatch = useAppDispatch();
   const query = useQuery();

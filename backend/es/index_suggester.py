@@ -17,6 +17,7 @@ def get_data():
             words = term.split()
         
             input = [*words, *ngrams(words, 2), *ngrams(words, 3), term]
+            # incase the full word is already in the set of ngrams
             s = sorted(set(input), key=input.index)
             
             yield {
@@ -29,6 +30,7 @@ def get_data():
           
       
 def build_index():
+    # TODO use ES-DSL for this?
     n_gram_mapping = {
             'mappings': {
                 'properties': {
@@ -49,5 +51,7 @@ def build_index():
         '_index': 'nsf-suggest',
         '_source': source
     } for source in get_data()))
+
         
-build_index()
+if __name__ == '__main__':
+    build_index()

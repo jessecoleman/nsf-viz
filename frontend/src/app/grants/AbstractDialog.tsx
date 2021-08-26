@@ -1,4 +1,4 @@
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, makeStyles, styled, Typography } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
 import { dismissAbstractDialog } from 'app/dataReducer';
 import { getSelectedAbstract, getSelectedGrant } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
