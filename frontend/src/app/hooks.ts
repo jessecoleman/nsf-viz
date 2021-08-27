@@ -1,6 +1,9 @@
 import queryString from 'query-string';
 import { useState, useEffect, useRef } from 'react';
 import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router';
+import { useAsync } from 'react-async-hook';
+import useConstant from 'use-constant';
+import AwesomeDebouncePromise from 'awesome-debounce-promise';
 
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;
@@ -23,6 +26,41 @@ export const useWindowDimensions = () => {
   }, []);
 
   return windowDimensions;
+};
+
+export const useDebouncedSearch = (
+  searchFunction: (input: string) => void,
+  timeout: number
+) => {
+
+  // Handle the input text state
+  const [input, setInput] = useState('');
+
+  // Debounce the original search async function
+  const debouncedSearchFunction = useConstant(() =>
+    AwesomeDebouncePromise(searchFunction, timeout)
+  );
+
+  // The async callback is run each time the text changes,
+  // but as the search function is debounced, it does not
+  // fire a new request on each keystroke
+  const results = useAsync(
+    async () => {
+      if (input.length === 0) {
+        return [];
+      } else {
+        return debouncedSearchFunction(input);
+      }
+    },
+    [debouncedSearchFunction, input]
+  );
+
+  // Return everything needed for the hook consumer
+  return {
+    input,
+    setInput,
+    results,
+  };
 };
 
 type Filters = 'terms' | 'divisions'

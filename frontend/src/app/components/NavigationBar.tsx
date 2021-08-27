@@ -5,52 +5,49 @@ import {
   Box,
 } from '@material-ui/core';
 
-import { Theme, makeStyles } from '@material-ui/core/styles';
+import { styled } from '@material-ui/core/styles';
 
-import TermsFilter from 'app/components/TermsFilter';
+import TermsFilter from 'app/terms/TermsFilter';
 
 import nsf from 'app/images/nsf_logo.png';
 
-const useStyles = makeStyles((theme: Theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-  toolbar: {
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  },
-  logo: {
-    marginRight: theme.spacing(2),
-    width: theme.spacing(4),
-    height: theme.spacing(4),
-  },
-  title: {
-    flexGrow: 1,
-    display: 'none',
-    [theme.breakpoints.up('sm')]: {
-      display: 'block',
-    },
-  },
-}));
+const StyledToolbar = styled(Toolbar)(({ theme }) => `
+  padding-top: ${theme.spacing(1)};
+  padding-bottom: ${theme.spacing(1)};
+`);
+
+const Logo = styled('img')(({ theme }) => `
+  margin-right: ${theme.spacing(2)};
+  width: ${theme.spacing(4)};
+  height: ${theme.spacing(4)};
+`);
+
+
+const Title = styled(Typography)(({ theme }) => `
+  flex-grow: 1;
+  display: none;
+  ${theme.breakpoints.up('sm')} {
+    display: block;
+  }
+`);
 
 const SearchAppBar = () => {
 
-  const classes = useStyles();
   return (
-    <div className={classes.root}>
+    <Box flexGrow={1}>
       <AppBar position="static">
-        <Toolbar className={classes.toolbar}>
+        <StyledToolbar>
           <Box minWidth='15em' display='flex' flexDirection='row'>
-            <img className={classes.logo} src={nsf} alt='national science foundation logo' />
-            <Typography className={classes.title} variant="h6" noWrap>
+            <Logo src={nsf} alt='national science foundation logo' />
+            <Title variant="h6" noWrap>
               Grant Explorer
-            </Typography>
+            </Title>
           </Box>
           <Box flexGrow={1} />
           <TermsFilter />
-        </Toolbar>
+        </StyledToolbar>
       </AppBar>
-    </div>
+    </Box>
   );
 };
 

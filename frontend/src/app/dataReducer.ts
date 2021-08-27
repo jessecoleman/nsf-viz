@@ -1,12 +1,14 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit';
+import { Aggregate } from 'api/models/Aggregate';
+import { DivisionAggregate } from 'api/models/DivisionAggregate';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
 import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
-import { Grant, PerDivision, PerYear } from './types';
+import { Grant } from './types';
 
 type GrantState = {
-  perYear?: PerYear,
-  perDivision?: PerDivision,
-  sumTotal?: PerYear,
+  perYear: Aggregate[],
+  perDivision: DivisionAggregate[],
+  sumTotal: Aggregate[],
   grants: Grant[],
   typeahead: string[],
   related: string[],
@@ -18,9 +20,9 @@ type GrantState = {
 }
 
 const initialState: GrantState = {
-  perYear: undefined,
-  perDivision: undefined,
-  sumTotal: undefined,
+  perYear: [],
+  perDivision: [],
+  sumTotal: [],
   grants: [],
   typeahead: [],
   related: [],
@@ -53,9 +55,9 @@ const dataSlice = createSlice({
     })
     .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
-      state.perYear = action.payload.perYear;
-      state.perDivision = action.payload.perDivision;
-      state.sumTotal = action.payload.sumTotal;
+      state.perYear = action.payload.per_year;
+      state.perDivision = action.payload.per_division;
+      state.sumTotal = action.payload.sum_total;
     })
     .addCase(loadData.rejected, (state) => {
       state.loadingData = false;

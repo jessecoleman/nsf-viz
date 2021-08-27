@@ -1,11 +1,14 @@
 import asyncio
+import re
 import json
-from typing import List
+from datetime import datetime
+from typing import List, Tuple
 
 from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import query
 
+INDEX = 'nsf-dev'
 
 with open('assets/divisions.json') as div_file:
     divisions = json.load(div_file)
@@ -16,6 +19,7 @@ async def year_division_aggregates(
         aioes: Elasticsearch,
         toggle: bool,
         terms: List[str] = None,
+        date_range: Tuple[datetime, datetime] = None,
         fields = ('title', 'abstract'),
         sort = False
     ):
@@ -87,7 +91,7 @@ async def year_division_aggregates(
                     'min_doc_count': 0,
                 },
                 'aggs': {
-                    'grant_amounts_total': {
+                    'grant_amounts': {
                         'sum': {
                             'field': 'amount',
                         }
@@ -118,15 +122,15 @@ async def year_division_aggregates(
             }
     
     return await asyncio.gather(
-            aioes.search(index='nsf', body=per_year),
-            aioes.search(index='nsf', body=per_division),
-            aioes.search(index='nsf', body=sum_total),
+            aioes.search(index=INDEX, body=per_year),
+            aioes.search(index=INDEX, body=per_division),
+            aioes.search(index=INDEX, body=sum_total),
         )
 
 
-async def term_freqs(aioes: Elasticsearch, term: str, fields: List[str]):
+async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):
 
-    query = {
+    queries = [{
         'query': {
             'multi_match': {
                 'fields': fields,
@@ -134,9 +138,12 @@ async def term_freqs(aioes: Elasticsearch, term: str, fields: List[str]):
                 'type': 'phrase',
             }
         },
-    }
+    } for term in terms]
     
-    return await aioes.count(index='nsf', body=query)
+    return await asyncio.gather(*(
+        aioes.count(index=INDEX, body=query)
+        for query in queries
+    ))
 
     
 async def grants(aioes,
@@ -147,10 +154,13 @@ async def grants(aioes,
         fields: List[str],
         terms: List[str],
     ):
-
+    
     query = {
         'size': 50,
         'from': idx,
+        '_source': {
+            'exclude': ['abstract']
+        },
         'query': {
             'bool': {
                 #'filter': [
@@ -178,7 +188,7 @@ async def grants(aioes,
     }
         
     try:
-        response = await aioes.search(index='nsf', body=query)
+        response = await aioes.search(index=INDEX, body=query)
     except RequestError as e:
         print(e.info)
 
@@ -205,7 +215,7 @@ async def abstract(aioes, _id: str, terms: str):
             }
         },
         'highlight': {
-            # 'type':'fvh', // TODO
+            'type':'unified',
             'number_of_fragments': 0,
             'tags_schema': 'styled',
             'fields': {
@@ -221,16 +231,21 @@ async def abstract(aioes, _id: str, terms: str):
                                     }
                                 }
                             for term in terms.split(',')]
-                        }
+                        },
                     }
                 }
-            }
+            },
+            'pre_tags': ['<em>']
         }
     }
 
-    response = await aioes.search(index='nsf', body=query)
-    print(json.dumps(response, indent=2))
-    return response['hits']['hits'][0]['highlight']['abstract'][0]
+    response = await aioes.search(index=INDEX, body=query)
+    hit = response['hits']['hits'][0]
+    if hit.get('highlight'):
+        highlight = hit['highlight']['abstract'][0]
+        return re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
+    else:
+        return hit['_source']['abstract']
 
  
 async def typeahead(aioes, prefix: str):
@@ -240,13 +255,18 @@ async def typeahead(aioes, prefix: str):
                     'prefix': prefix,
                     'completion': {
                         'field': 'suggest',
-                        'size': 15
+                        'size': 10
                     }
-                }
+                },
+                # 'highlight': {
+                #     'pre_tag': '<em>',
+                #     'post_tag': '</em>',
+                # }
             }
         })
 
+    print(json.dumps(result, indent=2))
     return [
-        g['_source']['gram']
+        g['_source']['term']
         for g in result['suggest']['gram-suggest'][0]['options']
     ]
