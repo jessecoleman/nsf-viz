@@ -1,39 +1,31 @@
 import React from 'react';
-import { Theme, makeStyles } from '@material-ui/core/styles';
-import { Paper, Grid } from '@material-ui/core';
+import { styled } from '@material-ui/core/styles';
+import { Grid } from '@material-ui/core';
 
-import DivisionTable from 'app/components/DivisionTable';
-import Cells from 'app/components/Cells';
+import DivisionTable from 'app/divisions/DivisionTable';
+import Chart from 'app/chart/Chart';
 
-const useStyles = makeStyles((theme: Theme) => ({
-  root: {
-    padding: theme.spacing(2),
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
-  }
-}));
+const Container = styled('div')(({ theme }) => `
+  padding: ${theme.spacing(2)};
+  flex-grow: 1;
+`);
 
-const Main: React.FC = () => {
-  const classes = useStyles();
+const Main = () => {
 
   return (
-    <div className={classes.root}>
+    <Container>
       <Grid container spacing={1}>
         <Grid item xs={12} md={4}>
           <DivisionTable />
         </Grid>
         <Grid item xs={12} md={8}>
-          <Cells percent={false} />
+          <Chart />
         </Grid>
         <Grid item xs={12}>
 Developed by Jesse Chamberlin, Peter Li, Jevin West at the University of Washington DataLab, and Chris Mentzel at the Moore Foundation 
         </Grid>
       </Grid>
-    </div>
+    </Container>
   );
 };
 

@@ -4,6 +4,7 @@ import './index.css';
 import { BrowserRouter as Router } from 'react-router-dom';
 import * as serviceWorker from './serviceWorker';
 
+import ThemeProvider from 'theme';
 import App from './App';
 
 import store from 'app/store';
@@ -11,7 +12,9 @@ import store from 'app/store';
 ReactDOM.render(
   <Provider store={store}>
     <Router>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </Router>
   </Provider>,
   document.getElementById('root')

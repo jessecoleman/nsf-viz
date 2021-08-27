@@ -8,10 +8,3 @@ body {
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
-
-.hlt1 {
-    font-style: normal;
-    background: lightgrey;
-    padding: 2px 8px;
-    border-radius: 20px;
-}
