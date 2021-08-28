@@ -193,8 +193,9 @@ async def grant_data(request: GrantsRequest):
             request.toggle,
             request.order_by,
             request.order,
+            request.divisions,
             request.fields,
-            request.terms
+            request.terms,
         )
     except Exception:
         raise HTTPException(404, detail='index out of bounds')

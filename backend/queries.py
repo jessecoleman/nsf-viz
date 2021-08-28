@@ -13,6 +13,7 @@ INDEX = 'nsf-dev'
 with open('assets/divisions.json') as div_file:
     divisions = json.load(div_file)
     div_map = {d['name']: d['key'] for d in divisions}
+    inv_div_map = {d['key']: d['name'] for d in divisions}
 
 
 async def year_division_aggregates(
@@ -121,6 +122,7 @@ async def year_division_aggregates(
                 }
             }
     
+    print(json.dumps(per_division, indent=2))
     return await asyncio.gather(
             aioes.search(index=INDEX, body=per_year),
             aioes.search(index=INDEX, body=per_division),
@@ -151,6 +153,7 @@ async def grants(aioes,
         toggle: bool,
         order_by: str,
         order: str,
+        divisions: List[str],
         fields: List[str],
         terms: List[str],
     ):
@@ -163,10 +166,15 @@ async def grants(aioes,
         },
         'query': {
             'bool': {
-                #'filter': [
-                #    {
-                #            
-                #],
+                'filter': [{
+                    'bool': {
+                        'should': [{
+                            'term': {
+                                'division': inv_div_map[div]
+                            }
+                        } for div in divisions]
+                    }
+                }],
                 ('must' if toggle else 'should'): [
                     {
                         'multi_match': {
