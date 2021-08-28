@@ -8,7 +8,7 @@ from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import query
 
-INDEX = 'nsf-dev'
+INDEX = 'nsf'
 
 with open('assets/divisions.json') as div_file:
     divisions = json.load(div_file)
