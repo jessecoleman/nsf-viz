@@ -1,5 +1,5 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { RootState } from './store';
+import type { RootState } from './store';
 
 export const getPerYear = (state: RootState) => state.data.perYear;
 
@@ -13,6 +13,8 @@ export const getGrants = (state: RootState) => state.data.grants;
 
 export const getNumGrants = (state: RootState) => state.data.grants.length;
 
+export const getLegendFilters = (state: RootState) => state.filter.legendFilters;
+
 export const getGrantOrder = (state: RootState) => state.filter.grantOrder;
 
 export const loadingGrants = (state: RootState) => state.data.loadingGrants;
@@ -24,10 +26,7 @@ export const getSelectedGrantId = (state: RootState) => state.data.selectedGrant
 export const getSelectedGrant = createSelector(
   getGrants,
   getSelectedGrantId,
-  (grants, id) => {
-    console.log(id, grants, grants.find(grant => grant.id === id));
-    return id ? grants.find(grant => grant.id === id) : undefined;
-  }
+  (grants, id) => id ? grants.find(grant => grant.id === id) : undefined
 );
 
 export const getSelectedAbstract = (state: RootState) => state.data.selectedAbstract;
@@ -38,7 +37,32 @@ export const getGrant = createSelector(
   (grants, idx) => grants[idx]
 );
 
+export const getDivisionsMap = (state: RootState) => state.filter.divisions.reduce((accum, div) => {
+  accum[div.name] = div.key;
+  return accum;
+}, {});
+
+export const getDivisionAggs = createSelector(
+  getTotal,
+  getDivisions,
+  (total, divisions) => (
+    divisions.map(d => {
+      const bucket = total?.find(d2 => d2.key === d.name);
+      return {
+        ...d,
+        amount: bucket?.grant_amounts!.value ?? 0,
+        count: bucket?.doc_count ?? 0,
+      };
+    })
+  )
+);
+
 export const getTerms = (state: RootState) => state.filter.terms;
+
+export const getSelectedTerms = createSelector(
+  getTerms,
+  (terms) => terms.filter(t => t.selected).map(t => t.term)
+);
 
 export const getTypeahead = (state: RootState) => state.data.typeahead;
 

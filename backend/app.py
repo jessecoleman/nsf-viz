@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
+from fastapi.responses import FileResponse
 from gensim.models.word2vec import Word2Vec
 import logging
 import json
@@ -10,7 +11,7 @@ from collections import defaultdict
 from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
 
-from models import GrantsRequest, SearchRequest, Term
+from models import GrantsRequest, SearchRequest, SearchResponse, Term
 import queries as Q
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -33,7 +34,7 @@ async def startup():
     # look for the environment variable ELASTICSEARCH_HOST. if not set, use default 'localhost'
     host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
     aioes = Elasticsearch([{"host": host}])
-    word_vecs = Word2Vec.load('assets/nsf_w2v_model').wv
+    word_vecs = Word2Vec.load('assets/nsf_fasttext_model').wv
 
 
 @app.on_event('shutdown')
@@ -82,43 +83,28 @@ def main(toggle='any', terms=default_terms):
 
 @app.get('/divisions', operation_id='loadDivisions')
 async def divisions():
-    with open('assets/divisions.csv', 'r') as divs:
-        divisions = [{
-                'title': d.strip()[:-2],
-                'selected': d.strip()[-1] == 'y'
-            } for d in divs.readlines()]
-        
-        return divisions
+    return FileResponse('assets/divisions.json')
 
 
-@app.post('/search', operation_id='search')
+@app.post('/search', operation_id='search', response_model=SearchResponse)
 async def search(request: SearchRequest):
-
-    #dependent = body.get('dependant')
 
     toggle = (request.boolQuery == 'all')
 
-    if request.terms is None:
-        return json.dumps({
-            y: {
-                'year': y, 
-                'data': {
-                    'all': {
-                        'total_amount': 0,
-                        'total_grants': 0,
-                        'match_amount': 0,
-                        'match_grants': 0
-                    }
-                }
-            } for y in range(2007, 2018)
-        })
+    if len(request.terms) == 0:
+        return SearchResponse(
+            per_year=[],
+            per_division=[],
+            sum_total=[]
+        )
 
     per_year, per_division, sum_total = await Q.year_division_aggregates(aioes, toggle, request.terms)
-    return {
-            'per_year': per_year,
-            'per_division': per_division,
-            'sum_total': sum_total,
-        }
+
+    return SearchResponse(
+        per_year=per_year['aggregations']['years']['buckets'],
+        per_division=per_division['aggregations']['years']['buckets'],
+        sum_total=sum_total['aggregations']['divisions']['buckets'],
+    )
 
     matched = await Q.year_division_aggregates(aioes, toggle, terms)
     order = await Q.year_division_aggregates(aioes, toggle, terms, sort=True)
@@ -177,20 +163,24 @@ async def typeahead(prefix: str):
 @app.get('/keywords/related/{keywords}', operation_id='loadRelated')
 def related(keywords: str):
     terms = []
+    print(keywords)
     for term in keywords.split(','):
-        for word in term.split():
-            if word_vecs.key_to_index.get(word, False):
-                terms.append(word)
+        # convert to ngram representation
+        term = term.lower().replace(' ', '_')
+        if word_vecs.key_to_index.get(term, False):
+            terms.append(term)
 
     if len(terms) > 0:
-        return [w[0] for w in word_vecs.most_similar(terms, [], topn=15)]
+        # convert back
+        return [w[0].replace('_', ' ') for w in word_vecs.most_similar(terms, [], topn=15)]
     else:
         return []
 
 
-@app.get('/keywords/count/{term}', operation_id='countTerm')
-async def count_term(term: str):
-    return await Q.term_freqs(aioes, term, ['title', 'abstract'])
+@app.get('/keywords/count/{terms}', operation_id='countTerm')
+async def count_term(terms: str):
+    counts = await Q.term_freqs(aioes, terms.split(','), ['title', 'abstract'])
+    return [c['count'] for c in counts]
 
 
 @app.post('/grants', operation_id='loadGrants')
@@ -212,9 +202,6 @@ async def grant_data(request: GrantsRequest):
 
 @app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract')
 async def get_abstract(_id, terms):
-
-    print(_id, terms)
-    
     return await Q.abstract(aioes, _id, terms)
 
 
@@ -233,6 +220,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--port", type=int, default=8888)
     parser.add_argument("--log-level", default='info')
     args = parser.parse_args()
+    app.servers = [{ 'url': 'http://localhost:8888' }]
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
     dev_mode = os.environ.get('DEV_MODE')

@@ -1,12 +1,14 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit';
+import { Aggregate } from 'api/models/Aggregate';
+import { DivisionAggregate } from 'api/models/DivisionAggregate';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
-import { selectAllDivisions, selectDivision, setGrantOrder } from './filterReducer';
-import { Grant, PerDivision, PerYear } from './types';
+import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
+import { Grant } from './types';
 
 type GrantState = {
-  perYear?: PerYear,
-  perDivision?: PerDivision,
-  sumTotal?: PerYear,
+  perYear: Aggregate[],
+  perDivision: DivisionAggregate[],
+  sumTotal: Aggregate[],
   grants: Grant[],
   typeahead: string[],
   related: string[],
@@ -15,36 +17,31 @@ type GrantState = {
   loadingData: boolean,
   loadingGrants: boolean,
   selectedAbstract?: string,
-  sort: boolean,
-  sortBy: 'title' | 'abstract',
 }
 
 const initialState: GrantState = {
-  perYear: undefined,
-  perDivision: undefined,
-  sumTotal: undefined,
+  perYear: [],
+  perDivision: [],
+  sumTotal: [],
   grants: [],
   typeahead: [],
   related: [],
   noMoreGrants: false,
   loadingData: false,
   loadingGrants: false,
-  sort: false,
-  sortBy: 'title',
 };
 
 const dataSlice = createSlice({
   name: 'data',
   initialState,
   reducers: {
-    sortedGrants: (state, action) => {
-      state.sortBy = action.payload.sortBy;
-      state.sort = action.payload.sort;
+    clearGrants: (state) => {
+      state.grants = [];
     },
     dismissAbstractDialog: (state) => {
       state.selectedGrantId = undefined;
       state.selectedAbstract = undefined;
-    }
+    },
   }, 
   extraReducers: builder => builder
     .addCase(loadTypeahead.fulfilled, (state, action) => {
@@ -58,9 +55,9 @@ const dataSlice = createSlice({
     })
     .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
-      state.perYear = action.payload.perYear;
-      state.perDivision = action.payload.perDivision;
-      state.sumTotal = action.payload.sumTotal;
+      state.perYear = action.payload.per_year;
+      state.perDivision = action.payload.per_division;
+      state.sumTotal = action.payload.sum_total;
     })
     .addCase(loadData.rejected, (state) => {
       state.loadingData = false;
@@ -71,6 +68,7 @@ const dataSlice = createSlice({
     })
     .addCase(loadGrants.fulfilled, (state, action) => {
       state.loadingGrants = false;
+      // TODO this needs to run conditionally on reorder
       state.grants = state.grants.concat(action.payload);
     })
     .addCase(loadGrants.rejected, (state) => {
@@ -82,14 +80,13 @@ const dataSlice = createSlice({
     })
     .addCase(loadAbstract.fulfilled, (state, action) => {
       state.selectedAbstract = action.payload;
-    })
-    .addMatcher(isAnyOf(setGrantOrder, selectDivision, selectAllDivisions), (state) => {
+    }).addMatcher(isAnyOf(setGrantOrder, setTerms, addChips, deleteChip), (state) => {
       state.grants = [];
     })
 });
 
 export const {
-  sortedGrants,
+  clearGrants,
   dismissAbstractDialog,
 } = dataSlice.actions;
 

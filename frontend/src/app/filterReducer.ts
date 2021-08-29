@@ -1,12 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { loadData, loadDivisions, loadTermCounts } from './actions';
+import { loadDivisions, loadTermCounts } from './actions';
 import { Division, GrantOrder } from './types';
 
 type Field = 'title' | 'abstract';
 
-type Term = {
+export type Term = {
   term: string,
   count?: number,
+  selected?: boolean,
 }
 
 export type FilterState = {
@@ -16,15 +17,25 @@ export type FilterState = {
   divisions: Division[],
   fields: Field[],
   grantOrder: GrantOrder,
+  legendFilters: {
+    bool: 'any' | 'all'
+    counts: boolean,
+    amounts: boolean,
+  },
 }
 
 const initialState: FilterState = {
   dependant: 'divisions',
   boolQuery: 'any',
-  terms: [{ term: 'data science' }, { term: 'machine learning' }],
+  terms: [],
   divisions: [],
   fields: ['title'], //, 'abstract'],
   grantOrder: [ 'date', 'desc' ],
+  legendFilters: {
+    bool: 'any',
+    counts: true,
+    amounts: true,
+  }
 };
 
 const filterSlice = createSlice({
@@ -34,11 +45,22 @@ const filterSlice = createSlice({
     setTerms: (state, action) => {
       state.terms = action.payload;
     },
+    selectTerm: (state, action) => {
+      const term = state.terms.find(t => t.term === action.payload);
+      if (term) {
+        term.selected = !term.selected;
+      }
+    },
+    clearTermSelection: (state) => {
+      state.terms.forEach(t => {
+        t.selected = false;
+      });
+    },
     addChips: (state, action) => {
       state.terms = state.terms.concat(action.payload.map(t => ({ term: t })));
     },
-    deleteChip: (state, action: PayloadAction<{ idx: number, chip: string }>) => {
-      state.terms.splice(action.payload.idx, 1);
+    deleteChip: (state, action: PayloadAction<number>) => {
+      state.terms.splice(action.payload, 1);
     },
     setBoolQuery: (state, action) => {
       state.boolQuery = action.payload.boolQuery;
@@ -46,51 +68,41 @@ const filterSlice = createSlice({
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
     },
-    selectDivision: (state, action) => {
-      const div = state.divisions.find(o => action.payload === o.title); 
-      if (div) div.selected = !div.selected;
-    },
-    selectAllDivisions: (state, action) => {
-      state.divisions.forEach(d => { d.selected = action.payload; });
-    },
+    setLegendFilters: (state, action) => {
+      state.legendFilters = {
+        ...state.legendFilters,
+        ...action.payload,
+      };
+    }
   },
   extraReducers: builder => builder
     .addCase(loadDivisions.fulfilled, (state, action) => {
-      console.log(action.payload);
       state.divisions = action.payload.map((div: Division) => ({
-        title: div.title,
-        selected: div.selected,
+        key: div.key,
+        name: div.name,
         count: '',
         amount: '',
       }));
     })
-    .addCase(loadData.fulfilled, (state, action) => {
-      // TODO at return type to OpenAPI spec
-      action.payload.sumTotal.divisions.buckets.forEach(d => {
-        const div = state.divisions.find(o => d.key === o.title);
-        if (div) {
-          div.amount = d.grant_amounts_total.value;
-          div.count = d.doc_count;
+    .addCase(loadTermCounts.fulfilled, (state, action) => {
+      action.meta.arg.split(',').forEach((t, i) => {
+        const term = state.terms.find(term => term.term === t);
+        if (term) {
+          term.count = action.payload[i];
         }
       });
-    })
-    .addCase(loadTermCounts.fulfilled, (state, action) => {
-      console.log(action);
-      const term = state.terms.find(term => term.term === action.meta.arg);
-      if (term) {
-        term.count = action.payload.count;
-      }
     })
 });
 
 export const {
   setTerms,
+  selectTerm,
+  clearTermSelection,
   addChips,
   deleteChip,
   setBoolQuery,
   setGrantOrder,
-  selectDivision,
-  selectAllDivisions,
+  setLegendFilters,
 } = filterSlice.actions;
 
 export default filterSlice.reducer;

@@ -1,44 +1,54 @@
 import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { Service } from 'api';
-import { FilterState } from './filterReducer';
+import { SearchResponse, Service } from 'api';
+import type { FilterState } from './filterReducer';
 
-export const loadData = createAsyncThunk(
+type FilterParams = {
+  divisions: string[],
+  terms: string[],
+}
+
+export const loadData = createAsyncThunk<
+  SearchResponse,
+  FilterParams,
+  { state: { filter: FilterState }}
+>(
   'loadData',
-  async (payload, thunkAPI) => {
+  async ({ divisions, terms }, thunkAPI) => {
     //const route = queryString.stringify(query);
-    const { filter } = thunkAPI.getState() as { filter: FilterState };
-    const { terms, ...rest } = filter;
-    console.log(terms);
+    const { filter } = thunkAPI.getState();
+    const { legendFilters, ...rest } = filter;
+    // const selected = getSelectedTerms(thunkAPI.getState() as any);
 
-    const data = await Service.search({
-      terms: terms.map(t => t.term),
+    return await Service.search({
       ...rest,
-      divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
+      boolQuery: legendFilters.bool,
+      terms, //: selected.length ? selected : terms,
+      divisions,
     });
-    return {
-      perYear: data.per_year.aggregations,
-      perDivision: data.per_division.aggregations,
-      sumTotal: data.sum_total.aggregations,
-    };
   });
+
+type LoadGrantsParams = FilterParams & {
+  idx: number,
+}
 
 export const loadGrants = createAsyncThunk(
   'loadGrants',
-  async (payload: number, thunkAPI) => {
+  async ({ divisions, terms, idx }: LoadGrantsParams, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    const { grantOrder, terms, ...rest } = filter;
-    const [ order_by, order ] = grantOrder;
+    // const selected = getSelectedTerms(thunkAPI.getState() as any);
+    const { grantOrder, legendFilters, ...rest } = filter;
+    const [ orderBy, order ] = grantOrder;
 
     return await Service.loadGrants({
-      idx: payload,
-      order,
-      order_by,
-      toggle: false,
-      terms: terms.map(t => t.term),
       ...rest,
-      divisions: filter.divisions.filter(d => d.selected).map(d => d.title),
+      idx,
+      order,
+      order_by: orderBy === 'title' ? 'title.raw' : orderBy,
+      toggle: legendFilters.bool === 'all',
+      terms, //: selected.length ? selected : terms,
+      divisions,
     });
   });
   
@@ -69,6 +79,6 @@ export const loadRelated = createAsyncThunk(
   'loadRelated',
   async (_, thunkAPI) => {
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    return await Service.loadRelated(filter.terms.join(','));
+    return await Service.loadRelated(filter.terms.map(t => t.term).join(','));
   }
 );

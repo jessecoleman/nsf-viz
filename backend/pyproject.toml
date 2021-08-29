@@ -10,9 +10,16 @@ fastapi = "^0.68.0"
 gensim = "^4.0.1"
 aioelasticsearch = "^0.7.0"
 uvicorn = "^0.14.0"
+mysql-connector = "^2.2.9"
+elasticsearch-dsl = "^7.4.0"
+aiofiles = "^0.7.0"
+matplotlib = "^3.4.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+nltk = "^3.6.2"
+fasttext = "^0.9.2"
+python-Levenshtein = "^0.12.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
