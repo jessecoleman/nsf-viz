@@ -14,17 +14,15 @@ export const loadData = createAsyncThunk<
   { state: { filter: FilterState }}
 >(
   'loadData',
-  async ({ divisions, terms }, thunkAPI) => {
-    //const route = queryString.stringify(query);
+  async (query, thunkAPI) => {
     const { filter } = thunkAPI.getState();
     const { legendFilters, ...rest } = filter;
-    // const selected = getSelectedTerms(thunkAPI.getState() as any);
 
     return await Service.search({
       ...rest,
+      ...query,
       boolQuery: legendFilters.bool,
-      terms, //: selected.length ? selected : terms,
-      divisions,
+      year_range: filter.yearRange,
     });
   });
 
@@ -34,21 +32,23 @@ type LoadGrantsParams = FilterParams & {
 
 export const loadGrants = createAsyncThunk(
   'loadGrants',
-  async ({ divisions, terms, idx }: LoadGrantsParams, thunkAPI) => {
+  async ({ idx, ...query }: LoadGrantsParams, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
     // const selected = getSelectedTerms(thunkAPI.getState() as any);
-    const { grantOrder, legendFilters, ...rest } = filter;
+    const { grantOrder, legendFilters, grantFilter, ...rest } = filter;
     const [ orderBy, order ] = grantOrder;
+
+    console.log(grantFilter);
 
     return await Service.loadGrants({
       ...rest,
+      ...query,
       idx,
       order,
       order_by: orderBy === 'title' ? 'title.raw' : orderBy,
       toggle: legendFilters.bool === 'all',
-      terms, //: selected.length ? selected : terms,
-      divisions,
+      year_range: grantFilter.yearRange,
     });
   });
   

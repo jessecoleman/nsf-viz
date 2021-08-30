@@ -23,9 +23,9 @@ import { format, timeFormat, timeParse } from 'd3';
 import { loadAbstract, loadGrants } from 'app/actions';
 import { Grant } from '../types';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrant, getGrantOrder, getNumGrants, loadingGrants, noMoreGrants } from 'app/selectors';
+import { getGrant, getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
-import { setGrantOrder } from 'app/filterReducer';
+import { clearGrantFilter, setGrantDialogOpen, setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
 import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
 import AbstractDialog from './AbstractDialog';
@@ -167,7 +167,7 @@ const GrantsDialog = () => {
   const dispatch = useAppDispatch();
   const loading = useAppSelector(loadingGrants);
   const numGrants = useAppSelector(getNumGrants);
-  const [ open, setOpen ] = useState<boolean>(false);
+  const open = useAppSelector(isGrantDialogOpen);
   const [ orderBy, order ] = useAppSelector(getGrantOrder);
 
   const handleSort = (property: keyof Grant) => () => {
@@ -182,12 +182,13 @@ const GrantsDialog = () => {
   };
 
   const handleOpen = () => {
-    dispatch(loadGrants({ ...query, idx: 0 }));
-    setOpen(true);
+    dispatch(clearGrants());
+    dispatch(setGrantDialogOpen(true));
   };
 
   const handleClose = () => {
-    setOpen(false);
+    dispatch(setGrantDialogOpen(false));
+    dispatch(clearGrantFilter());
   };
 
   return (

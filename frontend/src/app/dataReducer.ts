@@ -55,7 +55,6 @@ const dataSlice = createSlice({
     })
     .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
-      state.perYear = action.payload.per_year;
       state.perDivision = action.payload.per_division;
       state.sumTotal = action.payload.sum_total;
     })

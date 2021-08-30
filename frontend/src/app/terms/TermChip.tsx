@@ -1,5 +1,5 @@
 import { Chip, CircularProgress } from '@material-ui/core';
-import { styled } from '@material-ui/core/styles';
+import { alpha, styled } from '@material-ui/core/styles';
 import { format } from 'd3';
 import { Term } from 'app/filterReducer';
 import { forwardRef, MouseEvent } from 'react';
@@ -18,6 +18,9 @@ const StyledChip = styled(Chip)(({ theme }) => `
     &:hover {
       background-color: ${theme.palette.secondary.dark};
     }
+    & > span > span > span {
+      background-color: ${alpha(theme.palette.common.white, 0.7)};
+    }
   }
 `);
 
@@ -26,8 +29,10 @@ const ChipContent = styled('span')(({ theme }) => `
   flex-direction: row;
   align-items: center;
   & > span {
+    height: ${theme.spacing(3)};
+    min-width: ${theme.spacing(3)};
     color: ${theme.palette.text.primary};
-    background-color: ${theme.palette.grey[400]};
+    background-color: ${alpha(theme.palette.common.black, 0.26)};
     margin-left: -${theme.spacing(0.9)};
     margin-right: ${theme.spacing(1)};
     padding: ${theme.spacing(0.25, 0.5)};
@@ -35,9 +40,6 @@ const ChipContent = styled('span')(({ theme }) => `
     align-items: center;
     justify-content: center;
     border-radius: ${theme.spacing(1.5)};
-    &:hover {
-      background-color: ${theme.palette.grey[500]};
-    }
   }
 `);
 
@@ -62,7 +64,7 @@ const TermChip = forwardRef<HTMLDivElement, TermChipProps>((props: TermChipProps
           <span> 
             {chip.count 
               ? format('.2s')(chip.count)
-              : <CircularProgress style={{ width: '1em', height: '1em' }} />
+              : <CircularProgress size='1.25em' color='secondary' />
             }
           </span>
           {props.chip.term}
