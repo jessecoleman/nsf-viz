@@ -91,19 +91,23 @@ async def search(request: SearchRequest):
 
     toggle = (request.boolQuery == 'all')
 
-    if len(request.terms) == 0:
-        return SearchResponse(
-            per_year=[],
-            per_division=[],
-            sum_total=[]
-        )
+    # if len(request.terms) == 0:
+    #     return SearchResponse(
+    #         per_division=[],
+    #         sum_total=[]
+    #     )
 
-    per_year, per_division, sum_total = await Q.year_division_aggregates(aioes, toggle, request.terms)
+    result = await Q.year_division_aggregates(
+        aioes,
+        toggle,
+        terms=request.terms,
+        year_range=request.year_range,
+        fields=request.fields
+    )
 
     return SearchResponse(
-        per_year=per_year['aggregations']['years']['buckets'],
-        per_division=per_division['aggregations']['years']['buckets'],
-        sum_total=sum_total['aggregations']['divisions']['buckets'],
+        per_division=result['aggregations']['years']['buckets'],
+        sum_total=result['aggregations']['divisions']['buckets'],
     )
 
     matched = await Q.year_division_aggregates(aioes, toggle, terms)

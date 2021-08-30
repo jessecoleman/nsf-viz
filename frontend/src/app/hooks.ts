@@ -2,8 +2,19 @@ import queryString from 'query-string';
 import { useState, useEffect, useRef } from 'react';
 import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router';
 import { useAsync } from 'react-async-hook';
-import useConstant from 'use-constant';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
+
+type ResultBox<T> = { v: T }
+
+export default function useConstant<T>(fn: () => T): T {
+  const ref = useRef<ResultBox<T>>();
+
+  if (!ref.current) {
+    ref.current = { v: fn() };
+  }
+
+  return ref.current.v;
+}
 
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;

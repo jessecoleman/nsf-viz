@@ -15,6 +15,8 @@ export const getNumGrants = (state: RootState) => state.data.grants.length;
 
 export const getLegendFilters = (state: RootState) => state.filter.legendFilters;
 
+export const getYearRange = (state: RootState) => state.filter.yearRange;
+
 export const getGrantOrder = (state: RootState) => state.filter.grantOrder;
 
 export const loadingGrants = (state: RootState) => state.data.loadingGrants;

@@ -182,7 +182,6 @@ const GrantsDialog = () => {
   };
 
   const handleOpen = () => {
-    dispatch(loadGrants({ ...query, idx: 0 }));
     setOpen(true);
   };
 

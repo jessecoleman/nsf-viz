@@ -1,5 +1,6 @@
+from typing import List, Optional, Tuple
 from enum import Enum
-from typing import Dict, List, Literal, Optional
+from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -13,6 +14,7 @@ class SearchRequest(BaseModel):
     dependant: str
     divisions: List[str]
     fields: List[str]
+    year_range: List[int]
 
 
 class GrantAmounts(BaseModel):
@@ -41,7 +43,7 @@ class DivisionAggregate(Aggregate):
 
 
 class SearchResponse(BaseModel):
-    per_year: List[Aggregate]
+    # per_year: List[Aggregate]
     per_division: List[DivisionAggregate]
     sum_total: List[Aggregate]
 

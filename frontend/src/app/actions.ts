@@ -25,6 +25,7 @@ export const loadData = createAsyncThunk<
       boolQuery: legendFilters.bool,
       terms, //: selected.length ? selected : terms,
       divisions,
+      year_range: filter.yearRange,
     });
   });
 

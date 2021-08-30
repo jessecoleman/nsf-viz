@@ -20,76 +20,19 @@ async def year_division_aggregates(
         aioes: Elasticsearch,
         toggle: bool,
         terms: List[str] = None,
-        date_range: Tuple[datetime, datetime] = None,
+        year_range: Tuple[int, int] = None,
         fields = ('title', 'abstract'),
         sort = False
     ):
 
-    per_year = {
-        'query': {
-            'match_all': {},
-        },
-        'aggs': {
-            'years': {
-                'date_histogram': {
-                    'field': 'date',
-                    'interval': 'year',
-                    'format': 'yyyy',
-                },
-                'aggs': {
-                        'grant_amounts': {
-                            'sum': {
-                                'field': 'amount'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    per_division = {
-            'query': {
-                'match_all': {},
-            },
-#            'aggs': {
-#                'divisions': {
-#                    'terms': {
-#                        'field': 'division'
-#                    },
-            'aggs': {
-                'years': {
-                    'date_histogram': {
-                        'field': 'date',
-                        'interval': 'year',
-                        'format': 'yyyy',
-                    },
-                    'aggs': {
-                        'divisions': {
-                            'terms': {
-                                'field': 'division'
-                            },
-                            'aggs': {
-                                'grant_amounts': {
-                                    'sum': {
-                                        'field': 'amount'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    sum_total = {
-        'query': {
-            'match_all': {},
-        },
+    query = {
+        'query': {},
         'aggs': {
             'divisions': {
                 'terms': {
                     'field': 'division',
                     'min_doc_count': 0,
+                    'size': 100,
                 },
                 'aggs': {
                     'grant_amounts': {
@@ -98,36 +41,71 @@ async def year_division_aggregates(
                         }
                     }
                 }
+            },
+            'years': {
+                'date_histogram': {
+                    'field': 'date',
+                    'interval': 'year',
+                    'format': 'yyyy',
+                },
+                'aggs': {
+                    'divisions': {
+                        'terms': {
+                            'field': 'division',
+                            'size': 100, # TODO: number of divisions
+                        },
+                        'aggs': {
+                            'grant_amounts': {
+                                'sum': {
+                                    'field': 'amount'
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
+    if len(terms) > 0:
 
-    if terms is not None:
-
-        per_division['query'] = \
-        per_year['query'] = \
-        sum_total['query'] = \
-            {
-                'bool': {
-                    ('must' if toggle else 'should'): [
-                        {
-                            'multi_match': {
-                                'fields': fields,
-                                'query': term,
-                                'type': 'phrase',
-                            }
+        query['query'] = {
+            'bool': {
+                ('must' if toggle else 'should'): [
+                    {
+                        'multi_match': {
+                            'fields': fields,
+                            'query': term,
+                            'type': 'phrase',
                         }
-                    for term in terms]
+                    }
+                for term in terms]
+            },
+        }
+        
+    if year_range is not None:
+        print(year_range)
+
+        if 'must' not in query['query']['bool']:
+            query['query']['bool']['must'] = []
+
+        query['query']['bool']['must'].append({
+            'range': {
+                'date': {
+                    'format': 'yyyy',
+                    'gte': year_range[0],
+                    'lte': year_range[1],
                 }
             }
-    
-    print(json.dumps(per_division, indent=2))
-    return await asyncio.gather(
-            aioes.search(index=INDEX, body=per_year),
-            aioes.search(index=INDEX, body=per_division),
-            aioes.search(index=INDEX, body=sum_total),
-        )
+        })
+        
+    if len(query['query']) == 0:
+        query['query'] = {
+            'match_all': {}
+        }
+  
+    print(json.dumps(query, indent=2))
+    return await aioes.search(index=INDEX, body=query)
 
 
 async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):
@@ -175,15 +153,20 @@ async def grants(aioes,
                         } for div in divisions]
                     }
                 }],
-                ('must' if toggle else 'should'): [
-                    {
-                        'multi_match': {
-                            'fields': fields,
-                            'query': term,
-                            'type': 'phrase',
-                        }
+                'must': [{
+                    'bool': {
+                        ('must' if toggle else 'should'): [
+                            {
+                                'multi_match': {
+                                    'fields': fields,
+                                    'query': term,
+                                    'type': 'phrase',
+                                }
+                            }
+                        for term in terms],
+                        'minimum_should_match': 1,
                     }
-                for term in terms]
+                }]
             }
         },
         'sort': [
@@ -197,6 +180,7 @@ async def grants(aioes,
         
     try:
         response = await aioes.search(index=INDEX, body=query)
+        print(json.dumps(response, indent=2))
     except RequestError as e:
         print(e.info)
 

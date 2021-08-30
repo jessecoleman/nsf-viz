@@ -17,6 +17,7 @@ export type FilterState = {
   divisions: Division[],
   fields: Field[],
   grantOrder: GrantOrder,
+  yearRange: [ number, number ],
   legendFilters: {
     bool: 'any' | 'all'
     counts: boolean,
@@ -29,8 +30,9 @@ const initialState: FilterState = {
   boolQuery: 'any',
   terms: [],
   divisions: [],
-  fields: ['title'], //, 'abstract'],
+  fields: ['title', 'abstract'],
   grantOrder: [ 'date', 'desc' ],
+  yearRange: [2005, 2018],
   legendFilters: {
     bool: 'any',
     counts: true,
@@ -68,6 +70,9 @@ const filterSlice = createSlice({
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
     },
+    setYearRange: (state, action) => {
+      state.yearRange = action.payload;
+    },
     setLegendFilters: (state, action) => {
       state.legendFilters = {
         ...state.legendFilters,
@@ -102,6 +107,7 @@ export const {
   deleteChip,
   setBoolQuery,
   setGrantOrder,
+  setYearRange,
   setLegendFilters,
 } = filterSlice.actions;
 
