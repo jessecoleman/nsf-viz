@@ -1,3 +1,4 @@
+import json
 from collections import Counter
 from itertools import chain
 from tqdm import tqdm
@@ -21,14 +22,14 @@ def nltk_download():
 word_tokenizer = nltk.RegexpTokenizer(r'\w+') # TODO do we like this tokenizer?
 lemmatizer = WordNetLemmatizer()
 stop = set(stopwords.words('english'))
-stop.add(',')
-stop.add('.')
-stop.add('this')
-stop.add('also')
+stop.update({',', '.', 'this', 'also'})
+# keep connector words for ngram analysis
+stop = stop - ENGLISH_CONNECTOR_WORDS
  
 filter_stop = lambda w: w.lower() not in stop
 norm_word = lambda w: lemmatizer.lemmatize(w.lower())
- 
+
+
 def process_text(text: str):
     t_text = sent_tokenize(text.replace('<br/>', ' '))
     w_text = [word_tokenizer.tokenize(s) for s in t_text]
@@ -36,7 +37,7 @@ def process_text(text: str):
     return f_text
  
 
-def get_data(data_file: str):
+def get_data(intermediate_file: str):
     db = mysql.connector.connect(host="localhost",
             database="nsf",
             user="nsf",
@@ -47,38 +48,62 @@ def get_data(data_file: str):
     cursor.execute("select AwardTitle, AbstractNarration from Award")
   
     result = cursor.fetchall()
-    t_sentences = []
+    sentences = []
     for title, abstract in tqdm(result):
-        t_sentences.extend([
+        sentences.extend([
             process_text(title),
             process_text(abstract)
         ])
+        
+    with open(f'../assets/{intermediate_file}', 'w') as out:
+        json.dump(sentences, out)
     
-    bigram_model = Phrases(
-        t_sentences,
+    
+def build_gram_model(input_file, data_file):
+
+    with open(f'../assets/{input_file}') as data:
+        sentences = json.load(data)
+        
+    bigram = Phrases(
+        sentences,
         min_count=5,
-        threshold=1,
+        threshold=2,
+        connector_words=ENGLISH_CONNECTOR_WORDS,
+        progress_per=1000
+    )
+    
+    print('built bigrams')
+
+    trigram = Phrases(
+        bigram[sentences],
+        min_count=5,
+        threshold=2,
+        connector_words=ENGLISH_CONNECTOR_WORDS,
+        progress_per=1000
+    )
+    
+    print('built trigrams')
+
+    quadgram = Phrases(
+        trigram[bigram[sentences]],
+        min_count=5,
+        threshold=2,
         connector_words=ENGLISH_CONNECTOR_WORDS
     )
-    sentences = [bigram_model[s] for s in t_sentences]
 
-    trigram_model = Phrases(
-        sentences,
-        min_count=3,
-        threshold=1,
-        connector_words=ENGLISH_CONNECTOR_WORDS
-    )
-    sentences = [trigram_model[s] for s in t_sentences]
+    print('built quadgrams')
+    sentences = [quadgram[trigram[bigram[s]]] for s in sentences]
+    
+    counter = Counter()
+    for s in sentences:
+        for w in s:
+            if w.count('_') > 1:
+                counter[w] += 1
 
-    quadgram_model = Phrases(
-        sentences,
-        min_count=2,
-        threshold=1,
-        connector_words=ENGLISH_CONNECTOR_WORDS
-    )
-    sentences = [quadgram_model[s] for s in t_sentences]
+    for f, w in counter.most_common(250):
+        print(f, w)
 
-    with open(data_file, 'w') as data:
+    with open(f'../assets/{data_file}', 'w') as data:
         data.write('\n'.join(' '.join(s) for s in sentences))
 
 
@@ -128,7 +153,7 @@ class callback(CallbackAny2Vec):
 
 
 def train_model(data_file: str):
-    model = FastText(
+    model = Word2Vec(
         vector_size=64,
         window=5,
         min_count=5,
@@ -148,8 +173,11 @@ def test_model(model):
             print(similar)
 
 
-data_file = '../assets/data.txt'
-#get_data(data_file)
-model = train_model(data_file)
-#count_phrases(data_file)
-#test_model(model)
+if __name__ == '__main__':
+    intermediate_file = 'intermediate.txt'
+    data_file = 'data.txt'
+    #get_data(intermediate_file)
+    build_gram_model(intermediate_file, data_file)
+    #model = train_model(data_file)
+    #count_phrases(data_file)
+    #test_model(model)
