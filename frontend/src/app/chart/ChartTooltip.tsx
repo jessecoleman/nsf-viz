@@ -2,6 +2,8 @@ import FlipMove from 'react-flip-move';
 import { Box, Paper, styled } from '@material-ui/core';
 import { TooltipProps } from 'recharts/types/component/Tooltip';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
+import { useAppSelector } from 'app/store';
+import { getDivisionsMap } from 'app/selectors';
 
 const Container = styled(Paper)(({ theme }) => `
   margin: 3em;
@@ -10,6 +12,7 @@ const Container = styled(Paper)(({ theme }) => `
 
 const ChartTooltip = (props: TooltipProps<number, string>) => {
 
+  const divMap = useAppSelector(getDivisionsMap);
   let year = 0;
   const totals: CellData[] = [{ key: 'count', v: 0 }, { key: 'amount', v: 0 }];
 
@@ -49,11 +52,11 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
           enterAnimation='fade'
           leaveAnimation='fade'
         >
-          {Object.entries(rows).reverse().map(([ name, cells ]) => (
+          {Object.entries(rows).reverse().map(([ key, cells ]) => (
             <DivisionRow
-              key={name}
-              dataKey={name}
-              title={name}
+              key={key}
+              dataKey={key}
+              title={divMap[key]}
               cells={cells}
             />
           ))}

@@ -1,7 +1,18 @@
+import re
 from typing import List, Optional, Tuple
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel as PyBaseModel
+
+
+def to_camel(snake: str):
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', snake).lower()
+
+
+class BaseModel(PyBaseModel):
+    class Config:
+        pass
+        # alias_generator = to_camel
 
 
 class Division(BaseModel):
@@ -14,7 +25,7 @@ class SearchRequest(BaseModel):
     dependant: str
     divisions: List[str]
     fields: List[str]
-    year_range: List[int]
+    year_range: Optional[List[int]]
 
 
 class GrantAmounts(BaseModel):
@@ -63,19 +74,12 @@ class GrantField(str, Enum):
     abstract = 'abstract'
 
 
-class GrantsRequest(BaseModel):
+class GrantsRequest(SearchRequest):
     idx: int
     order: str #Order,
     order_by: Optional[str] = 'title'
-    terms: List[str]
-    fields: List[str] # GrantField]
-    divisions: List[str]
     toggle: bool
     
-    class Config:
-        pass
-        # use_enum_values = True
-        
 
 class Term(BaseModel):
     term: str

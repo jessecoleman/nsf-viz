@@ -10,6 +10,8 @@ export type Term = {
   selected?: boolean,
 }
 
+type YearRange = [ number, number ];
+
 export type FilterState = {
   dependant: string,
   boolQuery: 'any' | 'all',
@@ -17,7 +19,11 @@ export type FilterState = {
   divisions: Division[],
   fields: Field[],
   grantOrder: GrantOrder,
-  yearRange: [ number, number ],
+  grantDialogOpen: boolean,
+  grantFilter: {
+    yearRange?: YearRange,
+  },
+  yearRange: YearRange,
   legendFilters: {
     bool: 'any' | 'all'
     counts: boolean,
@@ -31,7 +37,9 @@ const initialState: FilterState = {
   terms: [],
   divisions: [],
   fields: ['title', 'abstract'],
-  grantOrder: [ 'date', 'desc' ],
+  grantOrder: ['date', 'desc'],
+  grantDialogOpen: false,
+  grantFilter: {},
   yearRange: [2005, 2018],
   legendFilters: {
     bool: 'any',
@@ -66,6 +74,18 @@ const filterSlice = createSlice({
     },
     setBoolQuery: (state, action) => {
       state.boolQuery = action.payload.boolQuery;
+    },
+    setGrantDialogOpen: (state, action) => {
+      state.grantDialogOpen = action.payload;
+    },
+    setGrantFilter: (state, action) => {
+      const { year } = action.payload;
+      if (year) {
+        state.grantFilter.yearRange = [year, year];
+      }
+    },
+    clearGrantFilter: (state) => {
+      state.grantFilter = {};
     },
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
@@ -106,6 +126,9 @@ export const {
   addChips,
   deleteChip,
   setBoolQuery,
+  setGrantDialogOpen,
+  setGrantFilter,
+  clearGrantFilter,
   setGrantOrder,
   setYearRange,
   setLegendFilters,

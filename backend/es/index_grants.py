@@ -1,4 +1,5 @@
 import os
+import json
 from elasticsearch_dsl import (
     Document,
     Date,
@@ -60,6 +61,7 @@ class Grant(Document):
     date = Date()
     amount = Integer()
     division = Keyword()
+    division_key = Keyword()
 
 
 def get_data():
@@ -70,11 +72,22 @@ def get_data():
 
     cur = db.cursor()
     cur.execute("select AwardTitle, AbstractNarration, AwardAmount, AwardEffectiveDate, LongName from Award join Division on Award.AwardID = Division.AwardID")
+    
+    with open('../assets/divisions.json') as div_file:
+        divs = json.load(div_file)
+        div_map = {d['name'].lower(): d['key'] for d in divs}
 
     Grant.init()
 
     for r in tqdm(cur.fetchall()):
-        g = Grant(title=r[0], abstract=r[1], amount=r[2], date=r[3], division=r[4])
+        g = Grant(
+            title=r[0],
+            abstract=r[1],
+            amount=r[2],
+            date=r[3],
+            division=r[4],
+            division_key=div_map[r[4].lower()],
+        )
         yield g.to_dict(True)
         
     

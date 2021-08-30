@@ -193,13 +193,14 @@ async def grant_data(request: GrantsRequest):
     try:
         return await Q.grants(
             aioes,
-            request.idx,
-            request.toggle,
-            request.order_by,
-            request.order,
-            request.divisions,
-            request.fields,
-            request.terms,
+            idx=request.idx,
+            toggle=request.toggle,
+            order_by=request.order_by,
+            order=request.order,
+            divisions=request.divisions,
+            fields=request.fields,
+            terms=request.terms,
+            year_range=request.year_range,
         )
     except Exception:
         raise HTTPException(404, detail='index out of bounds')

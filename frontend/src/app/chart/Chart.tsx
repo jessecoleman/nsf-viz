@@ -1,17 +1,23 @@
 import { useEffect } from 'react';
+import { useMemoOne } from 'use-memo-one';
 import * as d3 from 'd3';
 import { green, deepPurple } from '@material-ui/core/colors';
 
 import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Tooltip, Brush, Legend } from 'recharts';
-import { getDivisions, getDivisionsMap, getLegendFilters, getPerDivision } from 'app/selectors';
+import { getDivisions, getLegendFilters, getPerDivision } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { useQuery } from 'app/hooks';
+import useConstant, { useQuery } from 'app/hooks';
 import { format } from 'd3';
 
 import ChartTooltip from './ChartTooltip';
 import { loadData } from 'app/actions';
 import ChartLegend from './ChartLegend';
+import BarStack from './BarStack';
+import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
+import { clearGrants } from 'app/dataReducer';
 
+const greenScale = d3.scaleOrdinal(Object.values(green).slice(2, -3));
+const deepPurpleScale = d3.scaleOrdinal(Object.values(deepPurple).slice(2, -3));
 
 const Chart = () => {
 
@@ -23,19 +29,20 @@ const Chart = () => {
   }, [dispatch]);
 
   const { counts, amounts } = useAppSelector(getLegendFilters);
-  const perYear = useAppSelector(getPerDivision);
   const perDivision = useAppSelector(getPerDivision);
-  const divisionsMap = useAppSelector(getDivisionsMap);
   const divisions = useAppSelector(getDivisions);
-  
-  if (!(perYear && perDivision)) return null;
 
   const handleChangeBrush = (e: any) => {
     // console.log(e.startIndex, e.endIndex);
   };
 
   const handleClick = e => {
-    // pass
+    if (e) {
+      console.log(e);
+      dispatch(clearGrants());
+      dispatch(setGrantFilter({ year: e.activeLabel }));
+      dispatch(setGrantDialogOpen(true));
+    }
   };
 
   const handleMouseLeave = e => {
@@ -45,30 +52,32 @@ const Chart = () => {
   const handleMouseMove = e => {
     // pass
   };
-
-  const data = perDivision.map((b, idx) => ({
-    year: +b.key_as_string!,
+  
+  const data = useMemoOne(() => perDivision.map((yearBucket, idx) => ({
+    year: +yearBucket.key_as_string!,
     v: idx,
-    ...b.divisions.buckets.reduce((obj, d) => {
-      obj[`${divisionsMap[d.key]}-count`] = d.doc_count;
-      obj[`${divisionsMap[d.key]}-amount`] = d.grant_amounts.value;
+    ...query.divisions.reduce((obj, key) => {
+      const div = yearBucket.divisions.buckets.find(d => d.key === key);
+      obj[`${key}-count`] = div?.doc_count ?? 0;
+      obj[`${key}-amount`] = div?.grant_amounts.value ?? 0;
       return obj;
     }, {}),
-  }));
-
-  const selectedDivisions = new Set(query.divisions);
-
-  const greenScale = d3.scaleOrdinal(Object.values(green).slice(2, -3))
-    .domain(divisions.map(d => d.key));
-
-  const deepPurpleScale = d3.scaleOrdinal(Object.values(deepPurple).slice(2, -3))
-    .domain(divisions.map(d => d.key));
-
-  const filteredDivisions = divisions.filter(d => selectedDivisions.has(d.key));
+    // ...yearBucket.divisions.buckets.reduce((obj, d) => {
+    //   obj[`${divisionsMap[d.key]}-count`] = d.doc_count;
+    //   obj[`${divisionsMap[d.key]}-amount`] = d.grant_amounts.value;
+    //   return obj;
+    // }, {}),
+  })), [JSON.stringify(perDivision), JSON.stringify(query.divisions)]);
+  
+  greenScale.domain(divisions.map(d => d.key));
+  deepPurpleScale.domain(divisions.map(d => d.key));
 
   return (
     <ResponsiveContainer width='100%' aspect={1.5}>
-      <BarChart data={data}>
+      <BarChart
+        data={data}
+        onClick={handleClick}
+      >
         <CartesianGrid strokeDasharray='2 2' />
         <XAxis
           dataKey='year'
@@ -85,24 +94,26 @@ const Chart = () => {
         <Tooltip<number, string>
           content={(props) => <ChartTooltip {...props} />}
         />
-        {counts && filteredDivisions.map(d => (
+        {counts && query.divisions.map(key => (
           <Bar
-            key={`${d.key}-count`}
+            key={`${key}-count`}
             yAxisId='count'
-            dataKey={`${d.key}-count`}
+            dataKey={`${key}-count`}
             stackId='count'
-            fill={deepPurpleScale(d.key)}
-            name={`${d.name}-count`}
+            fill={deepPurpleScale(key)}
+            name={`${key}-count`}
+            onClick={handleClick}
           />
         ))}
-        {amounts && filteredDivisions.map(d => (
+        {amounts && query.divisions.map(key => (
           <Bar
-            key={d.key}
+            key={`${key}-amount`}
             yAxisId='amount'
-            dataKey={`${d.key}-amount`}
+            dataKey={`${key}-amount`}
             stackId='amount'
-            fill={greenScale(d.key)}
-            name={`${d.name}-amount`}
+            fill={greenScale(key)}
+            name={`${key}-amount`}
+            onClick={handleClick}
           />
         ))}
         <Brush

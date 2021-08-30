@@ -30,7 +30,7 @@ async def year_division_aggregates(
         'aggs': {
             'divisions': {
                 'terms': {
-                    'field': 'division',
+                    'field': 'division_key',
                     'min_doc_count': 0,
                     'size': 100,
                 },
@@ -51,7 +51,7 @@ async def year_division_aggregates(
                 'aggs': {
                     'divisions': {
                         'terms': {
-                            'field': 'division',
+                            'field': 'division_key',
                             'size': 100, # TODO: number of divisions
                         },
                         'aggs': {
@@ -79,12 +79,12 @@ async def year_division_aggregates(
                             'type': 'phrase',
                         }
                     }
-                for term in terms]
+                for term in terms],
+                'minimum_should_match': 1,
             },
         }
         
     if year_range is not None:
-        print(year_range)
 
         if 'must' not in query['query']['bool']:
             query['query']['bool']['must'] = []
@@ -94,7 +94,7 @@ async def year_division_aggregates(
                 'date': {
                     'format': 'yyyy',
                     'gte': year_range[0],
-                    'lte': year_range[1],
+                    'lt': year_range[1] + 1,
                 }
             }
         })
@@ -134,6 +134,7 @@ async def grants(aioes,
         divisions: List[str],
         fields: List[str],
         terms: List[str],
+        year_range: Tuple[int, int]
     ):
     
     query = {
@@ -177,10 +178,22 @@ async def grants(aioes,
             }
         ]
     }
-        
+
+    if year_range is not None:
+        print(year_range)
+
+        query['query']['bool']['must'].append({
+            'range': {
+                'date': {
+                    'format': 'yyyy',
+                    'gte': year_range[0],
+                    'lt': year_range[1] + 1,
+                }
+            }
+        })
+ 
     try:
         response = await aioes.search(index=INDEX, body=query)
-        print(json.dumps(response, indent=2))
     except RequestError as e:
         print(e.info)
 
