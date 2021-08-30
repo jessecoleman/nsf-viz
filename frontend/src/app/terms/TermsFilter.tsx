@@ -118,6 +118,9 @@ const TermsFilter = () => {
 
   const handleDeleteChip = (idx: number) => () => {
     const chip = terms[idx];
+    if (!chip) {
+      return;
+    }
     push({
       component: 'terms',
       action: 'remove',
