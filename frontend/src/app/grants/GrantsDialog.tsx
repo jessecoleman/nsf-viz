@@ -133,8 +133,7 @@ const GrantsTable = () => {
         await dispatch(loadGrants({ ...query, idx }));
       }
     }
-    // return null;
-  }
+  };
 
   const count = noMore ? numGrants : numGrants + 1;
   const isLoaded = (idx: number) => noMore || idx < numGrants;
