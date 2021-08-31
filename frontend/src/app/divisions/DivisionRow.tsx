@@ -4,7 +4,11 @@ import { forwardRef } from 'react';
 
 const StyledBox = styled(Box)(({ theme }) => `
   width: 26em;
-  padding: ${theme.spacing(1)};
+  height: 2.5em;
+  display: flex;
+  align-items: center;
+  padding: ${theme.spacing(0, 1)};
+  border-bottom: 1px solid ${theme.palette.grey[200]}
 `);
 
 const NumberBox = styled(StyledBox)(({ theme }) => `

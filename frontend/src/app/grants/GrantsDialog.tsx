@@ -1,4 +1,4 @@
-import { useState, CSSProperties, useRef } from 'react';
+import { CSSProperties, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
@@ -21,9 +21,9 @@ import {
 import { format, timeFormat, timeParse } from 'd3';
 
 import { loadAbstract, loadGrants } from 'app/actions';
-import { Grant } from '../types';
+import { Grant } from '../../api/models/Grant';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrant, getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
+import { getDivisionsMap, getGrant, getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
 import { clearGrantFilter, setGrantDialogOpen, setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';

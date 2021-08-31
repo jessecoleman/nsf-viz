@@ -1,7 +1,7 @@
 import asyncio
+from models import Grant
 import re
 import json
-from datetime import datetime
 from typing import List, Tuple
 
 from aioelasticsearch import Elasticsearch
@@ -179,7 +179,8 @@ async def grants(aioes,
                     'order': order
                 }
             }
-        ]
+        ],
+        'track_scores': True
     }
 
     if year_range is not None:
@@ -205,11 +206,11 @@ async def grants(aioes,
 
     grants = []
     for hit in response['hits']['hits']:
-        grants.append({
-                'score': hit['_score'],
-                'id': hit['_id'],
+        grants.append(Grant(
+                id=hit['_id'],
+                score=hit['_score'],
                 **hit['_source'],
-            })
+            ))
             
     return grants
  

@@ -37,16 +37,17 @@ export const getSelectedGrant = createSelector(
 
 export const getSelectedAbstract = (state: RootState) => state.data.selectedAbstract;
 
-export const getGrant = createSelector(
-  getGrants,
-  (state: RootState, idx: number) => idx,
-  (grants, idx) => grants[idx]
-);
-
 export const getDivisionsMap = (state: RootState) => state.filter.divisions.reduce((accum, div) => {
   accum[div.key] = div.name;
   return accum;
 }, {});
+
+export const getGrant = createSelector(
+  getGrants,
+  getDivisionsMap,
+  (state: RootState, idx: number) => idx,
+  (grants, divMap, idx) => grants[idx]
+);
 
 export const getDivisionAggs = createSelector(
   getTotal,

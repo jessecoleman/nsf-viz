@@ -1,6 +1,6 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
 import { dismissAbstractDialog } from 'app/dataReducer';
-import { getSelectedAbstract, getSelectedGrant } from 'app/selectors';
+import { getDivisionsMap, getSelectedAbstract, getSelectedGrant } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import * as d3 from 'd3';
 
@@ -51,7 +51,7 @@ const AbstractDialog = () => {
     >
       <DialogTitle>
         <Title variant='h5'>{selectedGrant.title}</Title>
-        <Subtitle variant='h6'>{selectedGrant.division}</Subtitle>
+        <Subtitle variant='h6'>{selectedGrant.division_key}</Subtitle>
         <Subtitle variant='h6'>{timeConvert(selectedGrant.date)}</Subtitle>
         <Subtitle variant='h6'>{d3.format('$,')(selectedGrant.amount)}</Subtitle>
       </DialogTitle>

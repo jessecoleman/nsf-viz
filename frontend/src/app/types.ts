@@ -1,12 +1,5 @@
 import { GridSize } from '@material-ui/core';
-
-export type Grant = {
-  id: string
-  title: string
-  date: string
-  amount: number
-  division: string
-}
+import { Grant } from '../api/models/Grant';
 
 export type GrantOrder = [ keyof Grant, SortDirection ];
 
