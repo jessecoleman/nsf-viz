@@ -23,7 +23,7 @@ import { format, timeFormat, timeParse } from 'd3';
 import { loadAbstract, loadGrants } from 'app/actions';
 import { Grant } from '../../api/models/Grant';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getDivisionsMap, getGrant, getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
+import { getGrant, getGrantOrder, getNumGrants, getSelectedTerms, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
 import { clearGrantFilter, setGrantDialogOpen, setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
@@ -114,6 +114,7 @@ const GrantsTable = () => {
   const [ orderBy, order ] = useAppSelector(getGrantOrder);
   const loading = useAppSelector(loadingGrants);
   const noMore = useAppSelector(noMoreGrants);
+  const selectedTerms = useAppSelector(getSelectedTerms);
   
   useEffect(() => {
     if (hasMountedRef.current) {
@@ -124,9 +125,13 @@ const GrantsTable = () => {
     hasMountedRef.current = true;
   }, [ orderBy, order ]);
 
-  async function handleLoadGrants(idx: number) {
+  const handleLoadGrants = async (idx: number) => {
     if (!loading) {
-      await dispatch(loadGrants({ ...query, idx }));
+      if (selectedTerms.length) {
+        await dispatch(loadGrants({ ...query, terms: selectedTerms, idx }));
+      } else {
+        await dispatch(loadGrants({ ...query, idx }));
+      }
     }
     // return null;
   }

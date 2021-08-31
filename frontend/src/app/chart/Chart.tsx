@@ -23,10 +23,6 @@ const Chart = () => {
   const dispatch = useAppDispatch();
   const query = useQuery();
 
-  useEffect(() => {
-    dispatch(loadData(query));
-  }, [dispatch]);
-
   const { counts, amounts } = useAppSelector(getLegendFilters);
   const perDivision = useAppSelector(getPerDivision);
   const divisions = useAppSelector(getDivisions);

@@ -32,7 +32,7 @@ type LoadGrantsParams = FilterParams & {
 
 export const loadGrants = createAsyncThunk(
   'loadGrants',
-  async ({ idx, ...query }: LoadGrantsParams, thunkAPI) => {
+  async (query: LoadGrantsParams, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
     // const selected = getSelectedTerms(thunkAPI.getState() as any);
@@ -44,7 +44,6 @@ export const loadGrants = createAsyncThunk(
     return await Service.loadGrants({
       ...rest,
       ...query,
-      idx,
       order,
       order_by: orderBy === 'title' ? 'title.raw' : orderBy,
       toggle: legendFilters.bool === 'all',

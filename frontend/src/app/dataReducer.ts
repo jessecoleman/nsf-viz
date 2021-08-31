@@ -38,6 +38,9 @@ const dataSlice = createSlice({
     clearGrants: (state) => {
       state.grants = [];
     },
+    clearTypeahead: (state) => {
+      state.typeahead = [];
+    },
     dismissAbstractDialog: (state) => {
       state.selectedGrantId = undefined;
       state.selectedAbstract = undefined;
@@ -86,6 +89,7 @@ const dataSlice = createSlice({
 
 export const {
   clearGrants,
+  clearTypeahead,
   dismissAbstractDialog,
 } = dataSlice.actions;
 

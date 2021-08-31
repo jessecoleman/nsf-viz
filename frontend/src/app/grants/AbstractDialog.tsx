@@ -1,6 +1,6 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
 import { dismissAbstractDialog } from 'app/dataReducer';
-import { getDivisionsMap, getSelectedAbstract, getSelectedGrant } from 'app/selectors';
+import { getSelectedAbstract, getSelectedGrant } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import * as d3 from 'd3';
 

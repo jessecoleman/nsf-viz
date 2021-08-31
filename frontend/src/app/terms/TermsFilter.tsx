@@ -27,6 +27,7 @@ import { addChips, clearTermSelection, deleteChip, selectTerm, setTerms } from '
 import { useDebouncedSearch, useNavigate, useQuery } from 'app/hooks';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
+import { clearTypeahead } from 'app/dataReducer';
 
 const SearchContainer = styled('div')(({ theme }) => `
   min-width: 25em;
@@ -87,10 +88,9 @@ const TermsFilter = () => {
     } else {
       dispatch(loadData(query));
     }
-  }, [selected]);
+  }, [JSON.stringify({ query, selected })]);
 
   const handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.value);
     setInput(e.target.value);
   };
 
@@ -112,7 +112,6 @@ const TermsFilter = () => {
     });
     dispatch(addChips(chips));
     dispatch(loadTermCounts(chipString));
-    dispatch(loadData(query));
     dispatch(loadRelated());
   };
 
@@ -127,14 +126,16 @@ const TermsFilter = () => {
       payload: [chip.term],
     });
     dispatch(deleteChip(idx));
-    dispatch(loadData(query));
     dispatch(loadRelated());
+  };
+  
+  const handleClearInput = () => {
+    dispatch(clearTypeahead());
   };
  
   const handleClearTerms = () => {
     if (selected.length > 0) {
       dispatch(clearTermSelection());
-      dispatch(loadData(query));
     } else {
       push({
         component: 'terms',
@@ -142,7 +143,6 @@ const TermsFilter = () => {
         payload: [],
       });
       dispatch(setTerms([]));
-      dispatch(loadData({ ...query, terms: [] }));
     }
   };
   
@@ -168,6 +168,7 @@ const TermsFilter = () => {
           onChange={handleChangeInput}
           onAddChip={handleAddChip}
           onDeleteLastChip={handleDeleteChip(terms.length - 1)}
+          onClearInput={handleClearInput}
         />
       </ChipContainer>
       <Tooltip title={selected.length === 0 ? 'clear all terms' : 'clear selection'}>

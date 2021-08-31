@@ -33,6 +33,7 @@ type TermsInputProps = {
   value: string
   onAddChip: (chips: string) => void
   onDeleteLastChip: () => void
+  onClearInput: () => void
 };
 
 const TermsInput = (props: InputBaseProps & TermsInputProps) => {
@@ -64,6 +65,8 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
     case 'Backspace':
       if (props.value.length === 0) {
         props.onDeleteLastChip();
+      } else if (props.value.length === 1) {
+        props.onClearInput();
       }
       break;
     case 'Escape':
