@@ -30,11 +30,7 @@ const Chart = () => {
   const { bool } = useAppSelector(getLegendFilters);
 
   useEffect(() => {
-    if (selectedTerms.length > 0) {
-      dispatch(loadData({ ...query, terms: selectedTerms }));
-    } else {
-      dispatch(loadData(query));
-    }
+    dispatch(loadData(query));
   }, [JSON.stringify({ query, selectedTerms, bool })]);
 
   const handleChangeBrush = (e: any) => {
@@ -44,9 +40,19 @@ const Chart = () => {
   const handleClick = e => {
     if (e?.activeLabel) {
       console.log(e);
-      dispatch(clearGrants());
-      dispatch(setGrantFilter({ year: e.activeLabel }));
-      dispatch(setGrantDialogOpen(true));
+      // TODO this is horribly clunky
+      // don't show popup unless there's data
+      const total = e.activePayload?.reduce((sum, year) => (
+        sum + Object.entries(year.payload as Record<string, number>).reduce((divSum: number, div: [string, number]) => (
+          div[0].endsWith('count') || div[0].endsWith('amount') ? divSum + div[1] : divSum
+        ), 0)
+      ), 0);
+      console.log(total);
+      if (total) {
+        dispatch(clearGrants());
+        dispatch(setGrantFilter({ year: e.activeLabel }));
+        dispatch(setGrantDialogOpen(true));
+      }
     }
   };
 

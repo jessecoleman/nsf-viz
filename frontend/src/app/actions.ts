@@ -16,13 +16,17 @@ export const loadData = createAsyncThunk<
   'loadData',
   async (query, thunkAPI) => {
     const { filter } = thunkAPI.getState();
-    const { legendFilters, ...rest } = filter;
+    const { terms, yearRange, legendFilters, ...rest } = filter;
+    const selected = terms.filter(t => t.selected).map(t => t.term);
+    if (selected.length) {
+      query.terms = selected;
+    }
 
     return await Service.search({
       ...rest,
       ...query,
       boolQuery: legendFilters.bool,
-      year_range: filter.yearRange,
+      year_range: yearRange,
     });
   });
 
@@ -35,11 +39,12 @@ export const loadGrants = createAsyncThunk(
   async (query: LoadGrantsParams, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    // const selected = getSelectedTerms(thunkAPI.getState() as any);
-    const { grantOrder, legendFilters, grantFilter, ...rest } = filter;
+    const { terms, grantOrder, legendFilters, grantFilter, ...rest } = filter;
+    const selected = terms.filter(t => t.selected).map(t => t.term);
+    if (selected.length) {
+      query.terms = selected;
+    }
     const [ orderBy, order ] = grantOrder;
-
-    console.log(grantFilter);
 
     return await Service.loadGrants({
       ...rest,
@@ -55,7 +60,12 @@ export const loadAbstract = createAsyncThunk(
   'loadAbstract',
   async (payload: string, thunkAPI) => {
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    return await Service.loadAbstract(payload, filter.terms.map(t => t.term));
+    let terms = filter.terms.map(t => t.term);
+    const selected = filter.terms.filter(t => t.selected).map(t => t.term);
+    if (selected.length) {
+      terms = selected;
+    }
+    return await Service.loadAbstract(payload, terms);
   }
 );
 
