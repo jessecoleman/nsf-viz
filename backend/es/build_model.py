@@ -1,6 +1,10 @@
+import os
+import argparse
+from pathlib import Path
 import json
 from collections import Counter
 from itertools import chain
+from typing import Generator, Iterable, List, Union
 from tqdm import tqdm
 import numpy as np
 from gensim.models import Word2Vec, FastText
@@ -11,7 +15,6 @@ from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 from nltk.stem import WordNetLemmatizer
 import mysql.connector
-
 
 def nltk_download():
     nltk.download('stopwords')
@@ -37,7 +40,7 @@ def process_text(text: str):
     return f_text
  
 
-def get_data(intermediate_file: str):
+def data_source_mysql() -> List:
     db = mysql.connector.connect(host="localhost",
             database="nsf",
             user="nsf",
@@ -47,21 +50,52 @@ def get_data(intermediate_file: str):
     
     cursor.execute("select AwardTitle, AbstractNarration from Award")
   
-    result = cursor.fetchall()
+    return cursor.fetchall()
+
+def data_source_csv(fpath: Union[str, Path]) -> Generator:
+    import csv
+    # csv schema is: 'idx,AwardTitle,AbstractNarration,AwardAmount,AwardEffectiveDate,DivisionCode,DivisionLongName'
+    fpath = Path(fpath)
+    with fpath.open() as f:
+        reader = csv.reader(f)
+        for i, row in enumerate(reader):
+            if i == 0:
+                # header row
+                continue
+
+            yield [
+                row[1],  # title
+                row[2],  # abstract
+            ]
+
+
+def get_data(intermediate_file: str, data_source: Union[Iterable, str] = 'mysql'):
+    intermediate_file = Path(intermediate_file).resolve()
+    assert intermediate_file.parent.exists()
+
+    if data_source == 'mysql':
+        data_source = data_source_mysql()
+
     sentences = []
-    for title, abstract in tqdm(result):
+    for title, abstract in tqdm(data_source):
         sentences.extend([
             process_text(title),
             process_text(abstract)
         ])
         
-    with open(f'../assets/{intermediate_file}', 'w') as out:
+    print(f"saving to {intermediate_file}")
+    with open(intermediate_file, 'w') as out:
         json.dump(sentences, out)
     
     
 def build_gram_model(input_file, data_file):
 
-    with open(f'../assets/{input_file}') as data:
+    data_file = Path(data_file).resolve()
+    assert data_file.parent.exists()
+
+    input_file = Path(input_file).resolve()
+    print(f"reading input file: {input_file}")
+    with open(input_file) as data:
         sentences = json.load(data)
         
     bigram = Phrases(
@@ -103,14 +137,23 @@ def build_gram_model(input_file, data_file):
     for f, w in counter.most_common(250):
         print(f, w)
 
-    with open(f'../assets/{data_file}', 'w') as data:
+    print(f"saving to {data_file}")
+    with open(data_file, 'w') as data:
         data.write('\n'.join(' '.join(s) for s in sentences))
 
 
-def count_phrases(data, explore=False):
+def count_phrases(data, model_file='../assets/nsf_fasttext_model', terms_file='../assets/terms.txt', explore=False):
+    terms_file = Path(terms_file).resolve()
+    assert terms_file.parent.exists()
+
     counter = Counter()
     normed = []
-    model = Word2Vec.load('../assets/nsf_fasttext_model')
+    model_file = Path(model_file).resolve()
+    print(f"loading model from file: {model_file}")
+    model = Word2Vec.load(str(model_file))
+
+    data = Path(data).resolve()
+    print(f"loading data from file: {data}")
     with open(data) as d:
         lines = list(d)
         for l in tqdm(lines):
@@ -125,7 +168,8 @@ def count_phrases(data, explore=False):
                 combined = np.log(f) * np.log(norm)
                 normed.append((w, f, norm, combined))
 
-    with open('../assets/terms.txt', 'w') as out:
+    print(f"writing to {terms_file}")
+    with open(terms_file, 'w') as out:
         for w, f, n, c in sorted(normed, key=lambda x: x[3], reverse=True):
             out.write(f'{c} {w}\n')
 
@@ -152,18 +196,24 @@ class callback(CallbackAny2Vec):
         self.prev_loss = loss
 
 
-def train_model(data_file: str):
+def train_model(data_file: str, model_file='nsf_fasttext_model'):
+    model_file = Path(model_file).resolve()
+    assert model_file.parent.exists()
+
+    data_file = Path(data_file).resolve()
+    print(f"using data file: {data_file}")
     model = Word2Vec(
         vector_size=64,
         window=5,
         min_count=5,
-        corpus_file=data_file,
+        corpus_file=str(data_file),
         epochs=15,
         compute_loss=True,
         callbacks=[callback()]
     )
 
-    model.save('nsf_fasttext_model')
+    print(f"saving to {model_file}")
+    model.save(str(model_file))
     return model
 
 
@@ -172,12 +222,61 @@ def test_model(model):
             similar = model.wv.most_similar([kw], [])
             print(similar)
 
+def dispatch(args):
+    if args.cmd == 'data':
+        if args.data_source.lower() == 'mysql':
+            data_source = data_source_mysql()
+        elif args.data_source.endswith('.csv'):
+            data_source = data_source_csv(args.data_source)
+        else:
+            raise ValueError('invalid value for argument "data-source"')
+        get_data(args.output, data_source=data_source)
+    elif args.cmd == 'build':
+        build_gram_model(args.intermediate_file, args.data_file)
+    elif args.cmd == 'train':
+        train_model(args.data_file, model_file=args.model_file)
+    elif args.cmd == 'count':
+        count_phrases(args.data_file, model_file=args.model_file, terms_file=args.terms_file)
+    elif args.cmd == 'test':
+        model = Word2Vec.load(args.model_file)
+        test_model(model)
+    else:
+        raise RuntimeError('invalid command')
 
 if __name__ == '__main__':
-    intermediate_file = 'intermediate.txt'
-    data_file = 'data.txt'
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    intermediate_file = os.path.join(script_dir, '../assets/intermediate.txt')
+    data_file = os.path.join(script_dir, '../assets/data.txt')
+    model_file = os.path.join(script_dir, '../assets/nsf_w2v_model')
+    terms_file = os.path.join(script_dir, '../assets/terms.txt')
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='cmd')  # stores the subparser's name in a "cmd" attribute
+
+    parser_00_data = subparsers.add_parser('data')
+    parser_00_data.add_argument('output', nargs='?', default=intermediate_file)
+    parser_00_data.add_argument("--data-source", default='mysql', help="Source for data (default: mysql database)")
+
+    parser_01_build = subparsers.add_parser('build')
+    parser_01_build.add_argument('intermediate_file', nargs='?', default=intermediate_file)
+    parser_01_build.add_argument('data_file', nargs='?', default=data_file)
+
+    parser_02_train = subparsers.add_parser('train')
+    parser_02_train.add_argument('data_file', nargs='?', default=data_file)
+    parser_02_train.add_argument('model_file', nargs='?', default=model_file)
+
+    parser_03_count = subparsers.add_parser('count')
+    parser_03_count.add_argument('data_file', nargs='?', default=data_file)
+    parser_03_count.add_argument('model_file', nargs='?', default=model_file)
+    parser_03_count.add_argument('terms_file', nargs='?', default=terms_file)
+
+    parser_04_test = subparsers.add_parser('test')
+    parser_04_test.add_argument('model_file', nargs='?', default=model_file)
+
+    args = parser.parse_args()
+    dispatch(args)
     #get_data(intermediate_file)
-    build_gram_model(intermediate_file, data_file)
+    # build_gram_model(intermediate_file, data_file)
     #model = train_model(data_file)
     #count_phrases(data_file)
     #test_model(model)
