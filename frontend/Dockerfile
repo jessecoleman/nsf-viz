@@ -2,7 +2,7 @@
 # environment where the JavaScript build process can run. In production the
 # files built by this process are served from disk, while in development a HTTP
 # server that's distributed with the UI build tools is used.
-FROM node:10.15.2
+FROM node:14.16
 
 # Setup a spot for our code
 WORKDIR /usr/local/src/app/frontend
@@ -23,9 +23,9 @@ ARG NODE_ENV=development
 ENV NODE_ENV $NODE_ENV
 
 # Build the UI
-RUN yarn build
+# RUN yarn build
 
-EXPOSE 3000
+# EXPOSE 3000
 
 ENTRYPOINT [ "yarn" ]
 CMD [ "generateAndStart" ]

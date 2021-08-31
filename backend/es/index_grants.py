@@ -1,5 +1,8 @@
 import os
 import json
+import csv
+from pathlib import Path
+from typing import Generator, Iterable, List, Union
 from elasticsearch_dsl import (
     Document,
     Date,
@@ -64,7 +67,7 @@ class Grant(Document):
     division_key = Keyword()
 
 
-def get_data():
+def data_source_mysql() -> List:
     db = conn.connect(database="nsf",
         user="nsf",
         password="!DLnsf333",
@@ -72,6 +75,29 @@ def get_data():
 
     cur = db.cursor()
     cur.execute("select AwardTitle, AbstractNarration, AwardAmount, AwardEffectiveDate, LongName from Award join Division on Award.AwardID = Division.AwardID")
+
+    return cur.fetchall()
+
+def data_source_csv(fpath: Union[str, Path]) -> Generator:
+    # csv schema is: 'idx,AwardTitle,AbstractNarration,AwardAmount,AwardEffectiveDate,DivisionCode,DivisionLongName'
+    fpath = Path(fpath)
+    with fpath.open() as f:
+        reader = csv.reader(f)
+        for i, row in enumerate(reader):
+            if i == 0:
+                # header row
+                continue
+
+            yield [
+                row[1],  # title
+                row[2],  # abstract
+                row[3],  # amount
+                row[4],  # date
+                row[6],  # division name
+            ]
+
+
+def get_data(data_source: Iterable):
     
     with open('../assets/divisions.json') as div_file:
         divs = json.load(div_file)
@@ -79,7 +105,7 @@ def get_data():
 
     Grant.init()
 
-    for r in tqdm(cur.fetchall()):
+    for r in tqdm(data_source):
         g = Grant(
             title=r[0],
             abstract=r[1],
@@ -91,13 +117,27 @@ def get_data():
         yield g.to_dict(True)
         
     
-def build_index():
+def build_index(data_source: Iterable):
     if nsf.exists():
         nsf.delete()
     nsf.create()
 
-    bulk(es, get_data())
+    bulk(es, get_data(data_source=data_source))
     
+def main(args):
+    if args.data_source.lower() == 'mysql':
+        data_source = data_source_mysql()
+        build_index(data_source=data_source)
+    elif args.data_source.endswith('.csv'):
+        data_source = data_source_csv(args.data_source)
+        build_index(data_source=data_source)
+    else:
+        raise ValueError('invalid value for argument "data-source"')
 
 if __name__ == '__main__':
-    build_index()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-source", default='mysql', help="Source for data (default: mysql database)")
+    global args
+    args = parser.parse_args()
+    main(args)

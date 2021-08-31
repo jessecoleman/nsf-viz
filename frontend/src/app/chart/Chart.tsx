@@ -12,7 +12,6 @@ import { format } from 'd3';
 import ChartTooltip from './ChartTooltip';
 import { loadData } from 'app/actions';
 import ChartLegend from './ChartLegend';
-import BarStack from './BarStack';
 import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
 import { clearGrants } from 'app/dataReducer';
 

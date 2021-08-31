@@ -17,7 +17,7 @@ COPY . .
 
 # RUN poetry run python app.py --generate-openapi-json ./api.json
 
-EXPOSE 8888
+# EXPOSE 8888
 
 # Kick things off
 ENTRYPOINT [ "poetry" ]
