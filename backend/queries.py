@@ -185,7 +185,7 @@ async def grants(aioes,
     }
     
     if must_or_should == 'should':
-        query['query']['bool']['must']['bool']['minimum_should_match'] = 1
+        query['query']['bool']['must'][0]['bool']['minimum_should_match'] = 1
 
     if year_range is not None:
 
