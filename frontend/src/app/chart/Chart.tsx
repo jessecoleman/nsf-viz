@@ -1,19 +1,19 @@
-import { useEffect } from 'react';
 import { useMemoOne } from 'use-memo-one';
 import * as d3 from 'd3';
 import { green, deepPurple } from '@material-ui/core/colors';
 
 import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Tooltip, Brush, Legend } from 'recharts';
-import { getDivisions, getLegendFilters, getPerDivision } from 'app/selectors';
+import { getDivisions, getLegendFilters, getPerDivision, getSelectedTerms } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import useConstant, { useQuery } from 'app/hooks';
+import { useQuery } from 'app/hooks';
 import { format } from 'd3';
 
 import ChartTooltip from './ChartTooltip';
-import { loadData } from 'app/actions';
 import ChartLegend from './ChartLegend';
 import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
 import { clearGrants } from 'app/dataReducer';
+import { loadData } from 'app/actions';
+import { useEffect } from 'react';
 
 const greenScale = d3.scaleOrdinal(Object.values(green).slice(2, -3));
 const deepPurpleScale = d3.scaleOrdinal(Object.values(deepPurple).slice(2, -3));
@@ -26,13 +26,23 @@ const Chart = () => {
   const { counts, amounts } = useAppSelector(getLegendFilters);
   const perDivision = useAppSelector(getPerDivision);
   const divisions = useAppSelector(getDivisions);
+  const selectedTerms = useAppSelector(getSelectedTerms);
+  const { bool } = useAppSelector(getLegendFilters);
+
+  useEffect(() => {
+    if (selectedTerms.length > 0) {
+      dispatch(loadData({ ...query, terms: selectedTerms }));
+    } else {
+      dispatch(loadData(query));
+    }
+  }, [JSON.stringify({ query, selectedTerms, bool })]);
 
   const handleChangeBrush = (e: any) => {
     // console.log(e.startIndex, e.endIndex);
   };
 
   const handleClick = e => {
-    if (e) {
+    if (e?.activeLabel) {
       console.log(e);
       dispatch(clearGrants());
       dispatch(setGrantFilter({ year: e.activeLabel }));

@@ -1,4 +1,4 @@
-import { MouseEvent, ChangeEvent, useEffect } from 'react';
+import { MouseEvent, ChangeEvent } from 'react';
 
 import FlipMove from 'react-flip-move';
 import { styled } from '@material-ui/core/styles';
@@ -16,7 +16,6 @@ import {
 } from '@material-ui/icons';
 
 import {
-  loadData,
   loadRelated,
   loadTermCounts,
   loadTypeahead,
@@ -24,7 +23,7 @@ import {
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getSelectedTerms, getTerms } from 'app/selectors';
 import { addChips, clearTermSelection, deleteChip, selectTerm, setTerms } from 'app/filterReducer';
-import { useDebouncedSearch, useNavigate, useQuery } from 'app/hooks';
+import { useDebouncedSearch, useNavigate } from 'app/hooks';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
 import { clearTypeahead } from 'app/dataReducer';
@@ -64,7 +63,6 @@ const SearchIcon = styled('div')(({ theme }) => `
 const TermsFilter = () => {
 
   const dispatch = useAppDispatch();
-  const query = useQuery();
   const { input, setInput } = useDebouncedSearch((input) => {
     if (input.length) {
       dispatch(loadTypeahead(input));
@@ -81,14 +79,6 @@ const TermsFilter = () => {
       dispatch(loadRelated());
     }
   }, '?terms');
-
-  useEffect(() => {
-    if (selected.length > 0) {
-      dispatch(loadData({ ...query, terms: selected }));
-    } else {
-      dispatch(loadData(query));
-    }
-  }, [JSON.stringify({ query, selected })]);
 
   const handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);

@@ -24,6 +24,8 @@ async def year_division_aggregates(
         fields = ('title', 'abstract'),
         sort = False
     ):
+    
+    must_or_should = 'must' if toggle else 'should'
 
     query = {
         'query': {},
@@ -67,25 +69,24 @@ async def year_division_aggregates(
         }
     }
 
-    # if len(terms) > 0:
+    if terms is not None and len(terms) > 0:
 
-    if terms is None:
-        terms = []
-
-    query['query'] = {
-        'bool': {
-            ('must' if toggle else 'should'): [
-                {
-                    'multi_match': {
-                        'fields': fields,
-                        'query': term,
-                        'type': 'phrase',
+        query['query'] = {
+            'bool': {
+                must_or_should: [
+                    {
+                        'multi_match': {
+                            'fields': fields,
+                            'query': term,
+                            'type': 'phrase',
+                        }
                     }
-                }
-            for term in terms],
-            'minimum_should_match': 1,
-        },
-    }
+                for term in terms],
+            },
+        }
+        
+    if must_or_should == 'should':
+        query['query']['bool']['minimum_should_match'] = 1
         
     if year_range is not None:
 
@@ -107,7 +108,6 @@ async def year_division_aggregates(
             'match_all': {}
         }
   
-    # print(json.dumps(query, indent=3))
     return await aioes.search(index=INDEX, body=query)
 
 
@@ -139,6 +139,8 @@ async def grants(aioes,
         terms: List[str],
         year_range: Tuple[int, int]
     ):
+
+    must_or_should = 'must' if toggle else 'should'
     
     query = {
         'size': 50,
@@ -159,7 +161,7 @@ async def grants(aioes,
                 }],
                 'must': [{
                     'bool': {
-                        ('must' if toggle else 'should'): [
+                        must_or_should: [
                             {
                                 'multi_match': {
                                     'fields': fields,
@@ -168,7 +170,6 @@ async def grants(aioes,
                                 }
                             }
                         for term in terms],
-                        'minimum_should_match': 1,
                     }
                 }]
             }
@@ -182,9 +183,11 @@ async def grants(aioes,
         ],
         'track_scores': True
     }
+    
+    if must_or_should == 'should':
+        query['query']['bool']['must']['bool']['minimum_should_match'] = 1
 
     if year_range is not None:
-        print(year_range)
 
         query['query']['bool']['must'].append({
             'range': {
