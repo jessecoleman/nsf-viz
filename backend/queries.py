@@ -8,7 +8,7 @@ from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import query
 
-INDEX = 'nsf'
+INDEX = 'nsf-dev'
 
 with open('assets/divisions.json') as div_file:
     divisions = json.load(div_file)
@@ -67,22 +67,25 @@ async def year_division_aggregates(
         }
     }
 
-    if len(terms) > 0:
+    # if len(terms) > 0:
 
-        query['query'] = {
-            'bool': {
-                ('must' if toggle else 'should'): [
-                    {
-                        'multi_match': {
-                            'fields': fields,
-                            'query': term,
-                            'type': 'phrase',
-                        }
+    if terms is None:
+        terms = []
+
+    query['query'] = {
+        'bool': {
+            ('must' if toggle else 'should'): [
+                {
+                    'multi_match': {
+                        'fields': fields,
+                        'query': term,
+                        'type': 'phrase',
                     }
-                for term in terms],
-                'minimum_should_match': 1,
-            },
-        }
+                }
+            for term in terms],
+            'minimum_should_match': 1,
+        },
+    }
         
     if year_range is not None:
 
@@ -104,7 +107,7 @@ async def year_division_aggregates(
             'match_all': {}
         }
   
-    print(json.dumps(query, indent=2))
+    # print(json.dumps(query, indent=3))
     return await aioes.search(index=INDEX, body=query)
 
 

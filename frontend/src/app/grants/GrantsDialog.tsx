@@ -124,13 +124,12 @@ const GrantsTable = () => {
     hasMountedRef.current = true;
   }, [ orderBy, order ]);
 
-  const handleLoadGrants = (idx: number) => {
+  async function handleLoadGrants(idx: number) {
     if (!loading) {
-      return dispatch(loadGrants({ ...query, idx }));
-    } else {
-      return null;
+      await dispatch(loadGrants({ ...query, idx }));
     }
-  };
+    // return null;
+  }
 
   const count = noMore ? numGrants : numGrants + 1;
   const isLoaded = (idx: number) => noMore || idx < numGrants;
