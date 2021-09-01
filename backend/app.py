@@ -1,4 +1,5 @@
 import os
+from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
@@ -11,7 +12,7 @@ from collections import defaultdict
 from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
 
-from models import GrantsRequest, SearchRequest, SearchResponse, Term
+from models import Grant, GrantsRequest, SearchRequest, SearchResponse, Term
 import queries as Q
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -187,7 +188,7 @@ async def count_term(terms: str):
     return [c['count'] for c in counts]
 
 
-@app.post('/grants', operation_id='loadGrants')
+@app.post('/grants', operation_id='loadGrants', response_model=List[Grant])
 async def grant_data(request: GrantsRequest):
 
     try:
@@ -202,7 +203,8 @@ async def grant_data(request: GrantsRequest):
             terms=request.terms,
             year_range=request.year_range,
         )
-    except Exception:
+    except Exception as e:
+        print(e)
         raise HTTPException(404, detail='index out of bounds')
         
 

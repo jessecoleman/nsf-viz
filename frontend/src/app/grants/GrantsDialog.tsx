@@ -1,4 +1,4 @@
-import { useState, CSSProperties, useRef } from 'react';
+import { CSSProperties, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
@@ -21,7 +21,7 @@ import {
 import { format, timeFormat, timeParse } from 'd3';
 
 import { loadAbstract, loadGrants } from 'app/actions';
-import { Grant } from '../types';
+import { Grant } from '../../api/models/Grant';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getGrant, getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
@@ -124,12 +124,11 @@ const GrantsTable = () => {
     hasMountedRef.current = true;
   }, [ orderBy, order ]);
 
-  async function handleLoadGrants(idx: number) {
+  const handleLoadGrants = async (idx: number) => {
     if (!loading) {
       await dispatch(loadGrants({ ...query, idx }));
     }
-    // return null;
-  }
+  };
 
   const count = noMore ? numGrants : numGrants + 1;
   const isLoaded = (idx: number) => noMore || idx < numGrants;
