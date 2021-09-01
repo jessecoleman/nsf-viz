@@ -1,4 +1,4 @@
-import { MouseEvent, ChangeEvent, useEffect } from 'react';
+import { MouseEvent, ChangeEvent } from 'react';
 
 import FlipMove from 'react-flip-move';
 import { styled } from '@material-ui/core/styles';
@@ -16,7 +16,6 @@ import {
 } from '@material-ui/icons';
 
 import {
-  loadData,
   loadRelated,
   loadTermCounts,
   loadTypeahead,
@@ -24,9 +23,10 @@ import {
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getSelectedTerms, getTerms } from 'app/selectors';
 import { addChips, clearTermSelection, deleteChip, selectTerm, setTerms } from 'app/filterReducer';
-import { useDebouncedSearch, useNavigate, useQuery } from 'app/hooks';
+import { useDebouncedSearch, useNavigate } from 'app/hooks';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
+import { clearTypeahead } from 'app/dataReducer';
 
 const SearchContainer = styled('div')(({ theme }) => `
   min-width: 25em;
@@ -63,7 +63,6 @@ const SearchIcon = styled('div')(({ theme }) => `
 const TermsFilter = () => {
 
   const dispatch = useAppDispatch();
-  const query = useQuery();
   const { input, setInput } = useDebouncedSearch((input) => {
     if (input.length) {
       dispatch(loadTypeahead(input));
@@ -81,16 +80,7 @@ const TermsFilter = () => {
     }
   }, '?terms');
 
-  useEffect(() => {
-    if (selected.length > 0) {
-      dispatch(loadData({ ...query, terms: selected }));
-    } else {
-      dispatch(loadData(query));
-    }
-  }, [selected]);
-
   const handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.value);
     setInput(e.target.value);
   };
 
@@ -112,7 +102,6 @@ const TermsFilter = () => {
     });
     dispatch(addChips(chips));
     dispatch(loadTermCounts(chipString));
-    dispatch(loadData(query));
     dispatch(loadRelated());
   };
 
@@ -127,14 +116,16 @@ const TermsFilter = () => {
       payload: [chip.term],
     });
     dispatch(deleteChip(idx));
-    dispatch(loadData(query));
     dispatch(loadRelated());
+  };
+  
+  const handleClearInput = () => {
+    dispatch(clearTypeahead());
   };
  
   const handleClearTerms = () => {
     if (selected.length > 0) {
       dispatch(clearTermSelection());
-      dispatch(loadData(query));
     } else {
       push({
         component: 'terms',
@@ -142,7 +133,6 @@ const TermsFilter = () => {
         payload: [],
       });
       dispatch(setTerms([]));
-      dispatch(loadData({ ...query, terms: [] }));
     }
   };
   
@@ -168,6 +158,7 @@ const TermsFilter = () => {
           onChange={handleChangeInput}
           onAddChip={handleAddChip}
           onDeleteLastChip={handleDeleteChip(terms.length - 1)}
+          onClearInput={handleClearInput}
         />
       </ChipContainer>
       <Tooltip title={selected.length === 0 ? 'clear all terms' : 'clear selection'}>

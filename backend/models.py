@@ -59,6 +59,16 @@ class SearchResponse(BaseModel):
     sum_total: List[Aggregate]
 
 
+class Grant(BaseModel):
+    id: str
+    score: float
+    title: str
+    date: str
+    amount: int
+    division: str
+    division_key: str
+
+
 class Order(str, Enum):
     asc = 'asc'
     desc = 'desc'

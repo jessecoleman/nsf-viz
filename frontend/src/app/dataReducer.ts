@@ -3,7 +3,7 @@ import { Aggregate } from 'api/models/Aggregate';
 import { DivisionAggregate } from 'api/models/DivisionAggregate';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
 import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
-import { Grant } from './types';
+import { Grant } from '../api/models/Grant';
 
 type GrantState = {
   perYear: Aggregate[],
@@ -37,6 +37,9 @@ const dataSlice = createSlice({
   reducers: {
     clearGrants: (state) => {
       state.grants = [];
+    },
+    clearTypeahead: (state) => {
+      state.typeahead = [];
     },
     dismissAbstractDialog: (state) => {
       state.selectedGrantId = undefined;
@@ -86,6 +89,7 @@ const dataSlice = createSlice({
 
 export const {
   clearGrants,
+  clearTypeahead,
   dismissAbstractDialog,
 } = dataSlice.actions;
 
