@@ -15,6 +15,12 @@ export const getNumGrants = (state: RootState) => state.data.grants.length;
 
 export const getLegendFilters = (state: RootState) => state.filter.legendFilters;
 
+export const getYearRange = (state: RootState) => state.filter.yearRange;
+
+export const isGrantDialogOpen = (state: RootState) => state.filter.grantDialogOpen;
+
+export const getGrantFilter = (state: RootState) => state.filter.grantFilter;
+
 export const getGrantOrder = (state: RootState) => state.filter.grantOrder;
 
 export const loadingGrants = (state: RootState) => state.data.loadingGrants;
@@ -31,23 +37,24 @@ export const getSelectedGrant = createSelector(
 
 export const getSelectedAbstract = (state: RootState) => state.data.selectedAbstract;
 
-export const getGrant = createSelector(
-  getGrants,
-  (state: RootState, idx: number) => idx,
-  (grants, idx) => grants[idx]
-);
-
 export const getDivisionsMap = (state: RootState) => state.filter.divisions.reduce((accum, div) => {
-  accum[div.name] = div.key;
+  accum[div.key] = div.name;
   return accum;
 }, {});
+
+export const getGrant = createSelector(
+  getGrants,
+  getDivisionsMap,
+  (state: RootState, idx: number) => idx,
+  (grants, divMap, idx) => grants[idx]
+);
 
 export const getDivisionAggs = createSelector(
   getTotal,
   getDivisions,
   (total, divisions) => (
     divisions.map(d => {
-      const bucket = total?.find(d2 => d2.key === d.name);
+      const bucket = total.find(d2 => d2.key === d.key);
       return {
         ...d,
         amount: bucket?.grant_amounts!.value ?? 0,

@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+import argparse
 from elasticsearch import helpers
 from elasticsearch_dsl import (
     Document,
@@ -30,8 +32,9 @@ def ngrams(input, n):
     return [' '.join(gram) for gram in output]
 
 
-def get_data():
-    with open('../assets/terms.txt', 'r') as terms:
+def get_data(terms_file='../assets/terms.txt'):
+    terms_file = Path(terms_file).resolve()
+    with open(terms_file, 'r') as terms:
         for line in terms:
             weight, term = line.strip().split()
             term = term.replace('_', ' ')
@@ -50,14 +53,20 @@ def get_data():
             ).to_dict(True)
           
       
-def build_index():
+def build_index(terms_file='../assets/terms.txt'):
     if suggestions.exists():
         suggestions.delete()
     suggestions.create()
 
 
-    helpers.bulk(es, get_data())
+    helpers.bulk(es, get_data(terms_file=terms_file))
 
         
 if __name__ == '__main__':
-    build_index()
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    terms_file = os.path.join(script_dir, '../assets/terms.txt')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('terms_file', nargs='?', default=terms_file)
+
+    args = parser.parse_args()
+    build_index(terms_file=args.terms_file)

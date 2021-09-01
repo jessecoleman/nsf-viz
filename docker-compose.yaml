@@ -42,13 +42,13 @@ services:
             - frontend
             - backend
     elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
         volumes: 
             - ./elasticsearch_data:/usr/share/elasticsearch/data
         environment: 
             - discovery.type=single-node
-        # ports: 
-        #     - 9200:9200
-        #     - 9300:9300
+        ports: 
+            - 9200:9200
+            - 9300:9300
 volumes:
     docker_openapi:

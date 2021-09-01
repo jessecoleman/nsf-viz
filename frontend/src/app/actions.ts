@@ -14,17 +14,19 @@ export const loadData = createAsyncThunk<
   { state: { filter: FilterState }}
 >(
   'loadData',
-  async ({ divisions, terms }, thunkAPI) => {
-    //const route = queryString.stringify(query);
+  async (query, thunkAPI) => {
     const { filter } = thunkAPI.getState();
-    const { legendFilters, ...rest } = filter;
-    // const selected = getSelectedTerms(thunkAPI.getState() as any);
+    const { terms, yearRange, legendFilters, ...rest } = filter;
+    const selected = terms.filter(t => t.selected).map(t => t.term);
+    if (selected.length) {
+      query.terms = selected;
+    }
 
     return await Service.search({
       ...rest,
+      ...query,
       boolQuery: legendFilters.bool,
-      terms, //: selected.length ? selected : terms,
-      divisions,
+      year_range: yearRange,
     });
   });
 
@@ -34,21 +36,23 @@ type LoadGrantsParams = FilterParams & {
 
 export const loadGrants = createAsyncThunk(
   'loadGrants',
-  async ({ divisions, terms, idx }: LoadGrantsParams, thunkAPI) => {
+  async (query: LoadGrantsParams, thunkAPI) => {
 
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    // const selected = getSelectedTerms(thunkAPI.getState() as any);
-    const { grantOrder, legendFilters, ...rest } = filter;
+    const { terms, grantOrder, legendFilters, grantFilter, ...rest } = filter;
+    const selected = terms.filter(t => t.selected).map(t => t.term);
+    if (selected.length) {
+      query.terms = selected;
+    }
     const [ orderBy, order ] = grantOrder;
 
     return await Service.loadGrants({
       ...rest,
-      idx,
+      ...query,
       order,
       order_by: orderBy === 'title' ? 'title.raw' : orderBy,
       toggle: legendFilters.bool === 'all',
-      terms, //: selected.length ? selected : terms,
-      divisions,
+      year_range: grantFilter.yearRange,
     });
   });
   
@@ -56,7 +60,12 @@ export const loadAbstract = createAsyncThunk(
   'loadAbstract',
   async (payload: string, thunkAPI) => {
     const { filter } = thunkAPI.getState() as { filter: FilterState };
-    return await Service.loadAbstract(payload, filter.terms.map(t => t.term));
+    let terms = filter.terms.map(t => t.term);
+    const selected = filter.terms.filter(t => t.selected).map(t => t.term);
+    if (selected.length) {
+      terms = selected;
+    }
+    return await Service.loadAbstract(payload, terms);
   }
 );
 
