@@ -1,4 +1,5 @@
 import { createSelector } from '@reduxjs/toolkit';
+import createCachedSelector from 're-reselect';
 import type { RootState } from './store';
 
 export const getPerYear = (state: RootState) => state.data.perYear;
@@ -62,6 +63,22 @@ export const getDivisionAggs = createSelector(
       };
     })
   )
+);
+
+export const getStackedData = createCachedSelector(
+  getPerDivision,
+  (state: RootState, divs: string[]) => divs,
+  (agg, divs) => agg.map((year, idx) => ({
+    year: +year.key_as_string!,
+    // v: idx,
+    ...divs.reduce((obj, key) => {
+      const div = year.divisions.buckets.find(d => d.key === key);
+      obj[`${key}-count`] = div?.doc_count ?? 0;
+      obj[`${key}-amount`] = div?.grant_amounts.value ?? 0;
+      return obj;
+    }, {}),
+  })))(
+  (state, divisions) => JSON.stringify(divisions)
 );
 
 export const getTerms = (state: RootState) => state.filter.terms;

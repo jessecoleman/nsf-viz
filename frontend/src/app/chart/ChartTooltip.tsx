@@ -3,7 +3,7 @@ import { Box, Paper, styled } from '@material-ui/core';
 import { TooltipProps } from 'recharts/types/component/Tooltip';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
-import { getDivisionsMap } from 'app/selectors';
+import { getDivisionAggs, getDivisionsMap, getLegendFilters } from 'app/selectors';
 
 const Container = styled(Paper)(({ theme }) => `
   margin: 3em;
@@ -12,12 +12,15 @@ const Container = styled(Paper)(({ theme }) => `
 
 const ChartTooltip = (props: TooltipProps<number, string>) => {
 
+  const { counts, amounts } = useAppSelector(getLegendFilters);
+  const divisions = useAppSelector(getDivisionAggs);
   const divMap = useAppSelector(getDivisionsMap);
   let year = 0;
   const totals: CellData[] = [{ key: 'count', v: 0 }, { key: 'amount', v: 0 }];
 
   const rows: Record<string, CellData[]> = {};
   props.payload?.forEach(p => {
+    console.log(p);
     if (!p.name || !p.value) return;
     year = p.payload.year;
     const [ key, group ] = p.name.split('-');
@@ -25,7 +28,8 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
       rows[key] = [{
         key: group,
         v: p.value,
-        fill: (p as any).fill 
+        fill: (p as any).fill,
+        color: (p as any).color,
       }];
       totals[0].v += p.value;
     } else {
@@ -33,17 +37,23 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
         key: group,
         v: p.value,
         fill: (p as any).fill,
+        color: (p as any).color,
       });
       totals[1].v += p.value;
     }
   });
+
+  const divCounts = Object.fromEntries(divisions.map(d => [d.key, d.count]));
+  const comparator = (a, b) => divCounts[b] - divCounts[a];
+
+  const cells = totals.filter((t, i) => [counts, amounts][i]);
 
   return (
     <Container elevation={5}>
       <DivisionRow
         dataKey='header'
         title={year.toString()}
-        cells={totals}
+        cells={cells}
         header
       />
       <Box>
@@ -52,7 +62,7 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
           enterAnimation='fade'
           leaveAnimation='fade'
         >
-          {Object.entries(rows).reverse().map(([ key, cells ]) => (
+          {Object.entries(rows).sort(comparator).map(([ key, cells ]) => (
             <DivisionRow
               key={key}
               dataKey={key}

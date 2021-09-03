@@ -21,6 +21,7 @@ export type CellData = {
   key: string,
   v: number,
   fill?: string,
+  color?: string,
 };
 
 type RowProps = {
@@ -30,32 +31,29 @@ type RowProps = {
   header?: boolean
 }
 
-const DivisionRow = forwardRef((props: RowProps, ref) => {
-
-  return (
-    <Box
-      ref={ref}
-      display='flex'
-      alignItems='center'
-    >
-      <StyledBox>
-        <Typography variant={props.header ? 'h6' : undefined}>{props.title}</Typography>
-      </StyledBox>
-      {props.cells.map(c => (
-        <NumberBox
-          key={c.key}
-          style={{
-            color: props.header ? 'black' : 'white',
-            backgroundColor: props.header ? 'inherit' : c.fill
-          }}
-        >
-          <Typography>
-            {c.key === 'count' ? c.v : format('$.2s')(c.v).replace(/G/, 'B')}
-          </Typography>
-        </NumberBox>
-      ))}
-    </Box>
-  ); 
-});
+const DivisionRow = forwardRef((props: RowProps, ref) => (
+  <Box
+    ref={ref}
+    display='flex'
+    alignItems='center'
+  >
+    <StyledBox>
+      <Typography variant={props.header ? 'h6' : undefined}>{props.title}</Typography>
+    </StyledBox>
+    {props.cells.map(c => (
+      <NumberBox
+        key={c.key}
+        style={{
+          color: props.header ? 'black' : c.color,
+          backgroundColor: props.header ? 'inherit' : c.fill
+        }}
+      >
+        <Typography>
+          {c.key === 'count' ? c.v : format('$.2s')(c.v).replace(/G/, 'B')}
+        </Typography>
+      </NumberBox>
+    ))}
+  </Box>
+));
 
 export default DivisionRow;
