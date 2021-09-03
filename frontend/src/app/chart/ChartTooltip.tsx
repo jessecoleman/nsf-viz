@@ -29,7 +29,6 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
         key: group,
         v: p.value,
         fill: (p as any).fill,
-        color: (p as any).color,
       }];
       totals[0].v += p.value;
     } else {
@@ -37,7 +36,6 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
         key: group,
         v: p.value,
         fill: (p as any).fill,
-        color: (p as any).color,
       });
       totals[1].v += p.value;
     }
@@ -49,7 +47,10 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
   const cells = totals.filter((t, i) => [counts, amounts][i]);
 
   return (
-    <Container elevation={5}>
+    <Container
+      style={{ width: '30em' }}
+      elevation={5}
+    >
       <DivisionRow
         dataKey='header'
         title={year.toString()}

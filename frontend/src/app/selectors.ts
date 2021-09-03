@@ -43,11 +43,13 @@ export const getDivisionsMap = (state: RootState) => state.filter.divisions.redu
   return accum;
 }, {});
 
-export const getGrant = createSelector(
+export const getGrant = createCachedSelector(
   getGrants,
   getDivisionsMap,
   (state: RootState, idx: number) => idx,
   (grants, divMap, idx) => grants[idx]
+)(
+  (state, idx) => idx
 );
 
 export const getDivisionAggs = createSelector(
