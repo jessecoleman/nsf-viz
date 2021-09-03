@@ -1,11 +1,10 @@
-import { useMemoOne } from 'use-memo-one';
 import * as d3 from 'd3';
 import { green, deepPurple } from '@material-ui/core/colors';
 
 import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Tooltip, Brush, Legend } from 'recharts';
-import { getDivisionAggs, getDivisions, getLegendFilters, getPerDivision, getSelectedTerms, getStackedData } from 'app/selectors';
+import { getDivisionAggs, getLegendFilters, getSelectedTerms, getStackedData } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { usePrevious, useQuery } from 'app/hooks';
+import { useQuery } from 'app/hooks';
 import { format } from 'd3';
 
 import ChartTooltip from './ChartTooltip';
@@ -69,19 +68,8 @@ const Chart = () => {
     // pass
   };
   
-  // const data = useMemoOne(() => perDivision.map((yearBucket, idx) => ({
-  //   year: +yearBucket.key_as_string!,
-  //   v: idx,
-  //   ...query.divisions.reduce((obj, key) => {
-  //     const div = yearBucket.divisions.buckets.find(d => d.key === key);
-  //     obj[`${key}-count`] = div?.doc_count ?? 0;
-  //     obj[`${key}-amount`] = div?.grant_amounts.value ?? 0;
-  //     return obj;
-  //   }, {}),
-  // })), [JSON.stringify(perDivision), JSON.stringify(query.divisions)]);
-  
   const divMap = Object.fromEntries(divisions.map(d => [d.key, d.count]));
-  const comparator = (a, b) => divMap[b] - divMap[a];
+  const comparator = (a: string, b: string) => divMap[b] - divMap[a];
 
   const divDomain = query.divisions.sort(comparator);
   greenScale.domain(divDomain);
@@ -111,7 +99,6 @@ const Chart = () => {
         />
         {counts && divDomain.map(key => (
           <Bar
-            // isAnimationActive={animate}
             key={`${key}-count`}
             yAxisId='count'
             dataKey={`${key}-count`}

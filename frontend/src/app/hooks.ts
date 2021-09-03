@@ -16,15 +16,6 @@ export const useConstant = <T extends unknown>(fn: () => T): T => {
   return ref.current.v;
 };
 
-export const usePrevious = <T extends unknown>(val: T): T | undefined => {
-  const ref = useRef<T>();
-
-  useEffect(() => {
-    ref.current = val;
-  }, [val]);
-  return ref.current;
-};
-
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;
   return {
