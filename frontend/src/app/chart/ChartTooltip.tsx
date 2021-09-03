@@ -16,28 +16,27 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
   const divisions = useAppSelector(getDivisionAggs);
   const divMap = useAppSelector(getDivisionsMap);
   let year = 0;
-  const totals: CellData[] = [{ key: 'count', v: 0 }, { key: 'amount', v: 0 }];
+  const totals: CellData[] = [{ name: 'count', value: 0 }, { name: 'amount', value: 0 }];
 
   const rows: Record<string, CellData[]> = {};
   props.payload?.forEach(p => {
-    console.log(p);
     if (!p.name || !p.value) return;
     year = p.payload.year;
     const [ key, group ] = p.name.split('-');
     if (!rows[key]) {
       rows[key] = [{
-        key: group,
-        v: p.value,
+        name: group,
+        value: p.value,
         fill: (p as any).fill,
       }];
-      totals[0].v += p.value;
+      totals[0].value += p.value;
     } else {
       rows[key].push({
-        key: group,
-        v: p.value,
+        name: group,
+        value: p.value,
         fill: (p as any).fill,
       });
-      totals[1].v += p.value;
+      totals[1].value += p.value;
     }
   });
 

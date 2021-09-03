@@ -15,10 +15,12 @@ import { clearGrants } from 'app/dataReducer';
 import { loadData } from 'app/actions';
 import { useEffect } from 'react';
 
-const interweave = (v, i, a) => a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)];
-const greens = Object.values(green).slice(0, -4).map(interweave);
+const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
+  a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
+);
+const greens = Object.values(green).slice(0, -4).map(interleave);
 export const greenScale = d3.scaleOrdinal(greens);
-const purples = Object.values(deepPurple).slice(0, -4).map(interweave);
+const purples = Object.values(deepPurple).slice(0, -4).map(interleave);
 export const deepPurpleScale = d3.scaleOrdinal(purples);
 
 const Chart = () => {

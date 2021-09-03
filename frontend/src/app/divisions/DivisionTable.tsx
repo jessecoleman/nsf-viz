@@ -1,7 +1,6 @@
-import { forwardRef, ReactNode, useState } from 'react';
-import clsx from 'clsx';
+import { useState } from 'react';
 import FlipMove from 'react-flip-move';
-import { Theme, makeStyles, alpha, styled } from '@material-ui/core/styles';
+import { styled } from '@material-ui/core/styles';
 import { 
   TableSortLabel,
   Toolbar,
@@ -10,15 +9,11 @@ import {
   Checkbox,
   IconButton,
   Tooltip,
-  Grid,
-  GridSize,
   Box
 } from '@material-ui/core';
 import { FilterList } from '@material-ui/icons';
 
 import GrantsDialog from 'app/grants/GrantsDialog';
-
-import { format } from 'd3';
 
 import { SortDirection } from '../types';
 import { getDivisionAggs, getDivisionsMap } from 'app/selectors';
@@ -57,13 +52,12 @@ type Columns = {
   id: string,
   numeric: boolean,
   label: string,
-  gridSize: GridSize,
 };
 
 const columns: Columns[] = [
-  { Component: StyledBox, id: 'title', numeric: false, label: 'Name', gridSize: 9 },
-  { Component: NumberBox, id: 'count', numeric: true, label: 'Grants', gridSize: 1 },
-  { Component: NumberBox, id: 'amount', numeric: false, label: 'Amount', gridSize: 1 },
+  { Component: StyledBox, id: 'title', numeric: false, label: 'Name' },
+  { Component: NumberBox, id: 'count', numeric: true, label: 'Grants' }, 
+  { Component: NumberBox, id: 'amount', numeric: false, label: 'Amount' },
 ];
 
 type EnhancedTableHeadProps = {
@@ -253,8 +247,8 @@ const DivisionTable = () => {
                 checked={selectedDivisions.has(div.key)}
                 aria-checked={selectedDivisions.has(div.key)}
                 cells={[
-                  { key: 'count', v: div.count, fill: selectedDivisions.has(div.key) ? deepPurpleScale(div.key) : undefined },
-                  { key: 'amount', v: div.amount, fill: selectedDivisions.has(div.key) ? greenScale(div.key) : undefined },
+                  { name: 'count', value: div.count, fill: selectedDivisions.has(div.key) ? deepPurpleScale(div.key) : undefined },
+                  { name: 'amount', value: div.amount, fill: selectedDivisions.has(div.key) ? greenScale(div.key) : undefined },
                 ]}
                 // tabIndex={-1}
               />

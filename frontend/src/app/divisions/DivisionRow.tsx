@@ -1,4 +1,4 @@
-import { Box, Checkbox, hslToRgb, styled, Typography } from '@material-ui/core';
+import { Box, Checkbox, styled, Typography } from '@material-ui/core';
 import { format } from 'd3';
 import { forwardRef } from 'react';
 
@@ -21,9 +21,9 @@ export const StyledBox = styled(Box)(({ theme }) => `
   padding: ${theme.spacing(0, 1)};
 `);
 
-export const CheckBoxBox = styled(StyledBox)(({ theme }) => `
+export const CheckBoxBox = styled(StyledBox)`
   width: 3em;
-`);
+`;
 
 export const NumberBox = styled(StyledBox)(({ theme }) => `
   display: flex;
@@ -32,8 +32,8 @@ export const NumberBox = styled(StyledBox)(({ theme }) => `
 `);
 
 export type CellData = {
-  key: string,
-  v: number,
+  name: string,
+  value: number,
   fill?: string,
 };
 
@@ -71,7 +71,7 @@ const DivisionRow = forwardRef((props: RowProps, ref) => (
     </StyledBox>
     {props.cells.map((c, idx) => (
       <NumberBox
-        key={c.key}
+        key={c.name}
         style={{
           marginLeft: idx === 0 ? 'auto' : 'initial',
           color: props.header ? 'black' : rgb2hsl(c.fill) < 0.9 ? 'white' : 'black',
@@ -79,11 +79,11 @@ const DivisionRow = forwardRef((props: RowProps, ref) => (
         }}
       >
         <Typography>
-          {c.v === 0 
+          {c.value === 0 
             ? '-'
-            : c.key === 'count'
-              ? c.v
-              : format('$.2s')(c.v).replace(/G/, 'B')
+            : c.name === 'count'
+              ? c.value
+              : format('$.2s')(c.value).replace(/G/, 'B')
           }
         </Typography>
       </NumberBox>
