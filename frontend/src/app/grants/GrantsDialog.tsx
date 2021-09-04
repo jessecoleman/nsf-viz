@@ -1,4 +1,4 @@
-import { CSSProperties, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
@@ -18,90 +18,30 @@ import {
   GridSize,
 } from '@material-ui/core';
 
-import { format, timeFormat, timeParse } from 'd3';
-
-import { loadAbstract, loadGrants } from 'app/actions';
+import { loadGrants } from 'app/actions';
 import { Grant } from '../../api/models/Grant';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrant, getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
+import { getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
 import { clearGrantFilter, setGrantDialogOpen, setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
 import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
 import AbstractDialog from './AbstractDialog';
+import GrantRow, { cols } from './GrantRow';
 
 const GrantsDialogContent = styled(DialogContent)(({ theme }) => `
-  padding-left: 0;
-  padding-right: 0;
+  box-shadow: inset 0 4px 4px ${theme.palette.grey[300]};
+  padding: 0;
   overflow-y: hidden;
 `);
 
-
-const GrantsCollapse = styled(Collapse)(({ theme }) => `
+const GrantsCollapse = styled(Collapse)`
   overflow-y: hidden;
-`);
+`;
 
-
-const GrantListItem = styled(Grid)(({ theme }) => `
-    cursor: pointer;
-    padding-left: ${theme.spacing(3)};
-    padding-right: ${theme.spacing(1)};
-    border-bottom: 1px solid ${theme.palette.grey[300]};
-    &:hover: {
-      backgroundColor: ${theme.palette.grey[100]};
-    }
-`);
-
-const cols: Column[] = [
-  { id: 'title', format: t => t, label: 'Grant Title', gridSize: 7 },
-  { id: 'date', format: d => timeFormat('%b %Y')(timeParse('%Y-%m-%d')(d)!), label: 'Date', gridSize: 1 },
-  { id: 'amount', format: format('$,'), label: 'Amount', gridSize: 1 },
-  { id: 'division', format: d => d, label: 'Division', gridSize: 3 },
-];
-
-type GrantRowProps = {
-  index: number
-  style: CSSProperties
-}
-
-const GrantRow = (props: GrantRowProps) => {
-
-  const { index, style } = props;
-
-  const dispatch = useAppDispatch();
-  const grant = useAppSelector(state => getGrant(state, index));
-
-  if (!grant) return null;
-
-  const setSelectedGrant = () => {
-    console.log(grant);
-    dispatch(loadAbstract(grant.id));
-  };
-
-  return (
-    <GrantListItem 
-      container 
-      key={index}
-      direction='row' 
-      alignItems='center' 
-      style={style}
-      onClick={setSelectedGrant}
-    >
-      {cols.map(({ gridSize, format, id }, idx: number) => (
-        <Grid item xs={gridSize} key={idx}>
-          {format(grant[id])}
-        </Grid>
-      ))}
-    </GrantListItem>
-  );
-};
-
-type Column = {
-  id: keyof Grant
-  format: (s: any) => string,
-  label: string,
-  gridSize: GridSize,
-}
+const ProgressBar = styled(LinearProgress)`
+  margin-bottom: -4px;
+`;
 
 const GrantsTable = () => {
 
@@ -166,7 +106,16 @@ const GrantsDialog = () => {
   const loading = useAppSelector(loadingGrants);
   const numGrants = useAppSelector(getNumGrants);
   const open = useAppSelector(isGrantDialogOpen);
+  const [ firstOpen, setFirstOpen ] = useState(0);
   const [ orderBy, order ] = useAppSelector(getGrantOrder);
+  
+  useEffect(() => {
+    if (open) {
+      setFirstOpen(c => c + 1);
+    } else {
+      setFirstOpen(0);
+    }
+  }, [open, numGrants]);
 
   const handleSort = (property: keyof Grant) => () => {
     const newOrder = orderBy === property && order === 'desc' ? 'asc' : 'desc';
@@ -225,11 +174,11 @@ const GrantsDialog = () => {
           </Grid>
         </DialogTitle>
         <GrantsDialogContent>
-          <GrantsCollapse in={numGrants > 0}>
+          <GrantsCollapse in={firstOpen !== 1 || numGrants > 0}>
             <GrantsTable />
           </GrantsCollapse>
-          {loading && <LinearProgress />}
         </GrantsDialogContent>
+        {loading && <ProgressBar />}
         <DialogActions>
           <Button onClick={handleDownload}>
             Download

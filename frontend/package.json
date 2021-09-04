@@ -23,6 +23,7 @@
         "history": "^4.9.0",
         "hoist-non-react-statics": "^3.3.0",
         "query-string": "^7.0.1",
+        "re-reselect": "^4.0.0",
         "react": "^17.0.2",
         "react-async-hook": "^3.6.2",
         "react-debounce-input": "^3.2.0",
@@ -36,8 +37,7 @@
         "react-window-infinite-loader": "^1.0.7",
         "recharts": "^2.0.10",
         "redux-logger": "^3.0.6",
-        "typescript": "^4.2.4",
-        "use-memo-one": "^1.1.2"
+        "typescript": "^4.2.4"
     },
     "scripts": {
         "start": "react-scripts start",
