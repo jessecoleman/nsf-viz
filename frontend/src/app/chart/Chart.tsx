@@ -12,9 +12,10 @@ import ChartLegend from './ChartLegend';
 import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
 import { clearGrants } from 'app/dataReducer';
 import { loadData } from 'app/actions';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import D3Component from './D3Chart';
 
-const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
+export const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
   a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
 );
 const greens = Object.values(green).slice(0, -4).map(interleave);
@@ -22,8 +23,11 @@ export const greenScale = d3.scaleOrdinal(greens);
 const purples = Object.values(deepPurple).slice(0, -4).map(interleave);
 export const deepPurpleScale = d3.scaleOrdinal(purples);
 
+let vis: D3Component;
+
 const Chart = () => {
 
+  const visRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const query = useQuery();
 
@@ -33,6 +37,22 @@ const Chart = () => {
   const divisions = useAppSelector(getDivisionAggs);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const { bool } = useAppSelector(getLegendFilters);
+
+  useEffect(() => {
+    if (visRef.current && !vis) {
+      console.log(visRef);
+      vis = new D3Component(visRef.current, {
+        data,
+      });
+    }
+  }, [visRef.current, visRef.current?.clientHeight]);
+  
+  useEffect(() => {
+    if (data.length) {
+      const divDomain = query.divisions; //.sort(comparator);
+      vis.update(data, divDomain);
+    }
+  }, [JSON.stringify(data)]);
 
   useEffect(() => {
     dispatch(loadData(query));
@@ -74,6 +94,10 @@ const Chart = () => {
   const divDomain = query.divisions.sort(comparator);
   greenScale.domain(divDomain);
   deepPurpleScale.domain(divDomain);
+  
+  return (
+    <div style={{ padding: '16px', height: '100%' }} ref={visRef} />
+  );
 
   return (
     <ResponsiveContainer width='100%' aspect={1.5}>
