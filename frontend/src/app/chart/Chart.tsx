@@ -14,6 +14,7 @@ import { clearGrants } from 'app/dataReducer';
 import { loadData } from 'app/actions';
 import { useEffect, useRef } from 'react';
 import D3Component from './D3Chart';
+import styled from '@emotion/styled';
 
 export const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
   a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
@@ -24,6 +25,34 @@ const purples = Object.values(deepPurple).slice(0, -4).map(interleave);
 export const deepPurpleScale = d3.scaleOrdinal(purples);
 
 let vis: D3Component;
+
+const ChartContainer = styled.div(({ theme }) => `
+  .axis {
+    padding: 16px;
+    height: 100%;
+    font: Helvetica;
+    font-size: 14px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 500;
+  }
+  .gridline {
+    stroke: ${theme.palette.grey[100]};
+    stroke-dasharray: 5 5;
+    // shape-rendering: crispEdges;
+    line {
+      stroke: ${theme.palette.grey[400]};
+    }
+    .domain {
+      display: none;
+    }
+  }
+  .selected {
+    outline-style: solid;
+    outline-color: black;
+    outline-width: 2px;
+    outline-offset: -2px;
+  }
+`);
 
 const Chart = () => {
 
@@ -96,7 +125,7 @@ const Chart = () => {
   deepPurpleScale.domain(divDomain);
   
   return (
-    <div style={{ padding: '16px', height: '100%' }} ref={visRef} />
+    <ChartContainer ref={visRef} />
   );
 
   return (
