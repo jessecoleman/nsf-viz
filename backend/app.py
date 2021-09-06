@@ -12,7 +12,7 @@ from collections import defaultdict
 from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
 
-from models import Grant, GrantsRequest, SearchRequest, SearchResponse, Term
+from models import Division, Grant, GrantsRequest, SearchRequest, SearchResponse, Term, YearsResponse
 import queries as Q
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -82,7 +82,7 @@ def main(toggle='any', terms=default_terms):
     # return render_template('index.html', toggle=toggle, divisions=divisions, terms=terms)
 
 
-@app.get('/divisions', operation_id='loadDivisions')
+@app.get('/divisions', operation_id='loadDivisions', response_model=List[Division])
 async def divisions():
     return FileResponse('assets/divisions.json')
 
@@ -91,12 +91,6 @@ async def divisions():
 async def search(request: SearchRequest):
 
     toggle = (request.boolQuery == 'all')
-
-    # if len(request.terms) == 0:
-    #     return SearchResponse(
-    #         per_division=[],
-    #         sum_total=[]
-    #     )
 
     result = await Q.year_division_aggregates(
         aioes,
@@ -110,54 +104,24 @@ async def search(request: SearchRequest):
         per_division=result['aggregations']['years']['buckets'],
         sum_total=result['aggregations']['divisions']['buckets'],
     )
+    
 
-    matched = await Q.year_division_aggregates(aioes, toggle, terms)
-    order = await Q.year_division_aggregates(aioes, toggle, terms, sort=True)
+@app.post('/years', operation_id='years', response_model=YearsResponse)
+async def years(request: SearchRequest):
 
-    sort = {i: b.key for i, b in enumerate(order.per_division.buckets)}
-    inv_sort = {b.key: i for i, b in enumerate(order.per_division.buckets)}
+    toggle = (request.boolQuery == 'all')
 
-    json_data = defaultdict(dict)
-    json_data['total_grants'] = {b.key: b.agg_grants.value for b in order.per_division.buckets}
-    json_data['total_amount'] = {b.key: b.agg_amount.value for b in order.per_division.buckets}
+    result = await Q.year_aggregates(
+        aioes,
+        toggle,
+        terms=request.terms,
+        fields=request.fields
+    )
 
-    for year in total.per_year.buckets:
-        y = int(year.key_as_string[:4])
-        if y not in list(range(2007, 2018)): continue
-        json_data[y]['year'] = y
-        json_data[y]['all'] = {
-            'index': 5,
-            'match_grants': 0,
-            'match_amount': 0,
-            'total_grants': 0,
-            'total_amount': 0
-        }
-        for div in year.per_division.buckets:
-            json_data[y]['all']['total_grants'] += div.agg_grants.value
-            json_data[y]['all']['total_amount'] += div.agg_amount.value
-            json_data[y][div.key] = {
-                    'year': y,
-                    'index': -1,
-                    'total_grants': div.agg_grants.value,
-                    'total_amount': div.agg_amount.value,
-                    'match_grants': 0,
-                    'match_amount': 0
-            }
-
-    for year in matched.per_year.buckets:
-        y = int(year.key_as_string[:4])
-        if y not in list(range(2007, 2018)): continue
-        for div in year.per_division.buckets:
-            json_data[y]['all']['match_grants'] += div.agg_grants.value
-            json_data[y]['all']['match_amount'] += div.agg_amount.value
-            json_data[y][div.key].update({
-                'index': inv_sort[div.key],
-                'match_grants': div.agg_grants.value,
-                'match_amount': div.agg_amount.value
-            })
-
-    return JSONResponse(json_data)
-
+    return YearsResponse(
+        per_year=result['aggregations']['years']['buckets'],
+    )
+ 
 
 @app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead')
 async def typeahead(prefix: str):
@@ -208,7 +172,7 @@ async def grant_data(request: GrantsRequest):
         raise HTTPException(404, detail='index out of bounds')
         
 
-@app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract')
+@app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract', response_model=str)
 async def get_abstract(_id, terms):
     return await Q.abstract(aioes, _id, terms)
 

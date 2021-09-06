@@ -6,6 +6,7 @@ import DivisionTable from 'app/divisions/DivisionTable';
 import Chart from 'app/chart/Chart';
 
 const Container = styled('div')(({ theme }) => `
+  height: calc(100% - 64px);
   padding: ${theme.spacing(2)};
   flex-grow: 1;
 `);

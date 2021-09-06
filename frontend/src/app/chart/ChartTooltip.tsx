@@ -1,53 +1,56 @@
 import FlipMove from 'react-flip-move';
 import { Box, Paper, styled } from '@material-ui/core';
-import { TooltipProps } from 'recharts/types/component/Tooltip';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
 import { getDivisionAggs, getDivisionsMap, getLegendFilters } from 'app/selectors';
+import { forwardRef, Ref } from 'react';
+import { useQuery } from 'app/hooks';
 
 const Container = styled(Paper)(({ theme }) => `
+  position: absolute;
+  width: 30em;
   margin: 3em;
+  top: 0;
+  left: 0;
   overflow-y: hidden;
 `);
 
-const ChartTooltip = (props: TooltipProps<number, string>) => {
+export type TooltipProps = {
+  key?: string
+  year?: number
+}
+
+const ChartTooltip = forwardRef((props: TooltipProps, ref: Ref<HTMLDivElement>) => {
 
   const { counts, amounts } = useAppSelector(getLegendFilters);
-  const divisions = useAppSelector(getDivisionAggs);
+  const { divisions } = useQuery();
+  const divisionAggs = useAppSelector(getDivisionAggs);
   const divMap = useAppSelector(getDivisionsMap);
-  let year = 0;
+  const year = 0;
   const totals: CellData[] = [{ name: 'count', value: 0 }, { name: 'amount', value: 0 }];
 
   const rows: Record<string, CellData[]> = {};
-  props.payload?.forEach(p => {
-    if (!p.name || !p.value) return;
-    year = p.payload.year;
-    const [ key, group ] = p.name.split('-');
-    if (!rows[key]) {
-      rows[key] = [{
-        name: group,
-        value: p.value,
-        fill: (p as any).fill,
-      }];
-      totals[0].value += p.value;
-    } else {
-      rows[key].push({
-        name: group,
-        value: p.value,
-        fill: (p as any).fill,
-      });
-      totals[1].value += p.value;
-    }
-  });
-
-  const divCounts = Object.fromEntries(divisions.map(d => [d.key, d.count]));
+  // const rows = {};
+  // const rows = Object.fromEntries(divisionAggs.filter(d => divisions.includes(d.key)).map(d => ([
+  //   d.key,
+  //   ['count', 'amount'].map((key, i) => {
+  //     totals[i].value += d[key];
+  //     return {
+  //       name: key,
+  //       value: d[key],
+  //       fill: '#ffffff', //(p as any).fill,
+  //     };
+  //   })
+  // ])));
+  
+  const divCounts = Object.fromEntries(divisionAggs.map(d => [d.key, d.count]));
   const comparator = (a, b) => divCounts[b] - divCounts[a];
 
   const cells = totals.filter((t, i) => [counts, amounts][i]);
 
   return (
     <Container
-      style={{ width: '30em' }}
+      ref={ref}
       elevation={5}
     >
       <DivisionRow
@@ -74,6 +77,6 @@ const ChartTooltip = (props: TooltipProps<number, string>) => {
       </Box>
     </Container>
   );
-};
+});
 
 export default ChartTooltip;

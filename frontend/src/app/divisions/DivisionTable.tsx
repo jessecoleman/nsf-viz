@@ -15,13 +15,14 @@ import { FilterList } from '@material-ui/icons';
 
 import GrantsDialog from 'app/grants/GrantsDialog';
 
-import { SortDirection } from '../types';
 import { getDivisionAggs, getDivisionsMap } from 'app/selectors';
 import{ loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useNavigate } from 'app/hooks';
 import DivisionRow, { CheckBoxBox, NumberBox, Row, StyledBox } from './DivisionRow';
 import { deepPurpleScale, greenScale } from 'app/chart/Chart';
+import { SortDirection } from 'app/filterReducer';
+
 
 const desc = <T extends unknown>(a: T, b: T, orderBy: keyof T) => {
   if (b[orderBy] < a[orderBy]) {

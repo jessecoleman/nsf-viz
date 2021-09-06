@@ -16,7 +16,11 @@ class BaseModel(PyBaseModel):
 
 
 class Division(BaseModel):
-    title: str
+    key: str
+    name: str
+    selected: bool
+    count: Optional[int]
+    amount: Optional[int]
 
 
 class SearchRequest(BaseModel):
@@ -54,9 +58,12 @@ class DivisionAggregate(Aggregate):
 
 
 class SearchResponse(BaseModel):
-    # per_year: List[Aggregate]
     per_division: List[DivisionAggregate]
     sum_total: List[Aggregate]
+
+
+class YearsResponse(BaseModel):
+    per_year: List[Aggregate]
 
 
 class Grant(BaseModel):

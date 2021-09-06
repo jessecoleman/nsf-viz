@@ -1,20 +1,19 @@
 import * as d3 from 'd3';
 import { green, deepPurple } from '@material-ui/core/colors';
 
-import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer, Tooltip, Brush, Legend } from 'recharts';
-import { getDivisionAggs, getLegendFilters, getSelectedTerms, getStackedData } from 'app/selectors';
+import { getDivisionAggs, getLegendFilters, getSelectedTerms, getStackedData, getYearRange } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
-import { format } from 'd3';
 
-import ChartTooltip from './ChartTooltip';
+import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
-import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
+import { setGrantDialogOpen, setGrantFilter, setYearRange } from 'app/filterReducer';
 import { clearGrants } from 'app/dataReducer';
-import { loadData } from 'app/actions';
-import { useEffect, useRef } from 'react';
+import { loadData, loadYears } from 'app/actions';
+import { useEffect, useRef, useState } from 'react';
 import D3Component from './D3Chart';
 import styled from '@emotion/styled';
+import { YearsResponse } from 'api/models/YearsResponse';
 
 export const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
   a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
@@ -27,6 +26,7 @@ export const deepPurpleScale = d3.scaleOrdinal(purples);
 let vis: D3Component;
 
 const ChartContainer = styled.div(({ theme }) => `
+  position: relative;
   .axis {
     padding: 16px;
     height: 100%;
@@ -52,29 +52,64 @@ const ChartContainer = styled.div(({ theme }) => `
     outline-width: 2px;
     outline-offset: -2px;
   }
+  .tooltip {
+    display: none;
+    .visible {
+      display: initial;
+    } 
+  }
 `);
 
 const Chart = () => {
 
   const visRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const query = useQuery();
 
   const { counts, amounts } = useAppSelector(getLegendFilters);
+  const yearRange = useAppSelector(getYearRange);
   // const perDivision = useAppSelector(getPerDivision);
   const data = useAppSelector(state => getStackedData(state, query.divisions));
   const divisions = useAppSelector(getDivisionAggs);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const { bool } = useAppSelector(getLegendFilters);
+  const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
+
+  const handleTooltipEnter = (key: string, year: number) => {
+    console.log('entered', key, year);
+    setTooltipProps({
+      key,
+      year,
+    });
+  };
+
+  const handleTooltipLeave = (key: string, year: number) => {
+    console.log('left', key, year);
+    setTooltipProps({
+      key,
+      year,
+    });
+  };
+  
+  const handleBrush = (selection: [ number, number ]) => {
+    console.log(selection);
+    dispatch(setYearRange(selection));
+  };
 
   useEffect(() => {
+    console.log(tooltipRef.current);
     if (visRef.current && !vis) {
-      console.log(visRef);
-      vis = new D3Component(visRef.current, {
+      vis = new D3Component({
+        containerEl: visRef.current,
+        //tooltipEl: tooltipRef.current,
         data,
+        onTooltipEnter: handleTooltipEnter,
+        onTooltipLeave: handleTooltipLeave,
+        onBrushEnded: handleBrush,
       });
     }
-  }, [visRef.current, visRef.current?.clientHeight]);
+  }, [visRef.current, tooltipRef.current]);
   
   useEffect(() => {
     if (data.length) {
@@ -84,12 +119,25 @@ const Chart = () => {
   }, [JSON.stringify(data)]);
 
   useEffect(() => {
-    dispatch(loadData(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
+    dispatch(loadData(query)).then(data => {
+      console.log(data);
+      // TODO directly update vis here instead of using listener above
+    });
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, yearRange, bool ])]);
 
-  const handleChangeBrush = (e: any) => {
-    // console.log(e.startIndex, e.endIndex);
-  };
+  useEffect(() => {
+    dispatch(loadYears(query)).then(({ payload }) => {
+      console.log('loadedYears', data);
+      if (!payload) return;
+      vis.updateYears((payload as YearsResponse).per_year.map(d => ({
+        year: +d.key_as_string!,
+        amount: d.grant_amounts?.value ?? 0,
+        count: d.doc_count,
+      })));
+      console.log(data);
+      // TODO directly update vis here instead of using listener above
+    });
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
 
   const handleClick = e => {
     if (e?.activeLabel) {
@@ -109,14 +157,6 @@ const Chart = () => {
     }
   };
 
-  const handleMouseLeave = e => {
-    // pass
-  };
-
-  const handleMouseMove = e => {
-    // pass
-  };
-  
   const divMap = Object.fromEntries(divisions.map(d => [d.key, d.count]));
   const comparator = (a: string, b: string) => divMap[b] - divMap[a];
 
@@ -125,64 +165,9 @@ const Chart = () => {
   deepPurpleScale.domain(divDomain);
   
   return (
-    <ChartContainer ref={visRef} />
-  );
-
-  return (
-    <ResponsiveContainer width='100%' aspect={1.5}>
-      <BarChart
-        data={data}
-        onClick={handleClick}
-      >
-        <CartesianGrid strokeDasharray='2 2' />
-        <XAxis
-          dataKey='year'
-          domain={[2005, 2018]}
-          tickCount={13}
-          interval={0}
-        />
-        <YAxis
-          yAxisId='amount'
-          orientation='right'
-          tickFormatter={format('$.2s')}
-        />
-        <YAxis yAxisId='count' />
-        <Tooltip<number, string>
-          content={(props) => <ChartTooltip {...props} />}
-        />
-        {counts && divDomain.map(key => (
-          <Bar
-            key={`${key}-count`}
-            yAxisId='count'
-            dataKey={`${key}-count`}
-            stackId='count'
-            fill={deepPurpleScale(key)}
-            name={`${key}-count`}
-            onClick={handleClick}
-          />
-        ))}
-        {amounts && divDomain.map(key => (
-          <Bar
-            key={`${key}-amount`}
-            yAxisId='amount'
-            dataKey={`${key}-amount`}
-            stackId='amount'
-            fill={greenScale(key)}
-            name={`${key}-amount`}
-            onClick={handleClick}
-          />
-        ))}
-        <Brush
-          dataKey='year'
-          onChange={handleChangeBrush}
-        />
-        <Legend
-          align='left'
-          verticalAlign='top'
-          content={<ChartLegend />}
-        />
-      </BarChart>
-    </ResponsiveContainer>
+    <ChartContainer ref={visRef}>
+      { /* <ChartTooltip ref={tooltipRef} {...tooltipProps} /> */ }
+    </ChartContainer>
   );
 };
 

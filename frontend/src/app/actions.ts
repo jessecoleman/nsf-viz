@@ -1,17 +1,20 @@
 import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { SearchResponse, Service } from 'api';
+import { Grant, SearchResponse, Service } from 'api';
 import type { FilterState } from './filterReducer';
+import { YearsResponse } from 'api/models/YearsResponse';
 
 type FilterParams = {
   divisions: string[],
   terms: string[],
 }
 
+type ThunkAPI = { state: { filter: FilterState }}
+
 export const loadData = createAsyncThunk<
   SearchResponse,
   FilterParams,
-  { state: { filter: FilterState }}
+  ThunkAPI
 >(
   'loadData',
   async (query, thunkAPI) => {
@@ -34,11 +37,37 @@ type LoadGrantsParams = FilterParams & {
   idx: number,
 }
 
-export const loadGrants = createAsyncThunk(
+export const loadYears = createAsyncThunk<
+  YearsResponse,
+  FilterParams,
+  ThunkAPI
+>(
+  'loadYears',
+  async (query, thunkAPI) => {
+
+    const { filter } = thunkAPI.getState();
+    const { terms, divisions, yearRange, legendFilters, ...rest } = filter;
+    const selected = terms.filter(t => t.selected).map(t => t.term);
+    if (selected.length) {
+      query.terms = selected;
+    }
+
+    return await Service.years({
+      ...rest,
+      ...query,
+      boolQuery: legendFilters.bool,
+    });
+  });
+
+export const loadGrants = createAsyncThunk<
+  Array<Grant>,
+  FilterParams & { idx: number },
+  ThunkAPI
+>(
   'loadGrants',
   async (query: LoadGrantsParams, thunkAPI) => {
 
-    const { filter } = thunkAPI.getState() as { filter: FilterState };
+    const { filter } = thunkAPI.getState();
     const { terms, grantOrder, legendFilters, grantFilter, ...rest } = filter;
     const selected = terms.filter(t => t.selected).map(t => t.term);
     if (selected.length) {
@@ -56,10 +85,14 @@ export const loadGrants = createAsyncThunk(
     });
   });
   
-export const loadAbstract = createAsyncThunk(
+export const loadAbstract = createAsyncThunk<
+  string,
+  string,
+  ThunkAPI
+>(
   'loadAbstract',
   async (payload: string, thunkAPI) => {
-    const { filter } = thunkAPI.getState() as { filter: FilterState };
+    const { filter } = thunkAPI.getState();
     let terms = filter.terms.map(t => t.term);
     const selected = filter.terms.filter(t => t.selected).map(t => t.term);
     if (selected.length) {
