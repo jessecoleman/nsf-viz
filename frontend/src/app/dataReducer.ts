@@ -1,7 +1,7 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 import { Aggregate } from 'api/models/Aggregate';
 import { DivisionAggregate } from 'api/models/DivisionAggregate';
-import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead } from './actions';
+import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead, loadYears } from './actions';
 import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
 import { Grant } from '../api/models/Grant';
 
@@ -58,11 +58,15 @@ const dataSlice = createSlice({
     })
     .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
+      // TODO clean this up so that we don't have clunky selectors
       state.perDivision = action.payload.per_division;
       state.sumTotal = action.payload.sum_total;
     })
     .addCase(loadData.rejected, (state) => {
       state.loadingData = false;
+    })
+    .addCase(loadYears.fulfilled, (state, action) => {
+      state.perYear = action.payload.per_year;
     })
     .addCase(loadGrants.pending, (state) => {
       state.loadingGrants = true;

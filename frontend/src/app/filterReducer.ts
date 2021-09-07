@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { loadDivisions, loadTermCounts } from './actions';
-import { Division, GrantOrder } from './types';
+import { Division } from '../api/models/Division';
+import { Grant } from 'api';
 
 type Field = 'title' | 'abstract';
 
@@ -11,6 +12,10 @@ export type Term = {
 }
 
 type YearRange = [ number, number ];
+
+export type SortDirection = 'asc' | 'desc';
+
+export type GrantOrder = [ keyof Grant, SortDirection ];
 
 export type FilterState = {
   dependant: string,
@@ -102,12 +107,7 @@ const filterSlice = createSlice({
   },
   extraReducers: builder => builder
     .addCase(loadDivisions.fulfilled, (state, action) => {
-      state.divisions = action.payload.map((div: Division) => ({
-        key: div.key,
-        name: div.name,
-        count: '',
-        amount: '',
-      }));
+      state.divisions = action.payload;
     })
     .addCase(loadTermCounts.fulfilled, (state, action) => {
       action.meta.arg.split(',').forEach((t, i) => {

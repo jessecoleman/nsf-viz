@@ -38,6 +38,12 @@ type TermsInputProps = {
 
 const TermsInput = (props: InputBaseProps & TermsInputProps) => {
 
+  const {
+    onAddChip,
+    onDeleteLastChip,
+    onClearInput,
+    ...inputProps
+  } = props;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [ focused, setFocused ] = useState(false);
   const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
@@ -60,13 +66,13 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
     console.log(e.key);
     switch(e.key) {
     case 'Enter':
-      props.onAddChip(props.value);
+      onAddChip(props.value);
       break;
     case 'Backspace':
       if (props.value.length === 0) {
-        props.onDeleteLastChip();
+        onDeleteLastChip();
       } else if (props.value.length === 1) {
-        props.onClearInput();
+        onClearInput();
       }
       break;
     case 'Escape':
@@ -85,7 +91,7 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
       <Box flexGrow={1}>
         <ChipInput
           inputRef={inputRef}
-          {...props}
+          {...inputProps}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
         />
@@ -104,7 +110,7 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
                     header='autocomplete'
                     filter={terms.map(t => t.term)}
                     terms={typeahead}
-                    onAddChip={props.onAddChip}
+                    onAddChip={onAddChip}
                   />
                   <Divider />
                   <TermsList
@@ -112,7 +118,7 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
                     header='related terms'
                     filter={terms.map(t => t.term)}
                     terms={related}
-                    onAddChip={props.onAddChip}
+                    onAddChip={onAddChip}
                   />
                 </List>
               </Dropdown>

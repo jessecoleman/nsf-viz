@@ -1,7 +1,6 @@
-import { forwardRef, useState } from 'react';
-import clsx from 'clsx';
+import { useState } from 'react';
 import FlipMove from 'react-flip-move';
-import { Theme, makeStyles, alpha, styled } from '@material-ui/core/styles';
+import { styled } from '@material-ui/core/styles';
 import { 
   TableSortLabel,
   Toolbar,
@@ -10,21 +9,20 @@ import {
   Checkbox,
   IconButton,
   Tooltip,
-  Grid,
-  GridSize,
   Box
 } from '@material-ui/core';
 import { FilterList } from '@material-ui/icons';
 
 import GrantsDialog from 'app/grants/GrantsDialog';
 
-import { format } from 'd3';
-
-import { SortDirection } from '../types';
-import { getDivisionAggs } from 'app/selectors';
+import { getDivisionAggs, getDivisionsMap } from 'app/selectors';
 import{ loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useNavigate } from 'app/hooks';
+import DivisionRow, { CheckBoxBox, NumberBox, Row, StyledBox } from './DivisionRow';
+import { deepPurpleScale, greenScale } from 'app/chart/Chart';
+import { SortDirection } from 'app/filterReducer';
+
 
 const desc = <T extends unknown>(a: T, b: T, orderBy: keyof T) => {
   if (b[orderBy] < a[orderBy]) {
@@ -51,16 +49,16 @@ const getSorting = <T extends unknown>(order: SortDirection, orderBy: keyof T) =
 };
 
 type Columns = {
+  Component: any
   id: string,
   numeric: boolean,
   label: string,
-  gridSize: GridSize,
 };
 
 const columns: Columns[] = [
-  { id: 'title', numeric: false, label: 'Name', gridSize: 9 },
-  { id: 'count', numeric: true, label: 'Grants', gridSize: 1 },
-  { id: 'amount', numeric: false, label: 'Amount', gridSize: 1 },
+  { Component: StyledBox, id: 'title', numeric: false, label: 'Name' },
+  { Component: NumberBox, id: 'count', numeric: true, label: 'Grants' }, 
+  { Component: NumberBox, id: 'amount', numeric: false, label: 'Amount' },
 ];
 
 type EnhancedTableHeadProps = {
@@ -72,7 +70,7 @@ type EnhancedTableHeadProps = {
   onRequestSort: (key: string) => void,
 }
 
-const EnhancedTableHead = forwardRef((props: EnhancedTableHeadProps, ref: any) => {
+const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
 
   const {
     onSelectAllClick,
@@ -90,30 +88,25 @@ const EnhancedTableHead = forwardRef((props: EnhancedTableHeadProps, ref: any) =
   const allSelected = numSelected === rowCount;
 
   return (
-    <Grid
-      container
-      ref={ref}
-      direction='row'
-      alignItems='center'
-      style={{ paddingRight: 16 }}
-    >
-      <Grid item xs={1}>
+    <Row>
+      <CheckBoxBox>
         <Checkbox
           indeterminate={numSelected > 0 && numSelected < rowCount}
           checked={allSelected}
           onChange={() => onSelectAllClick(!allSelected)}
         />
-      </Grid>
-      {columns.map(c => (
-        <Grid
-          item
+      </CheckBoxBox>
+      {columns.map((c, idx) => (
+        <c.Component
           key={c.id}
-          xs={c.gridSize}
-          // sortDirection={orderBy === row.id ? order : false}
-        >
+          style={{
+            color: 'black',
+            marginLeft: idx === 1 ? 'auto' : 'initial',
+            marginRight: idx === 2 ? '16px' : 'initial'
+          }}>
           <Tooltip
-            title='Sort'
-            placement={c.numeric ? 'bottom-end' : 'bottom-start'}
+            title={`sort by ${c.label}`}
+            placement='bottom-end'
             enterDelay={300}
           >
             <TableSortLabel
@@ -124,11 +117,11 @@ const EnhancedTableHead = forwardRef((props: EnhancedTableHeadProps, ref: any) =
               {c.label}
             </TableSortLabel>
           </Tooltip>
-        </Grid>
+        </c.Component>
       ))}
-    </Grid>
+    </Row>
   );
-});
+};
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => `
   padding-right: ${theme.spacing(1)};
@@ -194,29 +187,13 @@ const TableWrapper = styled('div')(({ theme }) => `
   overflow-y: auto;
 `);
 
-const DivisionRow = styled(Grid)(({ theme }) => `
-  cursor: pointer;
-  borderBottom: 1px solid ${theme.palette.grey[300]};
-  &:hover: {
-    backgroundColor: ${theme.palette.grey[100]};
-  }
-`);
-
-
-//  selected: {
-//    backgroundColor: alpha(theme.palette.secondary.light, 0.7),
-//    ['&:hover']: {
-//      backgroundColor: alpha(theme.palette.secondary.light, 0.6),
-//    },
-//  }
-
-
 const DivisionTable = () => {
 
   const dispatch = useAppDispatch();
   const [ order, setOrder ] = useState<SortDirection>('desc');
   const [ orderBy, setOrderBy ] = useState<string>('doc_count');
   const divisions = useAppSelector(getDivisionAggs);
+  const divMap = useAppSelector(getDivisionsMap);
 
   const { query, push } = useNavigate(({ firstLoad }) => {
     if (firstLoad) {
@@ -264,28 +241,18 @@ const DivisionTable = () => {
           {stableSort(Object.values(divisions), getSorting(order, orderBy))
             .map(div => (
               <DivisionRow
-                container
-                alignItems='center'
-                // hover
-                onClick={select(div.key, selectedDivisions.has(div.key))}
-                // role='checkbox'
-                aria-checked={selectedDivisions.has(div.key)}
-                tabIndex={-1}
                 key={div.key}
-              >
-                <Grid item xs={1}>
-                  <Checkbox checked={selectedDivisions.has(div.key)} />
-                </Grid>
-                <Grid item xs={9}>
-                  {div.name}
-                </Grid>
-                <Grid item xs={1}>
-                  {div.count > 0 ? format('.2s')(div.count as number) : '-'}
-                </Grid>
-                <Grid item xs={1}>
-                  {div.amount ? format('$.2s')(div.amount).replace(/G/,'B') : '-'}
-                </Grid>
-              </DivisionRow>
+                dataKey={div.key}
+                title={divMap[div.key]}
+                onCheck={select(div.key, selectedDivisions.has(div.key))}
+                checked={selectedDivisions.has(div.key)}
+                aria-checked={selectedDivisions.has(div.key)}
+                cells={[
+                  { name: 'count', value: div.count, fill: selectedDivisions.has(div.key) ? deepPurpleScale(div.key) : undefined },
+                  { name: 'amount', value: div.amount, fill: selectedDivisions.has(div.key) ? greenScale(div.key) : undefined },
+                ]}
+                // tabIndex={-1}
+              />
             ))
           }
         </FlipMove>
