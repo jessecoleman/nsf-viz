@@ -1,8 +1,28 @@
 import queryString from 'query-string';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, RefObject } from 'react';
 import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router';
 import { useAsync } from 'react-async-hook';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
+
+export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] => {
+  
+  const ref = useRef<T>(null);
+  // const dims = useRef<DOMRect>();
+  const padding = useRef<number>(0);
+
+  useEffect(() => {
+    if (ref.current) {
+      const bbox = ref.current.getBoundingClientRect();
+      const parent = ref.current.parentElement?.getBoundingClientRect();
+      console.log('parent', ref.current.parentElement);
+      if (parent && bbox.width) {
+        padding.current = parent.width - bbox.width;
+      }
+    }
+  }, [ref.current?.getBoundingClientRect().width]);
+ 
+  return [ ref, padding.current ];
+};
 
 type ResultBox<T> = { v: T }
 
@@ -37,6 +57,15 @@ export const useWindowDimensions = () => {
   }, []);
 
   return windowDimensions;
+};
+
+export const useDebouncedCallback = (
+  callback: (...args: any[]) => void,
+  timeout: number
+) => {
+  return useConstant(() =>
+    AwesomeDebouncePromise(callback, timeout)
+  );
 };
 
 export const useDebouncedSearch = (

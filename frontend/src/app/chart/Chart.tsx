@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { green, deepPurple } from '@material-ui/core/colors';
 
-import { getDivisionAggs, getLegendFilters, getSelectedTerms, getStackedData, getYearRange } from 'app/selectors';
+import { getDivisionAggs, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, getYearRange } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
 
@@ -52,10 +52,14 @@ const ChartContainer = styled.div(({ theme }) => `
     outline-width: 2px;
     outline-offset: -2px;
   }
-  .tooltip {
-    display: none;
-    .visible {
-      display: initial;
+  #tooltip {
+    pointer-events: none;
+    position: absolute;
+    visibility: hidden;
+    left: auto;
+    width: 30em;
+    &.visible {
+      visibility: initial;
     } 
   }
 `);
@@ -72,89 +76,84 @@ const Chart = () => {
   // const perDivision = useAppSelector(getPerDivision);
   const data = useAppSelector(state => getStackedData(state, query.divisions));
   const divisions = useAppSelector(getDivisionAggs);
+  const highlightedDivision = useAppSelector(getHighlightedDivision);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const { bool } = useAppSelector(getLegendFilters);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
 
-  const handleTooltipEnter = (key: string, year: number) => {
-    console.log('entered', key, year);
+  const handleTooltipEnter = (dataKey: string, year: number, props) => {
     setTooltipProps({
-      key,
+      show: true,
+      ...props,
+      dataKey,
       year,
     });
   };
 
   const handleTooltipLeave = (key: string, year: number) => {
-    console.log('left', key, year);
-    setTooltipProps({
-      key,
-      year,
-    });
+    setTooltipProps(p => ({ ...p, show: false }));
   };
   
   const handleBrush = (selection: [ number, number ]) => {
-    console.log(selection);
     dispatch(setYearRange(selection));
   };
 
   useEffect(() => {
-    console.log(tooltipRef.current);
     if (visRef.current && !vis) {
       vis = new D3Component({
         containerEl: visRef.current,
-        //tooltipEl: tooltipRef.current,
         data,
         onTooltipEnter: handleTooltipEnter,
         onTooltipLeave: handleTooltipLeave,
+        onBarClick: handleBarClick,
         onBrushEnded: handleBrush,
       });
     }
-  }, [visRef.current, tooltipRef.current]);
+  }, [visRef.current]);
   
   useEffect(() => {
     if (data.length) {
-      const divDomain = query.divisions; //.sort(comparator);
+      const divDomain = divisions
+        .filter(d => query.divisions.includes(d.key))
+        .map(d => d.key);
       vis.update(data, divDomain);
     }
   }, [JSON.stringify(data)]);
+  
+  useEffect(() => {
+    vis.highlightGroup(highlightedDivision);
+  }, [highlightedDivision]);
 
   useEffect(() => {
     dispatch(loadData(query)).then(data => {
-      console.log(data);
       // TODO directly update vis here instead of using listener above
     });
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, yearRange, bool ])]);
 
   useEffect(() => {
     dispatch(loadYears(query)).then(({ payload }) => {
-      console.log('loadedYears', data);
       if (!payload) return;
       vis.updateYears((payload as YearsResponse).per_year.map(d => ({
         year: +d.key_as_string!,
         amount: d.grant_amounts?.value ?? 0,
         count: d.doc_count,
       })));
-      console.log(data);
       // TODO directly update vis here instead of using listener above
     });
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
 
-  const handleClick = e => {
-    if (e?.activeLabel) {
-      console.log(e);
-      // TODO this is horribly clunky
-      // don't show popup unless there's data
-      const total = e.activePayload?.reduce((sum, year) => (
-        sum + Object.entries(year.payload as Record<string, number>).reduce((divSum: number, div: [string, number]) => (
-          div[0].endsWith('count') || div[0].endsWith('amount') ? divSum + div[1] : divSum
-        ), 0)
-      ), 0);
-      if (total) {
-        dispatch(clearGrants());
-        dispatch(setGrantFilter({ year: e.activeLabel }));
-        dispatch(setGrantDialogOpen(true));
-      }
-    }
+  const handleBarClick = (key: string, year: number) => {
+    // TODO this is horribly clunky
+    // don't show popup unless there's data
+    // const total = e.activePayload?.reduce((sum, year) => (
+    //   sum + Object.entries(year.payload as Record<string, number>).reduce((divSum: number, div: [string, number]) => (
+    //     div[0].endsWith('count') || div[0].endsWith('amount') ? divSum + div[1] : divSum
+    //   ), 0)
+    // ), 0);
+    // if (total) {
+    dispatch(clearGrants());
+    dispatch(setGrantFilter({ year }));
+    dispatch(setGrantDialogOpen(true));
   };
 
   const divMap = Object.fromEntries(divisions.map(d => [d.key, d.count]));
@@ -166,7 +165,7 @@ const Chart = () => {
   
   return (
     <ChartContainer ref={visRef}>
-      { /* <ChartTooltip ref={tooltipRef} {...tooltipProps} /> */ }
+      <ChartTooltip {...tooltipProps} />
     </ChartContainer>
   );
 };

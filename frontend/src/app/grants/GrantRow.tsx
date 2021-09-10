@@ -45,7 +45,6 @@ const GrantRow = (props: GrantRowProps) => {
   if (!grant) return null;
 
   const setSelectedGrant = () => {
-    console.log(grant);
     dispatch(loadAbstract(grant.id));
   };
 

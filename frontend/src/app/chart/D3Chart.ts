@@ -1,7 +1,9 @@
 import { green } from '@material-ui/core/colors';
+import { debounce } from '../debounce';
 import * as d3 from 'd3';
 import { interleave } from './Chart';
 import D3Timeline, { BrushCallback, TimelineData } from './D3Timeline';
+import AwesomeDebouncePromise from 'awesome-debounce-promise';
 
 export type Data = Record<string | 'year', number>
 
@@ -11,14 +13,22 @@ type Series = [ number, number ] & {
   data: Data
 }
 
-type TooltipCallback = (key: string, year: number) => void
+type CallbackProps = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+type ChartCallback = (key: string, year: number, props?: CallbackProps) => void
 
 type D3Props = {
   containerEl: HTMLDivElement;
   tooltipEl?: HTMLDivElement;
   data: Data[]
-  onTooltipEnter: TooltipCallback
-  onTooltipLeave: TooltipCallback
+  onTooltipEnter: ChartCallback
+  onTooltipLeave: ChartCallback
+  onBarClick: ChartCallback;
   onBrushEnded: BrushCallback
   // width: number
   // height: number
@@ -43,7 +53,7 @@ export type ChartElements = {
   xAxis: Selection<SVGGElement>;
   yAxis: Selection<SVGGElement>;
   gridLines: Selection<SVGGElement>;
-  getXAxis: () => d3.Axis<number>;
+  getXAxis: (scale: d3.ScaleBand<number>) => d3.Axis<number>;
   getYAxis: () => d3.Axis<number>;
   getGridLines: () => d3.Axis<number>;
 }
@@ -65,15 +75,16 @@ class D3Component {
   divs: string[];
   years: number[];
   color: d3.ScaleOrdinal<string, string>;
-  getXAxis: () => d3.Axis<number>;
+  getXAxis: (scale: d3.ScaleBand<number>) => d3.Axis<number>;
   getYAxis: () => d3.Axis<number>;
   getGridLines: () => d3.Axis<number>;
   xAxis: Selection<SVGGElement>;
   yAxis: Selection<SVGGElement>;
   gridLines: Selection<SVGGElement>;
   timelineElements?: ChartElements;
-  onTooltipEnter: TooltipCallback
-  onTooltipLeave: TooltipCallback
+  onTooltipEnter: ChartCallback
+  onTooltipLeave: ChartCallback
+  onBarClick: ChartCallback
   rtime?: Date;
   timeout = false;
   animationDur = 1000;
@@ -86,6 +97,7 @@ class D3Component {
     this.data = props.data;
     this.onTooltipEnter = props.onTooltipEnter;
     this.onTooltipLeave = props.onTooltipLeave;
+    this.onBarClick = props.onBarClick;
     const [ width, height ] = [ this.containerEl.clientWidth, 800 ]; //containerEl.clientHeight ];
 
     // d3.select('window').on('resize', () => {
@@ -98,6 +110,7 @@ class D3Component {
     // });
 
     this.chartWidth = width - this.padding.left - this.padding.right;
+    // TODO better formula
     this.chartHeight = height - this.padding.top - 2*this.padding.bottom - this.timelineLayout.height;
     this.color = d3.scaleOrdinal(Object.values(green).slice(0, -4).map(interleave));
     this.years = [];
@@ -120,12 +133,22 @@ class D3Component {
       onBrushEnded: props.onBrushEnded,
     });
       
-    this.svg.append('defs')
-      .append('style')
+    const defs = this.svg.append('defs');
+    
+    defs.append('style')
       .attr('type', 'text/css')
       // eslint-disable-next-line quotes
       .text("@import url('https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800');");
-      
+        
+    const filter = defs.append('filter')
+      .attr('id', 'shadow')
+      .html(`
+        <filter id="f3" x="0" y="0" width="200%" height="200%">
+        <feOffset result="offOut" in="SourceAlpha" dx="20" dy="20" />
+        <feGaussianBlur result="blurOut" in="offOut" stdDeviation="10" />
+        <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+      `);
+
     this.chart = this.svg
       .append('g')
       .classed('chart', true)
@@ -134,14 +157,17 @@ class D3Component {
     this.x = d3.scaleBand<number>()
       .rangeRound([0, this.chartWidth])
       .padding(0.2);
-
+      
     this.y = d3.scaleLinear()
       .rangeRound([this.chartHeight, 0])
       .nice();
+      
+    // TODO better formatting of decimals
+    const numberFormat = (d: number) => d3.format('.2s')(d).replace(/G/, 'B').replace(/\.\d/, '');
     
     this.getGridLines = () => d3.axisLeft<number>(this.y).tickSize(-this.chartWidth).tickFormat(() => '');
-    this.getXAxis = () => d3.axisBottom<number>(this.x).tickFormat(d3.format('d'));
-    this.getYAxis = () => d3.axisLeft<number>(this.y).tickFormat(d3.format('.2s')).ticks(5);
+    this.getXAxis = (scale) => d3.axisBottom<number>(scale).tickFormat(d3.format('d'));
+    this.getYAxis = () => d3.axisLeft<number>(this.y).tickFormat(numberFormat).ticks(5);
     
     this.gridLines = this.chart.append('g')
       .classed('gridline', true)
@@ -150,12 +176,11 @@ class D3Component {
     this.xAxis = this.chart.append('g')
       .attr('class', 'axis axis-x')
       .attr('transform', `translate(0 ${this.chartHeight})`)
-      .call(this.getXAxis());
+      .call(this.getXAxis(this.x));
 
     this.yAxis = this.chart.append('g')
       .attr('class', 'axis axis-y')
       .call(this.getYAxis());
-    
   }
   
   resizeEnd() {
@@ -189,10 +214,13 @@ class D3Component {
     
     // necessary because this gets shadowed in d3 callbacks
     const getSelectionBBox = this.getSelectionBBox;
+    const svgBbox = getSelectionBBox(this.svg as any);
     const bandwidth = this.x.bandwidth();
-    const tooltip = this.tooltip;
+    const padding = bandwidth * this.x.padding();
     const onTooltipEnter = this.onTooltipEnter;
     const onTooltipLeave = this.onTooltipLeave;
+    const onBarClick = this.onBarClick;
+    const tooltipDebounce = debounce();
 
     this.updateAxes();
 
@@ -200,8 +228,8 @@ class D3Component {
       .data(stackedData, d => d.key)
       .join(
         enter => enter.append('g')
-          .classed('bars', true)
-          .join('.bars')
+          // .classed('bars', true)
+          .attr('class', d => `bars ${d.key}`)
           .attr('fill', d => this.color(d.key)),
         update => update,
         exit => {
@@ -255,31 +283,67 @@ class D3Component {
           .remove()
       )
       .on('mouseover', function() {
-        const s = d3.select(this)
+        const s = d3.select<SVGRectElement, Series>(this)
           .classed('selected', true);
-        const d = s.datum() as Series;
-        const props = getSelectionBBox(s);
-        console.log(props, tooltip);
-        // tooltip
-        //   .classed('visible', true)
-        //   .transition()
-        //   .duration(500)
-        //   .style('opacity', 1)
-        //   .style('left', props.x + bandwidth + 'px')
-        //   .style('top', props.y + 'px');
-        onTooltipEnter(d.key, d.data.year);
+          
+        const tooltip = d3.select('#tooltip');
+        const tipBbox = getSelectionBBox(tooltip as any);
+        const d = s.datum();
+        const bbox = getSelectionBBox(s as any);
+        onTooltipEnter(d.key, d.data.year, bbox);
+        (tooltip.select(`#${d.key.split('-')[0]}-tooltip`).node() as any)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest' 
+        });
+        
+        const chartRightEdge = svgBbox.x + svgBbox.width;
+        const tipRightEdge = bbox.x + bbox.width + tipBbox.width;
+        const tipSide = tipRightEdge < chartRightEdge ? 'left' : 'right';
+        const tipLeft = bbox.x - svgBbox.x + (
+          tipSide === 'left'
+            ? bandwidth + 2 * padding
+            : -tipBbox.width - 2 * padding);
+        
+        const rectCenter = bbox.y + bbox.height / 2;
+        const tipTop = Math.max(0, Math.min(rectCenter - tipBbox.height / 2, svgBbox.height - tipBbox.height));
+
+        // transition tooltip in
+        tooltipDebounce(() => {
+          tooltip
+            .classed('visible', true)
+            .transition()
+            .duration(500)
+            .style('opacity', 1)
+            .style('left', `${tipLeft}px`)
+            .style('top', `${tipTop}px`);
+        }, 350);
       })
       .on('mouseleave', function() {
         const d = d3.select(this)
           .classed('selected', false)
           .datum() as Series;
+
         onTooltipLeave(d.key, d.data.year);
         
-        // tooltip
-        //   .classed('visible', false)
-        //   .transition()
-        //   .duration(200)
-        //   .style('opacity', 0);
+        // transition tooltip out
+        tooltipDebounce(() => {
+          d3.select('#tooltip')
+            .transition()
+            .duration(200)
+            .style('opacity', 0)
+            .on('end', function() { 
+              d3.select('#tooltip')
+                .classed('visible', false);
+            });
+        }, 200);
+          
+      })
+      .on('click', function() {
+        const d = d3.select(this)
+          .classed('selected', false)
+          .datum() as Series;
+        onBarClick(d.key, d.data.year);
       })
       .transition()
       .duration(this.animationDur)
@@ -313,37 +377,28 @@ class D3Component {
     return this.x(year) ?? 0;
   }
   
-  getSelectionBBox(s: Selection<any>) {
-    return {
-      x: parseInt(s.attr('x')),
-      y: parseInt(s.attr('y')),
-      width: parseInt(s.attr('width')),
-      height: parseInt(s.attr('height'))
-    };
+  getSelectionBBox(s: Selection<Element>) {
+    return s.node()!.getBoundingClientRect();
   }
   
   updateAxes() {
+
+    const domain = this.x.domain();
+    const padding = this.x(domain[0])!;
+    const range = [-15, 15];
+    const newDomain = Array.from({ length: domain.length + range[1] - range[0] }, (x, i) => domain[0] + range[0] + i);
+    const newRange = range.map((r, i) => ((i + 1) * padding) + (this.x.bandwidth() * (r + i * newDomain.length)));
+    const x2 = d3.scaleBand<number>()
+      .rangeRound(range.map((r, i) => padding + this.x.bandwidth() * (r + i * domain.length)))
+      .domain(newDomain)
+      .padding(0.2);
+    /**** */
+
     this.xAxis.transition()
       .duration(this.animationDur)
-      .call(this.getXAxis());
+      //.call(this.getXAxis(x2));
+      .call(this.getXAxis(this.x));
       
-    this.xAxis.selectAll<SVGGElement, number>('.axis-x .tick')
-      .join(
-        enter => enter,
-        update => update,
-        exit => {
-          console.log(exit, exit.data());
-          exit
-          .transition()
-          .duration(this.animationDur)
-          .attr('x', d => this.getXTransition(d, this.prev));
-        }
-      );
-      //.enter()
-      //.transition()
-      //.duration(this.animationDur)
-      // .attr('x', (d, i) => { console.log(d, i); return this.x(d as number)!; });
-
     this.yAxis.transition()
       .duration(this.animationDur)
       .call(this.getYAxis());
@@ -352,12 +407,17 @@ class D3Component {
       .duration(this.animationDur)
       .call(this.getGridLines());
   }
-
-  setTooltipRef(tooltipEl: HTMLDivElement) {
-    console.log(tooltipEl);
-    this.chart.append('div')
-      .attr('html', tooltipEl.innerHTML);
-    // this.tooltip = d3.select(tooltipEl);
+  
+  highlightGroup(group?: string) {
+    d3.selectAll('.bars')
+      .selectAll('.bar')
+      .classed('selected', false);
+    
+    if (group) {
+      d3.selectAll(`.${group}-count`)
+        .selectAll('.bar')
+        .classed('selected', true);
+    }
   }
 
   resize = (width, height) => { /*...*/ }

@@ -59,8 +59,9 @@ class D3Timeline {
     this.getXAxis = () => d3.axisBottom<number>(this.x).tickFormat(d3.format('d'));
     this.getYAxis = () => d3.axisLeft<number>(this.y).tickFormat(d3.format('.2s'));
     
-    const x = this.x;
+    // d3 shadows `this` in callbacks
     const xInverse = this.xInverse();
+    const getBrushBounds = this.getBrushBounds();
     
     // setup brush
     const defaultSelection = [this.x(2000), this.x(2020)];
@@ -71,16 +72,14 @@ class D3Timeline {
       ])
       //.on('brush', function(brush) { brushed(brush, xInv); })
       .on('end', function({ sourceEvent, selection }) {
-        console.log('selection', selection);
-        const s = selection.map(xInverse);
-        console.log(s);
-        props.onBrushEnded([s[0], s[1] - 1]);
         if (!sourceEvent || !selection) return;
-        const padding = x.step() * x.padding();
+        // inversed map is interval [s, e)
+        const s = selection.map(xInverse);
+        props.onBrushEnded(s);
         d3.select(this)
           .transition()
           // TODO still have off-by-one here
-          .call(brush.move, s.map((xi: number) => x(xi)! - padding / 2));
+          .call(brush.move, s.map(getBrushBounds));
       });
 
     this.gb = this.chart.append('g')
@@ -100,16 +99,14 @@ class D3Timeline {
 
   xInverse() {
     const scale = this.x;
-    return (x: number) => {
+    return (y: number, idx: number) => {
       const domain = scale.domain();
       const paddingOuter = scale(domain[0])!;
       const eachBand = scale.step();
-      console.log(domain, (x - paddingOuter) / eachBand);
-      const idx = Math.round((x - paddingOuter) / eachBand);
-      console.log(Math.min(idx, domain.length - 1));
-      console.log(domain[Math.min(idx, domain.length - 1)]);
+      // subtract idx to get exclusive range [s, e + 1)
+      const x = Math.round((y - paddingOuter) / eachBand) - idx;
       // https://stackoverflow.com/a/50846323
-      return domain[Math.max(0, Math.min(idx, domain.length - 1))];
+      return domain[Math.max(0, Math.min(x, domain.length - 1))];
     };
   }
 
@@ -134,28 +131,49 @@ class D3Timeline {
     //   .call(this.getGridLines());
 
     // console.log(data);
-    this.chart.selectAll('.bar')
-      .data(data)
+    this.chart.selectAll<SVGRectElement, { year: number }>('.bar')
+      .data(data, d => d.year)
       .join(
         enter => enter
-          .append('rect'),
+          .append('rect')
+          .call(enter => enter
+            .attr('y', this.chartHeight)
+            .attr('height', 0)
+            // .transition()
+            // .duration(this.animationDur)
+            // .attr('height', 0)
+          ),
         update => update,
         exit => exit.remove()
       )
       .classed('bar', true)
+      .attr('x', d => this.x(d.year)!)
+      .attr('width', this.x.bandwidth())
       .transition()
       .duration(this.animationDur)
       .attr('fill', 'green')
-      .attr('x', d => this.x(d.year)!)
       .attr('y', d => this.y(d.count))
-      .attr('height', d => this.chartHeight - this.y(d.count))
-      .attr('width', this.x.bandwidth());
+      .attr('height', d => this.chartHeight - this.y(d.count));
       
+    const getBrushBounds = this.getBrushBounds();
 
-    const padding = this.x.step() * this.x.padding();
     this.gb
-      .call(this.brush.move, [this.x.domain()[0], this.x.domain().pop()].map(d => this.x(d as number)! - padding / 2 ?? 0))
+      .call(this.brush.move, [
+        this.x.domain()[0],
+        this.x.domain().pop()
+      ].map(getBrushBounds))
       .raise();
+  }
+  
+  getBrushBounds() {
+    const scale = this.x;
+    return (x: number | undefined, idx: number) => {
+      if (x === undefined) return scale(0);
+      const padding = scale.step() * scale.padding();
+      // make range inclusive [s, e]
+      const endOffset = scale.step() * idx;
+      return scale(x)! + endOffset - padding / 2 ?? 0;
+    };
   }
   
   brushed(brush, invScale) {
