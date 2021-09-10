@@ -16,6 +16,64 @@ with open('assets/divisions.json') as div_file:
     inv_div_map = {d['key']: d['name'] for d in divisions}
 
 
+async def year_aggregates(
+    aioes: Elasticsearch,
+    toggle: bool,
+    terms: List[str] = None,
+    fields = ('title', 'abstract'),
+    sort = False
+):
+    must_or_should = 'must' if toggle else 'should'
+
+    query = {
+        'query': {},
+        'aggs': {
+            'years': {
+                'date_histogram': {
+                    'field': 'date',
+                    'interval': 'year',
+                    'format': 'yyyy',
+                    #'min_doc_count': 0,
+                    #'size': 100,
+                },
+                'aggs': {
+                    'grant_amounts': {
+                        'sum': {
+                            'field': 'amount',
+                        }
+                    }
+                }
+            },
+        }
+    }
+
+    if terms is not None and len(terms) > 0:
+
+        query['query'] = {
+            'bool': {
+                must_or_should: [
+                    {
+                        'multi_match': {
+                            'fields': fields,
+                            'query': term,
+                            'type': 'phrase',
+                        }
+                    }
+                for term in terms],
+            },
+        }
+        
+    if must_or_should == 'should':
+        query['query']['bool']['minimum_should_match'] = 1
+        
+    if len(query['query']) == 0:
+        query['query'] = {
+            'match_all': {}
+        }
+  
+    return await aioes.search(index=INDEX, body=query)
+
+
 async def year_division_aggregates(
         aioes: Elasticsearch,
         toggle: bool,

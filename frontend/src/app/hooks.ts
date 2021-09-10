@@ -6,7 +6,7 @@ import AwesomeDebouncePromise from 'awesome-debounce-promise';
 
 type ResultBox<T> = { v: T }
 
-export default function useConstant<T>(fn: () => T): T {
+export const useConstant = <T extends unknown>(fn: () => T): T => {
   const ref = useRef<ResultBox<T>>();
 
   if (!ref.current) {
@@ -14,7 +14,7 @@ export default function useConstant<T>(fn: () => T): T {
   }
 
   return ref.current.v;
-}
+};
 
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;

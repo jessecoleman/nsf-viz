@@ -143,6 +143,11 @@ def build_gram_model(input_file, data_file):
 
 
 def count_phrases(data, model_file='../assets/nsf_fasttext_model', terms_file='../assets/terms.txt', explore=False):
+    '''
+    generates terms.txt with following format:
+    ...
+    {weight} {term}\n
+    '''
     terms_file = Path(terms_file).resolve()
     assert terms_file.parent.exists()
 
@@ -154,17 +159,22 @@ def count_phrases(data, model_file='../assets/nsf_fasttext_model', terms_file='.
 
     data = Path(data).resolve()
     print(f"loading data from file: {data}")
+    # count occurances of each term
     with open(data) as d:
         lines = list(d)
         for l in tqdm(lines):
             counter.update(**Counter(l.split(' ')))
 
+    # sort words by frequency, truncating at 50
     for w, f in counter.most_common():
         if f < 50:
             break
+        # ignore stop words and short words
         if w not in stop and len(w) > 3:
             if w in model.wv:
+                # get magnitude of embedding vector
                 norm = np.linalg.norm(model.wv[w])
+                # create weighted average of frequency and magnitude
                 combined = np.log(f) * np.log(norm)
                 normed.append((w, f, norm, combined))
 
@@ -174,6 +184,7 @@ def count_phrases(data, model_file='../assets/nsf_fasttext_model', terms_file='.
             out.write(f'{c} {w}\n')
 
     if explore:
+        # create histogram of terms
         from matplotlib import pyplot as plt
 
         words, freqs, mags = zip(*normed)
