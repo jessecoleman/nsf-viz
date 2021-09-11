@@ -17,12 +17,17 @@ export type SortDirection = 'asc' | 'desc';
 
 export type GrantOrder = [ keyof Grant, SortDirection ];
 
+export type DivisionKey = 'name' | 'count' | 'amount';
+export type DivisionOrder = [ DivisionKey, SortDirection ];
+
 export type FilterState = {
   dependant: string,
   boolQuery: 'any' | 'all',
   terms: Term[],
   divisions: Division[],
+  highlightedDivision?: string,
   fields: Field[],
+  divisionOrder: DivisionOrder,
   grantOrder: GrantOrder,
   grantDialogOpen: boolean,
   grantFilter: {
@@ -42,6 +47,7 @@ const initialState: FilterState = {
   terms: [],
   divisions: [],
   fields: ['title', 'abstract'],
+  divisionOrder: ['name', 'desc'],
   grantOrder: ['date', 'desc'],
   grantDialogOpen: false,
   grantFilter: {},
@@ -77,6 +83,9 @@ const filterSlice = createSlice({
     deleteChip: (state, action: PayloadAction<number>) => {
       state.terms.splice(action.payload, 1);
     },
+    highlightDivision: (state, action) => {
+      state.highlightedDivision = action.payload;
+    },
     setBoolQuery: (state, action) => {
       state.boolQuery = action.payload.boolQuery;
     },
@@ -91,6 +100,9 @@ const filterSlice = createSlice({
     },
     clearGrantFilter: (state) => {
       state.grantFilter = {};
+    },
+    setDivisionOrder: (state, action) => {
+      state.divisionOrder = action.payload;
     },
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
@@ -125,10 +137,12 @@ export const {
   clearTermSelection,
   addChips,
   deleteChip,
+  highlightDivision,
   setBoolQuery,
   setGrantDialogOpen,
   setGrantFilter,
   clearGrantFilter,
+  setDivisionOrder,
   setGrantOrder,
   setYearRange,
   setLegendFilters,

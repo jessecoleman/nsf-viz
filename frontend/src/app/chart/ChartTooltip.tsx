@@ -2,46 +2,45 @@ import FlipMove from 'react-flip-move';
 import { Box, Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
-import { getDivisionAggs, getDivisionsMap, getLegendFilters } from 'app/selectors';
-import { forwardRef, Ref } from 'react';
-import { useQuery } from 'app/hooks';
-
-const Container = styled(Paper)(({ theme }) => `
-  position: absolute;
-  width: 30em;
-  margin: 3em;
-  top: 0;
-  left: 0;
-  overflow-y: hidden;
-`);
+import { getDivisionAggs, getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
+import { useMeasure, useQuery } from 'app/hooks';
+import { deepPurpleScale, greenScale } from './Chart';
 
 export type TooltipProps = {
-  key?: string
+  dataKey?: string
   year?: number
 }
 
-const ChartTooltip = forwardRef((props: TooltipProps, ref: Ref<HTMLDivElement>) => {
+const ScrollableDiv = styled('div')`
+  max-height: 30em;
+  overflow-y: auto;
+`;
 
-  const { counts, amounts } = useAppSelector(getLegendFilters);
+const ChartTooltip = (props: TooltipProps) => {
+
+  const [ widthRef, padding ] = useMeasure<HTMLDivElement>();
+  const { dataKey, year } = props;
   const { divisions } = useQuery();
+  const { counts, amounts } = useAppSelector(getLegendFilters);
+  // const divisionAggs = useAppSelector(state => getDivisionYear(state, year));
   const divisionAggs = useAppSelector(getDivisionAggs);
   const divMap = useAppSelector(getDivisionsMap);
-  const year = 0;
-  const totals: CellData[] = [{ name: 'count', value: 0 }, { name: 'amount', value: 0 }];
+  const totals: CellData[] = [
+    { name: 'count', value: 0 },
+    { name: 'amount', value: 0 },
+  ];
 
-  const rows: Record<string, CellData[]> = {};
-  // const rows = {};
-  // const rows = Object.fromEntries(divisionAggs.filter(d => divisions.includes(d.key)).map(d => ([
-  //   d.key,
-  //   ['count', 'amount'].map((key, i) => {
-  //     totals[i].value += d[key];
-  //     return {
-  //       name: key,
-  //       value: d[key],
-  //       fill: '#ffffff', //(p as any).fill,
-  //     };
-  //   })
-  // ])));
+  const rows = Object.fromEntries(divisionAggs.filter(d => divisions.includes(d.key)).map(d => ([
+    d.key,
+    ['count', 'amount'].map((key, i) => {
+      totals[i].value += d[key];
+      return {
+        name: key,
+        value: d[key],
+        fill: [deepPurpleScale, greenScale][i](d.key),
+      };
+    })
+  ])));
   
   const divCounts = Object.fromEntries(divisionAggs.map(d => [d.key, d.count]));
   const comparator = (a, b) => divCounts[b] - divCounts[a];
@@ -49,17 +48,17 @@ const ChartTooltip = forwardRef((props: TooltipProps, ref: Ref<HTMLDivElement>) 
   const cells = totals.filter((t, i) => [counts, amounts][i]);
 
   return (
-    <Container
-      ref={ref}
-      elevation={5}
-    >
-      <DivisionRow
-        dataKey='header'
-        title={year.toString()}
-        cells={cells}
-        header
-      />
-      <Box>
+    <Paper id='tooltip' elevation={5}>
+      <Box paddingRight={padding}>
+        <DivisionRow
+          dataKey='header'
+          title={year?.toString() ?? ''}
+          cells={cells}
+          header
+        />
+      </Box>
+      <ScrollableDiv>
+        <div ref={widthRef} />
         <FlipMove
           delay={100}
           enterAnimation='fade'
@@ -68,15 +67,17 @@ const ChartTooltip = forwardRef((props: TooltipProps, ref: Ref<HTMLDivElement>) 
           {Object.entries(rows).sort(comparator).map(([ key, cells ]) => (
             <DivisionRow
               key={key}
+              id={`${key}-tooltip`}
+              selected={dataKey?.split('-')[0] === key}
               dataKey={key}
               title={divMap[key]}
               cells={cells}
             />
           ))}
         </FlipMove>
-      </Box>
-    </Container>
+      </ScrollableDiv>
+    </Paper>
   );
-});
+};
 
 export default ChartTooltip;
