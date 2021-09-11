@@ -6,7 +6,7 @@ import { Box } from '@material-ui/core';
 const App = () => {
   
   return (
-    <Box height='100vh' overflow='hidden'>
+    <Box height='100vh' overflow='clip'>
       <NavigationBar />
       <Main />
     </Box>
