@@ -112,8 +112,9 @@ class D3Component {
     this.divs = [];
 
     const container = d3.select(this.containerEl);
-    container.selectAll('svg').remove();
+    container.select('chart-area').remove();
     this.svg = container.append('svg')
+      .attr('id', 'chart-area')
       // .attr('xmlns', 'http://www.w3.org/2000/svg')
       // .attr('xmlns:xmlns:xlink', 'http://www.w3.org/1999/xlink')
       .attr('version', '1.1')

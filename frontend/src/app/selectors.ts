@@ -106,14 +106,14 @@ export const getStackedData = createCachedSelector(
   getYearDivisionAgg,
   getDivisionOrder,
   getDivs,
-  (agg, order,divs) => agg.map((year): Data => ({
+  (agg, order, divs) => agg.map((year): Data => ({
     year: year.key,
     //aggs: Object.fromEntries(divs.map(key => {
     aggs: Object.fromEntries(
       stableSort(year.divisions
         .filter(div => divs.includes(div.key)),
-      ...order)
-      .map(({ key, ...aggs }) => [ key, aggs ])
+        ...order
+      ).map(({ key, ...aggs }) => [ key, aggs ])
     )
   })))(
   (state, divs) => JSON.stringify(divs)
