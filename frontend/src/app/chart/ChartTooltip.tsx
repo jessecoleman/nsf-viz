@@ -2,7 +2,7 @@ import FlipMove from 'react-flip-move';
 import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
-import { getDivisionAggs, getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
+import { getSortedDivisionAggs, getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
 import { useMeasure, useQuery } from 'app/hooks';
 import { colorScales } from '../../theme';
 
@@ -24,15 +24,14 @@ const ChartTooltip = (props: TooltipProps) => {
   const { dataKey, year } = props;
   const { divisions } = useQuery();
   const legendFilter = useAppSelector(getLegendFilters);
-  // const divisionAggs = useAppSelector(state => getDivisionYear(state, year));
-  const divisionAggs = useAppSelector(getDivisionAggs);
+  const divisionAggs = useAppSelector(state => getDivisionYear(state, year));
   const divMap = useAppSelector(getDivisionsMap);
   const totals: CellData[] = [
     { name: 'count', value: 0 },
     { name: 'amount', value: 0 },
   ];
 
-  const rows = divisionAggs.filter(d => divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
+  const rows = divisionAggs?.filter(d => divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
     d.key,
     ['count', 'amount'].map((field, i) => {
       totals[i].value += d[field];
@@ -42,7 +41,7 @@ const ChartTooltip = (props: TooltipProps) => {
         fill: colorScales[field](d.key),
       };
     })
-  ]);
+  ]) ?? [];
   
   const cells = totals.filter((t, i) => [legendFilter.counts, legendFilter.amounts][i]);
 

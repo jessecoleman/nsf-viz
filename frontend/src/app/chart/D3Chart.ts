@@ -4,7 +4,7 @@ import D3Timeline, { BrushCallback, TimelineData } from './D3Timeline';
 import { colorScales } from 'theme';
 import { removeTooltip, transitionTooltip } from './D3Tooltip';
 
-type AggFields = {
+export type AggFields = {
   count: number
   amount: number
 }
@@ -68,7 +68,7 @@ class D3Component {
   divs: string[];
   years: number[];
   color: d3.ScaleOrdinal<string, string>;
-  field: 'count' | 'amount';
+  agg: keyof AggFields
   getXAxis: (scale: d3.ScaleBand<number>) => d3.Axis<number>;
   getYAxis: () => d3.Axis<number>;
   getGridLines: () => d3.Axis<number>;
@@ -101,18 +101,19 @@ class D3Component {
     //     setTimeout(this.resizeEnd, 200);
     //   }
     // });
-    this.stack = this.getStack(props.data, props.divDomain); 
+    this.stack = this.getStack(props.data, props.divDomain, 'count'); 
 
     this.chartWidth = width - this.padding.left - this.padding.right;
     // TODO better formula
     this.chartHeight = height - this.padding.top - 2*this.padding.bottom - this.timelineLayout.height;
-    this.color = colorScales.count;
-    this.field = 'count';
+    this.agg = 'count';
+    this.color = colorScales[this.agg];
     this.years = [];
     this.divs = [];
 
-    this.svg = d3.select(this.containerEl)
-      .append('svg')
+    const container = d3.select(this.containerEl);
+    container.selectAll('svg').remove();
+    this.svg = container.append('svg')
       // .attr('xmlns', 'http://www.w3.org/2000/svg')
       // .attr('xmlns:xmlns:xlink', 'http://www.w3.org/1999/xlink')
       .attr('version', '1.1')
@@ -194,14 +195,16 @@ class D3Component {
   
   // updateField(field) {};
   
-  update(data: Data[], divDomain: string[]) {
+  update(data: Data[], divDomain: string[], agg?: keyof AggFields) {
 
     this.years = data.map(d => d.year);
     this.divs = divDomain;
+    if (agg) this.agg = agg;
 
-    this.stack = this.getStack(data, divDomain);
+    this.stack = this.getStack(data, divDomain, this.agg);
     this.x.domain(this.years);
     this.y.domain([0, Math.max(...this.stack.flat().flat())]);
+    this.color = colorScales[this.agg];
     this.color.domain(this.divs);
     
     this.updateAxes();
@@ -210,9 +213,7 @@ class D3Component {
       .data(this.stack, d => d.key)
       .join(
         enter => enter.append('g')
-          // .classed('bars', true)
-          .attr('class', d => `bars ${d.key}`)
-          .attr('fill', d => this.color(d.key)),
+          .attr('class', d => `bars ${d.key}`),
         update => update,
         exit => {
           // only applies to exiting div groups, not year stacks
@@ -227,6 +228,11 @@ class D3Component {
             .remove();
         }
       );
+      
+    stacks
+      .transition()
+      .duration(this.animationDur)
+      .attr('fill', d => this.color(d.key));
       
     const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
     const barChart = stacks.selectAll<SVGRectElement, Series>('.bar')
@@ -318,10 +324,10 @@ class D3Component {
       });
   }
   
-  getStack(data: Data[], domain: string[]) {
+  getStack(data: Data[], domain: string[], agg: keyof AggFields) {
     return d3.stack<Data, string>()
       .keys(domain)
-      .value((d, key) => d.aggs[key]?.[this.field] ?? 0)
+      .value((d, key) => d.aggs[key]?.[agg] ?? 0)
       .order(d3.stackOrderNone)(data);
   }
 

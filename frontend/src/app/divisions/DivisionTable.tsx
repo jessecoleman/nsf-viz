@@ -13,7 +13,7 @@ import {
 import { FilterList } from '@material-ui/icons';
 
 import GrantsDialog from 'app/grants/GrantsDialog';
-import { getDivisionAggs, getDivisionOrder, getDivisionsMap } from 'app/selectors';
+import { getSortedDivisionAggs, getDivisionOrder, getDivisionsMap } from 'app/selectors';
 import{ loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useDebouncedCallback, useMeasure, useNavigate } from 'app/hooks';
@@ -163,7 +163,7 @@ const DivisionTable = () => {
   const dispatch = useAppDispatch();
   const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
   const [ orderBy, direction ] = useAppSelector(getDivisionOrder);
-  const divisions = useAppSelector(getDivisionAggs);
+  const divisions = useAppSelector(getSortedDivisionAggs);
   const divMap = useAppSelector(getDivisionsMap);
 
   const debouncedHighlight = useDebouncedCallback(key => {

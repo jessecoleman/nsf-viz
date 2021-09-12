@@ -1,6 +1,5 @@
 import * as d3 from 'd3';
 import { Selection } from './D3utils';
-import { Data } from './D3Chart';
 
 export type BrushCallback = (selection: [ number, number ]) => void;
 
@@ -60,26 +59,22 @@ class D3Timeline {
     this.getXAxis = () => d3.axisBottom<number>(this.x).tickFormat(d3.format('d'));
     this.getYAxis = () => d3.axisLeft<number>(this.y).tickFormat(d3.format('.2s'));
     
-    // d3 shadows `this` in callbacks
-    const xInverse = this.xInverse();
-    const getBrushBounds = this.getBrushBounds();
-    
     // setup brush
     const defaultSelection = [this.x(2000), this.x(2020)];
-    const brush = this.brush = d3.brushX()
+    this.brush = d3.brushX()
       .extent([
         [0, 0],
         [this.chartWidth, this.chartHeight]
       ])
-      //.on('brush', function(brush) { brushed(brush, xInv); })
-      .on('end', function({ sourceEvent, selection }) {
+      .on('end', ({ target, sourceEvent, selection }) => {
         if (!sourceEvent || !selection) return;
         // inversed map is interval [s, e)
-        const s = selection.map(xInverse);
-        props.onBrushEnded(s);
-        d3.select(this)
+        const yearRange = selection.map(this.xInverse);
+        props.onBrushEnded(yearRange);
+        // TODO test this
+        d3.select(sourceEvent.originalTarget.parentElement)
           .transition()
-          .call(brush.move, s.map(getBrushBounds));
+          .call(target.move, yearRange.map(this.getBrushBounds));
       });
 
     this.gb = this.chart.append('g')
@@ -97,20 +92,17 @@ class D3Timeline {
  
   }
 
-  xInverse() {
-    const scale = this.x;
-    return (y: number, idx: number) => {
-      const domain = scale.domain();
-      const paddingOuter = scale(domain[0])!;
-      const eachBand = scale.step();
-      // subtract idx to get exclusive range [s, e + 1)
-      const x = Math.round((y - paddingOuter) / eachBand) - idx;
-      // https://stackoverflow.com/a/50846323
-      return domain[Math.max(0, Math.min(x, domain.length - 1))];
-    };
+  xInverse = (y: number, idx: number) => {
+    // https://stackoverflow.com/a/50846323
+    const domain = this.x.domain();
+    const paddingOuter = this.x(domain[0])!;
+    const eachBand = this.x.step();
+    // subtract idx to get exclusive range [s, e + 1)
+    const x = Math.round((y - paddingOuter) / eachBand) - idx;
+    return domain[Math.max(0, Math.min(x, domain.length - 1))];
   }
 
-  update(data: TimelineData[]) {
+  update = (data: TimelineData[]) => {
 
     this.x.domain(data.map(d => d.year));
     const max = Math.max(...data.map(d => d.count));
@@ -130,7 +122,6 @@ class D3Timeline {
     //   .duration(this.animationDur)
     //   .call(this.getGridLines());
 
-    // console.log(data);
     this.chart.selectAll<SVGRectElement, { year: number }>('.bar')
       .data(data, d => d.year)
       .join(
@@ -155,28 +146,23 @@ class D3Timeline {
       .attr('y', d => this.y(d.count))
       .attr('height', d => this.chartHeight - this.y(d.count));
       
-    const getBrushBounds = this.getBrushBounds();
-
     this.gb
       .call(this.brush.move, [
         this.x.domain()[0],
         this.x.domain().pop()
-      ].map(getBrushBounds))
+      ].map(this.getBrushBounds))
       .raise();
   }
   
-  getBrushBounds() {
-    const scale = this.x;
-    return (x: number | undefined, idx: number) => {
-      if (x === undefined) return scale(0);
-      const padding = scale.step() * scale.padding();
-      // make range inclusive [s, e]
-      const endOffset = scale.step() * idx;
-      return scale(x)! + endOffset - padding / 2 ?? 0;
-    };
+  getBrushBounds = (x: number | undefined, idx: number) => {
+    if (x === undefined) return this.x(0);
+    const padding = this.x.step() * this.x.padding();
+    // make range inclusive [s, e]
+    const endOffset = this.x.step() * idx;
+    return this.x(x)! + endOffset - padding / 2 ?? 0;
   }
   
-  brushed(brush, invScale) {
+  brushed = (brush, invScale) => {
     // if (brush.selection && invScale) {
     //   console.log(brush.selection.map(s => invScale(s)));
     // }

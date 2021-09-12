@@ -1,12 +1,13 @@
 import { createSelector } from '@reduxjs/toolkit';
 import { DivisionAggregate } from 'api';
 import createCachedSelector from 're-reselect';
-import { Data } from './chart/D3Chart';
+import { Data, AggFields } from './chart/D3Chart';
 import { SortDirection } from './filterReducer';
 import type { RootState } from './store';
 
-// TODO
 type SortableKeys = 'name' | 'count' | 'amount';
+
+export const isAgg = (key: SortableKeys): key is keyof AggFields => ['count', 'amount'].includes(key);
 
 const desc = (a: DivisionAggregate, b: DivisionAggregate, key: SortableKeys) => {
   if (b[key] < a[key]) return -1;
@@ -27,7 +28,7 @@ const stableSort = (array: DivisionAggregate[], key: SortableKeys, direction: So
 
 export const getYearAgg = (state: RootState) => state.data.yearAgg;
 
-export const getYearDivisionAgg = (state: RootState) => state.data.yearDivisionAggg;
+export const getYearDivisionAgg = (state: RootState) => state.data.yearDivisionAgg;
 
 export const getDivisionAgg = (state: RootState) => state.data.divisionAgg;
 
@@ -51,6 +52,8 @@ export const getDivisionOrder = (state: RootState) => state.filter.divisionOrder
 
 export const getGrantOrder = (state: RootState) => state.filter.grantOrder;
 
+export const isLoadingData = (state: RootState) => state.data.loadingData;
+
 export const loadingGrants = (state: RootState) => state.data.loadingGrants;
 
 export const noMoreGrants = (state: RootState) => state.data.noMoreGrants;
@@ -70,60 +73,45 @@ export const getDivisionsMap = (state: RootState) => state.filter.divisions.redu
   return accum;
 }, {});
 
+const getGrantIdx = (state: RootState, idx: number) => idx;
+
 export const getGrant = createCachedSelector(
   getGrants,
   getDivisionsMap,
-  (state: RootState, idx: number) => idx,
+  getGrantIdx, 
   (grants, divMap, idx) => grants[idx]
-)(
-  (state, idx) => idx
-);
+)(getGrantIdx);
 
-export const getDivisionAggs = createSelector(
+export const getSortedDivisionAggs = createSelector(
   getDivisionAgg,
-  getDivisions,
   getDivisionOrder,
-  (total, divisions, order) => (
-    stableSort(divisions.map(d => {
-      const bucket = total.find(d2 => d2.key === d.key);
-      return {
-        ...d,
-        amount: bucket?.amount ?? 0,
-        count: bucket?.count ?? 0,
-      };
-    }), ...order)
-  )
+  (agg, order) => stableSort(agg, ...order)
 );
 
-// TODO fix this selector
+const getYear = (state: RootState, year: number | undefined) => year ?? 0;
+
 export const getDivisionYear = createCachedSelector(
-  (state: RootState, year: number | undefined) => year,
+  getYear, 
   getYearDivisionAgg,
-  getDivisions,
   getDivisionOrder,
-  (year, perDivision, divisions, order) => (
-    stableSort(divisions.map(d => {
-      const bucket = perDivision.find(d => d.key === year)?.divisions.find(d2 => d2.key === d.key);
-      return {
-        ...d,
-        amount: bucket?.amount ?? 0,
-        count: bucket?.count ?? 0,
-      };
-    }), ...order)
+  (year, divisionAgg, order) => stableSort(
+    divisionAgg.find(d => d.key === year)?.divisions ?? [],
+    ...order
   )
-)(
-  (state: RootState, year: number | undefined) => year
-);
+)(getYear);
+
+const getDivs = (state: RootState, divs: string[]) => divs;
 
 export const getStackedData = createCachedSelector(
   getYearDivisionAgg,
   getDivisionOrder,
-  (state: RootState, divs: string[]) => divs,
+  getDivs,
   (agg, order,divs) => agg.map((year): Data => ({
     year: year.key,
     //aggs: Object.fromEntries(divs.map(key => {
-    aggs: Object.fromEntries(stableSort(year.divisions
-      .filter(div => divs.includes(div.key)),
+    aggs: Object.fromEntries(
+      stableSort(year.divisions
+        .filter(div => divs.includes(div.key)),
       ...order)
       .map(({ key, ...aggs }) => [ key, aggs ])
     )

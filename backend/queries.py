@@ -17,25 +17,21 @@ with open('assets/divisions.json') as div_file:
 
 
 def convert(bucket):
-    try:
-        if 'key_as_string' in bucket:
-            bucket['key'] = int(bucket.pop('key_as_string'))
-                
-        if 'doc_count' in bucket:
-            bucket['count'] = bucket.pop('doc_count')
+    if 'key_as_string' in bucket:
+        bucket['key'] = int(bucket.pop('key_as_string'))
+            
+    if 'doc_count' in bucket:
+        bucket['count'] = bucket.pop('doc_count')
 
-        if 'grant_amounts' in bucket:
-            bucket['amount'] = bucket.pop('grant_amounts')['value']
-        else:
-            bucket['amount'] = 0
-        
-        if 'divisions' in bucket:
-            bucket['divisions'] = [convert(bucket) for bucket in bucket['divisions']['buckets']]
+    if 'grant_amounts' in bucket:
+        bucket['amount'] = bucket.pop('grant_amounts')['value']
+    else:
+        bucket['amount'] = 0
+    
+    if 'divisions' in bucket:
+        bucket['divisions'] = [convert(bucket) for bucket in bucket['divisions']['buckets']]
 
-        return bucket
-    except Exception as e:
-        print(e, bucket)
-        return bucket
+    return bucket
 
 
 async def year_aggregates(

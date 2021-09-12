@@ -8,7 +8,7 @@ import { YearAggregate } from 'api/models/YearAggregate';
 
 type GrantState = {
   yearAgg: YearAggregate[],
-  yearDivisionAggg: YearDivisionAggregate[],
+  yearDivisionAgg: YearDivisionAggregate[],
   divisionAgg: DivisionAggregate[],
   grants: Grant[],
   typeahead: string[],
@@ -22,7 +22,7 @@ type GrantState = {
 
 const initialState: GrantState = {
   yearAgg: [],
-  yearDivisionAggg: [],
+  yearDivisionAgg: [],
   divisionAgg: [],
   grants: [],
   typeahead: [],
@@ -60,7 +60,7 @@ const dataSlice = createSlice({
     .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
       // TODO clean this up so that we don't have clunky selectors
-      state.yearDivisionAggg = action.payload.per_year;
+      state.yearDivisionAgg = action.payload.per_year;
       state.divisionAgg = action.payload.overall;
     })
     .addCase(loadData.rejected, (state) => {
