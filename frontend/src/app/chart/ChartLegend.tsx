@@ -13,11 +13,11 @@ const Container = styled(Paper)(({ theme }) => `
     flex-direction: row;
 `);
 
-const Label = styled('div')(({ theme }) => `
+const Label = styled('div')`
   display: flex;
   flex-direction: row;
   align-items: center;
-`);
+`;
 
 const ChartLegend = () => {
   
@@ -66,7 +66,7 @@ const ChartLegend = () => {
   ];
 
   return (
-    <Container>
+    <Container id='legend'>
       <FormGroup>
         {units.map(u => (
           <FormControlLabel 

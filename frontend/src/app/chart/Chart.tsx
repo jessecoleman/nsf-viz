@@ -1,6 +1,3 @@
-import * as d3 from 'd3';
-import { green, deepPurple } from '@material-ui/core/colors';
-
 import { getDivisionAggs, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, getYearRange } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
@@ -14,14 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import D3Component from './D3Chart';
 import styled from '@emotion/styled';
 import { YearsResponse } from 'api/models/YearsResponse';
-
-export const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
-  a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
-);
-const greens = Object.values(green).slice(0, -4).map(interleave);
-export const greenScale = d3.scaleOrdinal(greens);
-const purples = Object.values(deepPurple).slice(0, -4).map(interleave);
-export const deepPurpleScale = d3.scaleOrdinal(purples);
+import { colorScales } from 'theme';
 
 let vis: D3Component;
 
@@ -52,11 +42,15 @@ const ChartContainer = styled.div(({ theme }) => `
     outline-width: 2px;
     outline-offset: -2px;
   }
+  #legend {
+    position: absolute;
+    left: 75px;
+    top: 25px;
+  }
   #tooltip {
     pointer-events: none;
     position: absolute;
     visibility: hidden;
-    left: auto;
     width: 30em;
     &.visible {
       visibility: initial;
@@ -76,33 +70,24 @@ const Chart = () => {
   // const perDivision = useAppSelector(getPerDivision);
   const data = useAppSelector(state => getStackedData(state, query.divisions));
   const divisions = useAppSelector(getDivisionAggs);
+  const divDomain = divisions
+    .filter(d => query.divisions.includes(d.key))
+    .map(d => d.key);
+
+  // update colors globally with new domain
+  Object.values(colorScales).forEach(s => s.domain(divDomain));
+ 
   const highlightedDivision = useAppSelector(getHighlightedDivision);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const { bool } = useAppSelector(getLegendFilters);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
-
-  const handleTooltipEnter = (dataKey: string, year: number, props) => {
-    setTooltipProps({
-      show: true,
-      ...props,
-      dataKey,
-      year,
-    });
-  };
-
-  const handleTooltipLeave = (key: string, year: number) => {
-    setTooltipProps(p => ({ ...p, show: false }));
-  };
-  
-  const handleBrush = (selection: [ number, number ]) => {
-    dispatch(setYearRange(selection));
-  };
 
   useEffect(() => {
     if (visRef.current && !vis) {
       vis = new D3Component({
         containerEl: visRef.current,
         data,
+        divDomain,
         onTooltipEnter: handleTooltipEnter,
         onTooltipLeave: handleTooltipLeave,
         onBarClick: handleBarClick,
@@ -113,9 +98,6 @@ const Chart = () => {
   
   useEffect(() => {
     if (data.length) {
-      const divDomain = divisions
-        .filter(d => query.divisions.includes(d.key))
-        .map(d => d.key);
       vis.update(data, divDomain);
     }
   }, [JSON.stringify(data)]);
@@ -134,13 +116,25 @@ const Chart = () => {
     dispatch(loadYears(query)).then(({ payload }) => {
       if (!payload) return;
       vis.updateYears((payload as YearsResponse).per_year.map(d => ({
-        year: +d.key_as_string!,
-        amount: d.grant_amounts?.value ?? 0,
-        count: d.doc_count,
+        year: d.key,
+        amount: d.amount,
+        count: d.count,
       })));
       // TODO directly update vis here instead of using listener above
     });
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
+
+  const handleTooltipEnter = (dataKey: string, year: number) => {
+    setTooltipProps({ dataKey, year });
+  };
+
+  const handleTooltipLeave = (key: string, year: number) => {
+    setTooltipProps({});
+  };
+  
+  const handleBrush = (selection: [ number, number ]) => {
+    dispatch(setYearRange(selection));
+  };
 
   const handleBarClick = (key: string, year: number) => {
     // TODO this is horribly clunky
@@ -156,16 +150,10 @@ const Chart = () => {
     dispatch(setGrantDialogOpen(true));
   };
 
-  const divMap = Object.fromEntries(divisions.map(d => [d.key, d.count]));
-  const comparator = (a: string, b: string) => divMap[b] - divMap[a];
-
-  const divDomain = query.divisions.sort(comparator);
-  greenScale.domain(divDomain);
-  deepPurpleScale.domain(divDomain);
-  
   return (
     <ChartContainer ref={visRef}>
       <ChartTooltip {...tooltipProps} />
+      <ChartLegend />
     </ChartContainer>
   );
 };

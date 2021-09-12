@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
-import { Data, Selection } from './D3Chart';
+import { Selection } from './D3utils';
+import { Data } from './D3Chart';
 
 export type BrushCallback = (selection: [ number, number ]) => void;
 
@@ -78,7 +79,6 @@ class D3Timeline {
         props.onBrushEnded(s);
         d3.select(this)
           .transition()
-          // TODO still have off-by-one here
           .call(brush.move, s.map(getBrushBounds));
       });
 

@@ -1,5 +1,5 @@
 import asyncio
-from models import Grant
+from models import Grant, SearchResponse, YearsResponse
 import re
 import json
 from typing import List, Tuple
@@ -14,6 +14,28 @@ with open('assets/divisions.json') as div_file:
     divisions = json.load(div_file)
     div_map = {d['name']: d['key'] for d in divisions}
     inv_div_map = {d['key']: d['name'] for d in divisions}
+
+
+def convert(bucket):
+    try:
+        if 'key_as_string' in bucket:
+            bucket['key'] = int(bucket.pop('key_as_string'))
+                
+        if 'doc_count' in bucket:
+            bucket['count'] = bucket.pop('doc_count')
+
+        if 'grant_amounts' in bucket:
+            bucket['amount'] = bucket.pop('grant_amounts')['value']
+        else:
+            bucket['amount'] = 0
+        
+        if 'divisions' in bucket:
+            bucket['divisions'] = [convert(bucket) for bucket in bucket['divisions']['buckets']]
+
+        return bucket
+    except Exception as e:
+        print(e, bucket)
+        return bucket
 
 
 async def year_aggregates(
@@ -71,10 +93,14 @@ async def year_aggregates(
             'match_all': {}
         }
   
-    return await aioes.search(index=INDEX, body=query)
+    hits = await aioes.search(index=INDEX, body=query)
+    per_year_buckets = hits['aggregations']['years']['buckets']
+    return YearsResponse(
+        per_year=[convert(bucket) for bucket in per_year_buckets]
+    )
 
 
-async def year_division_aggregates(
+async def division_aggregates(
         aioes: Elasticsearch,
         toggle: bool,
         terms: List[str] = None,
@@ -166,7 +192,15 @@ async def year_division_aggregates(
             'match_all': {}
         }
   
-    return await aioes.search(index=INDEX, body=query)
+    hits = await aioes.search(index=INDEX, body=query)
+    per_year_buckets = hits['aggregations']['years']['buckets']
+    overall_buckets = hits['aggregations']['divisions']['buckets']
+
+    return SearchResponse(
+        per_year=[convert(bucket) for bucket in per_year_buckets],
+        overall=[convert(bucket) for bucket in overall_buckets],
+    )
+ 
 
 
 async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):

@@ -1,3 +1,4 @@
+import * as d3 from 'd3';
 import {
   Theme as EmotionTheme,
   ThemeProvider as EmotionThemeProvider
@@ -12,6 +13,15 @@ import { CssBaseline } from '@material-ui/core';
 import { deepPurple, green } from '@material-ui/core/colors';
 
 type Color = PaletteColorOptions;
+
+export const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
+  a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
+);
+
+export const colorScales = {
+  count: d3.scaleOrdinal(Object.values(deepPurple).slice(0, -4).map(interleave)),
+  amount: d3.scaleOrdinal(Object.values(green).slice(0, -4).map(interleave)),
+};
 
 declare module '@material-ui/core/styles/createPalette' {
   export interface PaletteOptions {
