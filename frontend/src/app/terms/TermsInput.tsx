@@ -63,7 +63,6 @@ const TermsInput = (props: InputBaseProps & TermsInputProps) => {
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    console.log(e.key);
     switch(e.key) {
     case 'Enter':
       onAddChip(props.value);

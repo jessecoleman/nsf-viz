@@ -13,29 +13,29 @@ import {
 import { FilterList } from '@material-ui/icons';
 
 import GrantsDialog from 'app/grants/GrantsDialog';
-import { getDivisionAggs, getDivisionOrder, getDivisionsMap } from 'app/selectors';
+import { getSortedDivisionAggs, getDivisionOrder, getDivisionsMap } from 'app/selectors';
 import{ loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useDebouncedCallback, useMeasure, useNavigate } from 'app/hooks';
-import DivisionRow, { Row, NumberBox, StyledBox } from './DivisionRow';
-import { deepPurpleScale, greenScale } from 'app/chart/Chart';
+import DivisionRow, { Row, NumberColumn, Column } from './DivisionRow';
 import { highlightDivision, setDivisionOrder, SortDirection } from 'app/filterReducer';
+import { colorScales } from 'theme';
 
 type Columns = {
-  Component: typeof StyledBox | typeof NumberBox,
+  Component: typeof Column | typeof NumberColumn,
   id: string,
   numeric: boolean,
   label: string,
 };
 
 const columns: Columns[] = [
-  { Component: StyledBox, id: 'name', numeric: false, label: 'Name' },
-  { Component: NumberBox, id: 'count', numeric: true, label: 'Gnts' }, 
-  { Component: NumberBox, id: 'amount', numeric: false, label: 'Amt' },
+  { Component: Column, id: 'name', numeric: false, label: 'Name' },
+  { Component: NumberColumn, id: 'count', numeric: true, label: 'Gnts' }, 
+  { Component: NumberColumn, id: 'amount', numeric: false, label: 'Amt' },
 ];
 
 type EnhancedTableHeadProps = {
-  padding?: number
+  scrollOffset?: number
   orderBy: string,
   direction: SortDirection,
   numSelected: number,
@@ -47,7 +47,7 @@ type EnhancedTableHeadProps = {
 const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
 
   const {
-    padding,
+    scrollOffset,
     orderBy,
     direction,
     numSelected,
@@ -61,17 +61,16 @@ const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
   };
 
   const allSelected = numSelected === rowCount;
-  console.log(padding);
 
   return (
-    <Row checkable nohover style={{ paddingRight: padding }}>
-      <StyledBox column='checkbox'>
+    <Row checkable nohover scrollOffset={scrollOffset}>
+      <Column column='checkbox'>
         <Checkbox
           indeterminate={numSelected > 0 && numSelected < rowCount}
           checked={allSelected}
           onChange={() => onSelectAllClick(!allSelected)}
         />
-      </StyledBox>
+      </Column>
       {columns.map(c => (
         <c.Component
           column={c.id}
@@ -162,9 +161,9 @@ const TableWrapper = styled('div')`
 const DivisionTable = () => {
 
   const dispatch = useAppDispatch();
-  const [ widthRef, padding ] = useMeasure<HTMLDivElement>();
+  const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
   const [ orderBy, direction ] = useAppSelector(getDivisionOrder);
-  const divisions = useAppSelector(getDivisionAggs);
+  const divisions = useAppSelector(getSortedDivisionAggs);
   const divMap = useAppSelector(getDivisionsMap);
 
   const debouncedHighlight = useDebouncedCallback(key => {
@@ -200,13 +199,11 @@ const DivisionTable = () => {
     });
   };
   
-  console.log(widthRef);
-
   return (
     <Container>
       <EnhancedTableToolbar numSelected={selectedDivisions.size} />
       <EnhancedTableHead
-        padding={padding}
+        scrollOffset={scrollOffset}
         numSelected={selectedDivisions.size}
         orderBy={orderBy}
         direction={direction}
@@ -228,10 +225,13 @@ const DivisionTable = () => {
               onMouseOut={debouncedHighlight}
               checked={selectedDivisions.has(div.key)}
               aria-checked={selectedDivisions.has(div.key)}
-              cells={[
-                { name: 'count', value: div.count, fill: selectedDivisions.has(div.key) ? deepPurpleScale(div.key) : undefined },
-                { name: 'amount', value: div.amount, fill: selectedDivisions.has(div.key) ? greenScale(div.key) : undefined },
-              ]}
+              cells={['count', 'amount'].map(field => ({
+                name: field,
+                value: div[field],
+                fill: selectedDivisions.has(div.key)
+                  ? colorScales[field](div.key)
+                  : 'white' 
+              }))}
               // tabIndex={-1}
             />
           ))

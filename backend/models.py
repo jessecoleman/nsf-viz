@@ -19,9 +19,25 @@ class Division(BaseModel):
     key: str
     name: str
     selected: bool
-    count: Optional[int]
-    amount: Optional[int]
 
+
+class YearAggregate(BaseModel):
+    key: int
+    count: int
+    amount: int
+  
+
+class DivisionAggregate(BaseModel):
+    key: str
+    count: int
+    amount: int
+
+
+class YearDivisionAggregate(BaseModel):
+    key: int
+    count: int
+    divisions: List[DivisionAggregate]
+   
 
 class SearchRequest(BaseModel):
     boolQuery: str
@@ -32,38 +48,13 @@ class SearchRequest(BaseModel):
     year_range: Optional[List[int]]
 
 
-class GrantAmounts(BaseModel):
-    value: int
-
-
-class Bucket(BaseModel):
-    key: str
-    doc_count: int
-    grant_amounts: GrantAmounts
-
-
-class Aggregate(BaseModel):
-    key: Optional[str]
-    key_as_string: Optional[str]
-    doc_count: int
-    grant_amounts: Optional[GrantAmounts]
-
-
-class DivisionBuckets(BaseModel):
-    buckets: List[Bucket]
-
-
-class DivisionAggregate(Aggregate):
-    divisions: DivisionBuckets
-
-
 class SearchResponse(BaseModel):
-    per_division: List[DivisionAggregate]
-    sum_total: List[Aggregate]
+    per_year: List[YearDivisionAggregate]
+    overall: List[DivisionAggregate]
 
 
 class YearsResponse(BaseModel):
-    per_year: List[Aggregate]
+    per_year: List[YearAggregate]
 
 
 class Grant(BaseModel):

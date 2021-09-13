@@ -1,10 +1,10 @@
 import FlipMove from 'react-flip-move';
-import { Box, Paper, styled } from '@material-ui/core';
+import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
-import { getDivisionAggs, getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
+import { getSortedDivisionAggs, getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
 import { useMeasure, useQuery } from 'app/hooks';
-import { deepPurpleScale, greenScale } from './Chart';
+import { colorScales } from '../../theme';
 
 export type TooltipProps = {
   dataKey?: string
@@ -16,47 +16,44 @@ const ScrollableDiv = styled('div')`
   overflow-y: auto;
 `;
 
+type RowTuple = [ string, CellData[] ];
+
 const ChartTooltip = (props: TooltipProps) => {
 
-  const [ widthRef, padding ] = useMeasure<HTMLDivElement>();
+  const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
   const { dataKey, year } = props;
   const { divisions } = useQuery();
-  const { counts, amounts } = useAppSelector(getLegendFilters);
-  // const divisionAggs = useAppSelector(state => getDivisionYear(state, year));
-  const divisionAggs = useAppSelector(getDivisionAggs);
+  const legendFilter = useAppSelector(getLegendFilters);
+  const divisionAggs = useAppSelector(state => getDivisionYear(state, year));
   const divMap = useAppSelector(getDivisionsMap);
   const totals: CellData[] = [
     { name: 'count', value: 0 },
     { name: 'amount', value: 0 },
   ];
 
-  const rows = Object.fromEntries(divisionAggs.filter(d => divisions.includes(d.key)).map(d => ([
+  const rows = divisionAggs?.filter(d => divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
     d.key,
-    ['count', 'amount'].map((key, i) => {
-      totals[i].value += d[key];
+    ['count', 'amount'].map((field, i) => {
+      totals[i].value += d[field];
       return {
-        name: key,
-        value: d[key],
-        fill: [deepPurpleScale, greenScale][i](d.key),
+        name: field,
+        value: d[field],
+        fill: colorScales[field](d.key),
       };
     })
-  ])));
+  ]) ?? [];
   
-  const divCounts = Object.fromEntries(divisionAggs.map(d => [d.key, d.count]));
-  const comparator = (a, b) => divCounts[b] - divCounts[a];
-
-  const cells = totals.filter((t, i) => [counts, amounts][i]);
+  const cells = totals.filter((t, i) => [legendFilter.counts, legendFilter.amounts][i]);
 
   return (
     <Paper id='tooltip' elevation={5}>
-      <Box paddingRight={padding}>
-        <DivisionRow
-          dataKey='header'
-          title={year?.toString() ?? ''}
-          cells={cells}
-          header
-        />
-      </Box>
+      <DivisionRow
+        scrollOffset={scrollOffset}
+        dataKey='header'
+        title={year?.toString() ?? ''}
+        cells={cells}
+        header
+      />
       <ScrollableDiv>
         <div ref={widthRef} />
         <FlipMove
@@ -64,7 +61,7 @@ const ChartTooltip = (props: TooltipProps) => {
           enterAnimation='fade'
           leaveAnimation='fade'
         >
-          {Object.entries(rows).sort(comparator).map(([ key, cells ]) => (
+          {rows.map(([ key, cells ]) => (
             <DivisionRow
               key={key}
               id={`${key}-tooltip`}

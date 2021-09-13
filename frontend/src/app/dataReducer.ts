@@ -1,14 +1,15 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit';
-import { Aggregate } from 'api/models/Aggregate';
 import { DivisionAggregate } from 'api/models/DivisionAggregate';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead, loadYears } from './actions';
 import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
 import { Grant } from '../api/models/Grant';
+import { YearDivisionAggregate } from 'api/models/YearDivisionAggregate';
+import { YearAggregate } from 'api/models/YearAggregate';
 
 type GrantState = {
-  perYear: Aggregate[],
-  perDivision: DivisionAggregate[],
-  sumTotal: Aggregate[],
+  yearAgg: YearAggregate[],
+  yearDivisionAgg: YearDivisionAggregate[],
+  divisionAgg: DivisionAggregate[],
   grants: Grant[],
   typeahead: string[],
   related: string[],
@@ -20,9 +21,9 @@ type GrantState = {
 }
 
 const initialState: GrantState = {
-  perYear: [],
-  perDivision: [],
-  sumTotal: [],
+  yearAgg: [],
+  yearDivisionAgg: [],
+  divisionAgg: [],
   grants: [],
   typeahead: [],
   related: [],
@@ -59,14 +60,14 @@ const dataSlice = createSlice({
     .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
       // TODO clean this up so that we don't have clunky selectors
-      state.perDivision = action.payload.per_division;
-      state.sumTotal = action.payload.sum_total;
+      state.yearDivisionAgg = action.payload.per_year;
+      state.divisionAgg = action.payload.overall;
     })
     .addCase(loadData.rejected, (state) => {
       state.loadingData = false;
     })
     .addCase(loadYears.fulfilled, (state, action) => {
-      state.perYear = action.payload.per_year;
+      state.yearAgg = action.payload.per_year;
     })
     .addCase(loadGrants.pending, (state) => {
       state.loadingGrants = true;
