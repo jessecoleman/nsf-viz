@@ -16,10 +16,9 @@ import { isFulfilled } from '@reduxjs/toolkit';
 let vis: D3Component;
 
 const ChartContainer = styled.div(({ theme }) => `
+  flex-grow: 1;
   position: relative;
   .axis {
-    padding: 16px;
-    height: 100%;
     font: Helvetica;
     font-size: 14px;
     font-family: "Open Sans", sans-serif;
@@ -100,9 +99,9 @@ const Chart = () => {
   useEffect(() => {
     if (vis && !loading) {
       if (isAgg(order)) {
-        vis.update(data, divDomain, order);
+        vis.updateData(data, divDomain, order);
       } else {
-        vis.update(data, divDomain);
+        vis.updateData(data, divDomain);
       }
     }
   }, [vis, loading, order, JSON.stringify(query.divisions)]);

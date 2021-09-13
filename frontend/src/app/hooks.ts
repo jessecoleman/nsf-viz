@@ -3,6 +3,20 @@ import { useState, useEffect, useRef, RefObject } from 'react';
 import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router';
 import { useAsync } from 'react-async-hook';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
+import { useAppDispatch, useAppSelector } from './store';
+import { isDrawerOpen } from './selectors';
+import { toggleDrawerOpen } from './filterReducer';
+
+export const useDrawer = (): [ boolean, () => void ] => {
+  const dispatch = useAppDispatch();
+  const drawerOpen = useAppSelector(isDrawerOpen);
+  
+  const handleToggle = () => {
+    dispatch(toggleDrawerOpen(!drawerOpen));
+  };
+ 
+  return [ drawerOpen, handleToggle ];
+};
 
 export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] => {
   

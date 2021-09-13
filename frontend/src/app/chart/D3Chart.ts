@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Selection } from './D3utils';
+import { Selection, debounce } from './D3utils';
 import D3Timeline, { BrushCallback, TimelineData } from './D3Timeline';
 import { colorScales } from 'theme';
 import { removeTooltip, transitionTooltip } from './D3Tooltip';
@@ -42,47 +42,38 @@ export type Layout = {
   years: number[];
  };
  
-export type ChartElements = {
-  xAxis: Selection<SVGGElement>;
-  yAxis: Selection<SVGGElement>;
-  gridLines: Selection<SVGGElement>;
-  getXAxis: (scale: d3.ScaleBand<number>) => d3.Axis<number>;
-  getYAxis: () => d3.Axis<number>;
-  getGridLines: () => d3.Axis<number>;
-}
-
 class D3Component {
+  // DOM layout
   containerEl: HTMLDivElement;
   tooltip?: Selection<HTMLDivElement>;
   padding = { top: 10, bottom: 20, left: 50, right: 10 };
-  timelineLayout = { height: 100, padding: this.padding };
+  timelineLayout = { height: 80, padding: this.padding };
   svg: Selection<SVGSVGElement>;
   chart: Selection<SVGGElement>;
   timeline: D3Timeline;
+  // chart dimensions
   chartWidth: number;
   chartHeight: number;
-  x: d3.ScaleBand<number>;
-  y: d3.ScaleLinear<number, number>;
-  prev?: Layout;
+  x = d3.scaleBand<number>().padding(0.2);
+  y = d3.scaleLinear().nice();
+  // data
   stack: d3.Series<Data, string>[];
-  divs: string[];
-  years: number[];
-  color: d3.ScaleOrdinal<string, string>;
-  agg: keyof AggFields
+  divs: string[] = [];
+  years: number[] = [];
+  agg: keyof AggFields = 'count';
+  color: d3.ScaleOrdinal<string, string> = colorScales[this.agg];
+  prev?: Layout;
   getXAxis: (scale: d3.ScaleBand<number>) => d3.Axis<number>;
   getYAxis: () => d3.Axis<number>;
   getGridLines: () => d3.Axis<number>;
   xAxis: Selection<SVGGElement>;
   yAxis: Selection<SVGGElement>;
   gridLines: Selection<SVGGElement>;
-  timelineElements?: ChartElements;
   onTooltipEnter: ChartCallback
   onTooltipLeave: ChartCallback
   onBarClick: ChartCallback
-  rtime?: Date;
-  timeout = false;
+  resizeDebounced = debounce();
   animationDur = 1000;
-  delta = 200;
   
   constructor(props: D3Props) {
     
@@ -91,36 +82,24 @@ class D3Component {
     this.onTooltipEnter = props.onTooltipEnter;
     this.onTooltipLeave = props.onTooltipLeave;
     this.onBarClick = props.onBarClick;
-    const [ width, height ] = [ this.containerEl.clientWidth, 800 ]; //containerEl.clientHeight ];
+    const { clientWidth, clientHeight } = this.containerEl;
 
-    // d3.select('window').on('resize', () => {
-    //   this.rtime = new Date();
-    //   console.log('resize', this.rtime);
-    //   if (!this.timeout) {
-    //     this.timeout = true;
-    //     setTimeout(this.resizeEnd, 200);
-    //   }
-    // });
+    // TODO wait until data loaded?
     this.stack = this.getStack(props.data, props.divDomain, 'count'); 
 
-    this.chartWidth = width - this.padding.left - this.padding.right;
+    this.chartWidth = clientWidth - this.padding.left - this.padding.right;
     // TODO better formula
-    this.chartHeight = height - this.padding.top - 2*this.padding.bottom - this.timelineLayout.height;
-    this.agg = 'count';
-    this.color = colorScales[this.agg];
-    this.years = [];
-    this.divs = [];
+    this.chartHeight = clientHeight - this.padding.top - 2*this.padding.bottom - this.timelineLayout.height;
 
     const container = d3.select(this.containerEl);
-    container.select('chart-area').remove();
+    // react-dev-server keeps appending on hot-reload
+    container.select('#chart-area').remove();
     this.svg = container.append('svg')
       .attr('id', 'chart-area')
       // .attr('xmlns', 'http://www.w3.org/2000/svg')
       // .attr('xmlns:xmlns:xlink', 'http://www.w3.org/1999/xlink')
       .attr('version', '1.1')
-      .attr('xml:space', 'preserve')
-      .attr('width', width)
-      .attr('height', height);
+      .attr('xml:space', 'preserve');
     
     this.timeline = new D3Timeline({
       svg: this.svg,
@@ -148,16 +127,7 @@ class D3Component {
 
     this.chart = this.svg
       .append('g')
-      .classed('chart', true)
-      .attr('transform', `translate(${this.padding.left}, ${this.padding.top})`);
-      
-    this.x = d3.scaleBand<number>()
-      .rangeRound([0, this.chartWidth])
-      .padding(0.2);
-      
-    this.y = d3.scaleLinear()
-      .rangeRound([this.chartHeight, 0])
-      .nice();
+      .classed('chart', true);
       
     // TODO better formatting of decimals
     const numberFormat = (d: number) => d3.format('.2s')(d).replace(/G/, 'B').replace(/\.\d/, '');
@@ -167,42 +137,63 @@ class D3Component {
     this.getYAxis = () => d3.axisLeft<number>(this.y).tickFormat(numberFormat).ticks(5);
     
     this.gridLines = this.chart.append('g')
-      .classed('gridline', true)
-      .call(this.getGridLines());
+      .classed('gridline', true);
 
     this.xAxis = this.chart.append('g')
-      .attr('class', 'axis axis-x')
-      .attr('transform', `translate(0 ${this.chartHeight})`)
-      .call(this.getXAxis(this.x));
+      .attr('class', 'axis axis-x');
 
     this.yAxis = this.chart.append('g')
-      .attr('class', 'axis axis-y')
-      .call(this.getYAxis());
+      .attr('class', 'axis axis-y');
+      
+    // add resize listener
+    d3.select(window).on('resize', () => (
+      this.resizeDebounced(this.measure, 200)
+    ));
+    
+    this.measure();
   }
   
-  resizeEnd() {
-    if (this.rtime && new Date().getTime() - this.rtime.getTime() < this.delta) {
-      setTimeout(this.resizeEnd, this.delta);
-    } else {
-      this.timeout = false;
-      // TODO only need to update coords, not data here
-      // this.update(this.data, this.divs ?? []);
-    }
+  measure = () => {
+    const { clientWidth, clientHeight } = this.containerEl;
+    this.chartWidth = clientWidth - this.padding.left - this.padding.right;
+    this.chartHeight = clientHeight - this.padding.top - 2*this.padding.bottom - this.timelineLayout.height;
+
+    this.svg
+      .attr('width', clientWidth)
+      .attr('height', clientHeight);
+      
+    this.chart
+      .attr('transform', `translate(${this.padding.left}, ${this.padding.top})`);
+      
+    this.xAxis
+      .attr('transform', `translate(0 ${this.chartHeight})`);
+
+    this.x.rangeRound([0, this.chartWidth]);
+      
+    this.y.rangeRound([this.chartHeight, 0]);
+
+    this.updateAxes();
+
+    this.redraw();
   }
-  
+ 
   updateYears(data: TimelineData[]) {
     this.timeline.update(data);
   }
   
   // updateField(field) {};
   
-  update(data: Data[], divDomain: string[], agg?: keyof AggFields) {
+  updateData(data: Data[], divDomain: string[], agg?: keyof AggFields) {
 
     this.years = data.map(d => d.year);
     this.divs = divDomain;
     if (agg) this.agg = agg;
 
     this.stack = this.getStack(data, divDomain, this.agg);
+    this.redraw();
+  }
+
+  redraw() {
     this.x.domain(this.years);
     this.y.domain([0, Math.max(...this.stack.flat().flat())]);
     this.color = colorScales[this.agg];
@@ -387,8 +378,6 @@ class D3Component {
     }
   }
 
-  resize = (width, height) => { /*...*/ }
-  
 }
 
 export default D3Component;

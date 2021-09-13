@@ -44,6 +44,8 @@ export const getLegendFilters = (state: RootState) => state.filter.legendFilters
 
 export const getYearRange = (state: RootState) => state.filter.yearRange;
 
+export const isDrawerOpen = (state: RootState) => state.filter.drawerOpen;
+
 export const isGrantDialogOpen = (state: RootState) => state.filter.grantDialogOpen;
 
 export const getGrantFilter = (state: RootState) => state.filter.grantFilter;

@@ -29,8 +29,19 @@ declare module '@material-ui/core/styles/createPalette' {
     counts: PaletteColorOptions,
   }
 }
+  
+declare module '@material-ui/core/styles/createTheme' {
+  export interface ThemeOptions {
+    drawerWidth: string
+  }
+  
+  export interface Theme {
+    drawerWidth: string
+  }
+}
 
 const theme = createTheme({
+  drawerWidth: '35em',
   palette: {
     primary: {
       main: '#6772e5'

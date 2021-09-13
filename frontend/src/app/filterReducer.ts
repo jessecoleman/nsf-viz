@@ -21,7 +21,7 @@ export type DivisionKey = 'name' | 'count' | 'amount';
 export type DivisionOrder = [ DivisionKey, SortDirection ];
 
 export type FilterState = {
-  dependant: string,
+  drawerOpen: boolean,
   boolQuery: 'any' | 'all',
   terms: Term[],
   divisions: Division[],
@@ -42,7 +42,7 @@ export type FilterState = {
 }
 
 const initialState: FilterState = {
-  dependant: 'divisions',
+  drawerOpen: false,
   boolQuery: 'any',
   terms: [],
   divisions: [],
@@ -63,6 +63,9 @@ const filterSlice = createSlice({
   name: 'filter',
   initialState,
   reducers: {
+    toggleDrawerOpen: (state, action) => {
+      state.drawerOpen = action.payload;
+    },
     setTerms: (state, action) => {
       state.terms = action.payload;
     },
@@ -132,6 +135,7 @@ const filterSlice = createSlice({
 });
 
 export const {
+  toggleDrawerOpen,
   setTerms,
   selectTerm,
   clearTermSelection,
