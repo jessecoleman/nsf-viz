@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { debounce } from '../debounce';
+import { debounce } from './D3utils';
 
 type ChartDimensions = {
   chart: DOMRect,
