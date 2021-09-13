@@ -1,31 +1,31 @@
-import { green } from '@material-ui/core/colors';
-import { debounce } from '../debounce';
 import * as d3 from 'd3';
-import { interleave } from './Chart';
+import { Selection } from './D3utils';
 import D3Timeline, { BrushCallback, TimelineData } from './D3Timeline';
-import AwesomeDebouncePromise from 'awesome-debounce-promise';
+import { colorScales } from 'theme';
+import { removeTooltip, transitionTooltip } from './D3Tooltip';
 
-export type Data = Record<string | 'year', number>
+export type AggFields = {
+  count: number
+  amount: number
+}
 
-type Series = [ number, number ] & {
-  key: string
+export type Data = {
   year: number
+  aggs: Record<string, AggFields>
+}
+
+type Series = {
+  key: string
   data: Data
 }
 
-type CallbackProps = {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-type ChartCallback = (key: string, year: number, props?: CallbackProps) => void
+type ChartCallback = (key: string, year: number) => void
 
 type D3Props = {
   containerEl: HTMLDivElement;
   tooltipEl?: HTMLDivElement;
   data: Data[]
+  divDomain: string[]
   onTooltipEnter: ChartCallback
   onTooltipLeave: ChartCallback
   onBarClick: ChartCallback;
@@ -34,17 +34,10 @@ type D3Props = {
   // height: number
 };
 
-export type Selection<
-  Element extends d3.BaseType,
-  Datum = unknown,
-  PElement extends d3.BaseType = null,
-  PDatum = undefined
-> = d3.Selection<Element, Datum, PElement, PDatum>;
-
 export type Layout = {
   x: d3.ScaleBand<number>;
   y: d3.ScaleLinear<number, number>;
-  stack?: any; //d3.Stack<unknown, Record<string, number>, string>;
+  stack: d3.Series<Data, string>[];
   divs: string[];
   years: number[];
  };
@@ -71,10 +64,11 @@ class D3Component {
   x: d3.ScaleBand<number>;
   y: d3.ScaleLinear<number, number>;
   prev?: Layout;
-  data: Data[];
+  stack: d3.Series<Data, string>[];
   divs: string[];
   years: number[];
   color: d3.ScaleOrdinal<string, string>;
+  agg: keyof AggFields
   getXAxis: (scale: d3.ScaleBand<number>) => d3.Axis<number>;
   getYAxis: () => d3.Axis<number>;
   getGridLines: () => d3.Axis<number>;
@@ -94,7 +88,6 @@ class D3Component {
     
     this.containerEl = props.containerEl;
     // this.tooltip = d3.select(props.tooltipEl);
-    this.data = props.data;
     this.onTooltipEnter = props.onTooltipEnter;
     this.onTooltipLeave = props.onTooltipLeave;
     this.onBarClick = props.onBarClick;
@@ -108,16 +101,20 @@ class D3Component {
     //     setTimeout(this.resizeEnd, 200);
     //   }
     // });
+    this.stack = this.getStack(props.data, props.divDomain, 'count'); 
 
     this.chartWidth = width - this.padding.left - this.padding.right;
     // TODO better formula
     this.chartHeight = height - this.padding.top - 2*this.padding.bottom - this.timelineLayout.height;
-    this.color = d3.scaleOrdinal(Object.values(green).slice(0, -4).map(interleave));
+    this.agg = 'count';
+    this.color = colorScales[this.agg];
     this.years = [];
     this.divs = [];
 
-    this.svg = d3.select(this.containerEl)
-      .append('svg')
+    const container = d3.select(this.containerEl);
+    container.select('chart-area').remove();
+    this.svg = container.append('svg')
+      .attr('id', 'chart-area')
       // .attr('xmlns', 'http://www.w3.org/2000/svg')
       // .attr('xmlns:xmlns:xlink', 'http://www.w3.org/1999/xlink')
       .attr('version', '1.1')
@@ -164,7 +161,7 @@ class D3Component {
       
     // TODO better formatting of decimals
     const numberFormat = (d: number) => d3.format('.2s')(d).replace(/G/, 'B').replace(/\.\d/, '');
-    
+      
     this.getGridLines = () => d3.axisLeft<number>(this.y).tickSize(-this.chartWidth).tickFormat(() => '');
     this.getXAxis = (scale) => d3.axisBottom<number>(scale).tickFormat(d3.format('d'));
     this.getYAxis = () => d3.axisLeft<number>(this.y).tickFormat(numberFormat).ticks(5);
@@ -188,7 +185,8 @@ class D3Component {
       setTimeout(this.resizeEnd, this.delta);
     } else {
       this.timeout = false;
-      this.update(this.data, this.prev?.divs ?? []);
+      // TODO only need to update coords, not data here
+      // this.update(this.data, this.divs ?? []);
     }
   }
   
@@ -196,44 +194,30 @@ class D3Component {
     this.timeline.update(data);
   }
   
-  update(data: Data[], divDomain: string[]) {
+  // updateField(field) {};
+  
+  update(data: Data[], divDomain: string[], agg?: keyof AggFields) {
 
-    // this.timeline.update(data.map(({ year }) => ({ year, value: 30 })));
-    this.data = data;
-    this.years = data.map(d  => d.year);
-    this.divs = divDomain.map(d => `${d}-count`);
-    const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
+    this.years = data.map(d => d.year);
+    this.divs = divDomain;
+    if (agg) this.agg = agg;
 
-    const stack = d3.stack().keys(this.divs);
-    const stackedData = stack(data);
-    const max = Math.max(...stackedData.flat().flat());
- 
+    this.stack = this.getStack(data, divDomain, this.agg);
     this.x.domain(this.years);
-    this.y.domain([0, max]);
+    this.y.domain([0, Math.max(...this.stack.flat().flat())]);
+    this.color = colorScales[this.agg];
     this.color.domain(this.divs);
     
-    // necessary because this gets shadowed in d3 callbacks
-    const getSelectionBBox = this.getSelectionBBox;
-    const svgBbox = getSelectionBBox(this.svg as any);
-    const bandwidth = this.x.bandwidth();
-    const padding = bandwidth * this.x.padding();
-    const onTooltipEnter = this.onTooltipEnter;
-    const onTooltipLeave = this.onTooltipLeave;
-    const onBarClick = this.onBarClick;
-    const tooltipDebounce = debounce();
-
     this.updateAxes();
 
     const stacks = this.chart.selectAll<SVGGElement, Series>('.bars')
-      .data(stackedData, d => d.key)
+      .data(this.stack, d => d.key)
       .join(
         enter => enter.append('g')
-          // .classed('bars', true)
-          .attr('class', d => `bars ${d.key}`)
-          .attr('fill', d => this.color(d.key)),
+          .attr('class', d => `bars ${d.key}`),
         update => update,
         exit => {
-          // animate out on division filter
+          // only applies to exiting div groups, not year stacks
           exit.selectAll<SVGGElement, Series>('.bar')
             .transition()
             .duration(this.animationDur)
@@ -246,7 +230,13 @@ class D3Component {
         }
       );
       
-    stacks.selectAll<SVGRectElement, Series>('.bar')
+    stacks
+      .transition()
+      .duration(this.animationDur)
+      .attr('fill', d => this.color(d.key));
+      
+    const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
+    const barChart = stacks.selectAll<SVGRectElement, Series>('.bar')
       .data<Series>(d => (d as any), (d, i, g) => {
         d.key = (g as any).key;
         return d.data.year;
@@ -262,16 +252,21 @@ class D3Component {
           .attr('y', (d, i) => {
             if (this.prev) {
               const idx = divIndices[d.key];
-              const prevGroup = this.prev.stack[idx - 1]?.[i];
-              // TODO entering from time slider doesn't initialize correctly
-              // console.log(idx, prevGroup);
-              return this.prev.y(prevGroup?.[1] ?? 0);
-            } else {
-              return this.chartHeight;
+              // will be undefined if bottom of stack
+              const prevGroup = this.prev.stack[idx - 1];
+              const sameMin = this.prev.years[0] === this.years[0];
+              const sameDomain = sameMin && this.prev.years.length === this.years.length;
+              if (prevGroup && sameDomain) {
+                return this.prev.y(prevGroup[i][1]);
+              }
             }
+            // first group in stack, first load, or entering years
+            return this.chartHeight;
           })
-          .style('opacity', 0),
+          // only fade in from sides
+          .style('opacity', d => this.prev?.x(d.data.year) ? 1 : 0),
         update => update,
+        // only applies to exiting year stacks, not div groups
         exit => exit
           .transition()
           .duration(this.animationDur)
@@ -281,70 +276,9 @@ class D3Component {
           .attr('y', this.chartHeight)
           .style('opacity', 0)
           .remove()
-      )
-      .on('mouseover', function() {
-        const s = d3.select<SVGRectElement, Series>(this)
-          .classed('selected', true);
-          
-        const tooltip = d3.select('#tooltip');
-        const tipBbox = getSelectionBBox(tooltip as any);
-        const d = s.datum();
-        const bbox = getSelectionBBox(s as any);
-        onTooltipEnter(d.key, d.data.year, bbox);
-        (tooltip.select(`#${d.key.split('-')[0]}-tooltip`).node() as any)?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest' 
-        });
-        
-        const chartRightEdge = svgBbox.x + svgBbox.width;
-        const tipRightEdge = bbox.x + bbox.width + tipBbox.width;
-        const tipSide = tipRightEdge < chartRightEdge ? 'left' : 'right';
-        const tipLeft = bbox.x - svgBbox.x + (
-          tipSide === 'left'
-            ? bandwidth + 2 * padding
-            : -tipBbox.width - 2 * padding);
-        
-        const rectCenter = bbox.y + bbox.height / 2;
-        const tipTop = Math.max(0, Math.min(rectCenter - tipBbox.height / 2, svgBbox.height - tipBbox.height));
-
-        // transition tooltip in
-        tooltipDebounce(() => {
-          tooltip
-            .classed('visible', true)
-            .transition()
-            .duration(500)
-            .style('opacity', 1)
-            .style('left', `${tipLeft}px`)
-            .style('top', `${tipTop}px`);
-        }, 350);
-      })
-      .on('mouseleave', function() {
-        const d = d3.select(this)
-          .classed('selected', false)
-          .datum() as Series;
-
-        onTooltipLeave(d.key, d.data.year);
-        
-        // transition tooltip out
-        tooltipDebounce(() => {
-          d3.select('#tooltip')
-            .transition()
-            .duration(200)
-            .style('opacity', 0)
-            .on('end', function() { 
-              d3.select('#tooltip')
-                .classed('visible', false);
-            });
-        }, 200);
-          
-      })
-      .on('click', function() {
-        const d = d3.select(this)
-          .classed('selected', false)
-          .datum() as Series;
-        onBarClick(d.key, d.data.year);
-      })
+      );
+      
+    barChart
       .transition()
       .duration(this.animationDur)
       .attr('width', this.x.bandwidth())
@@ -356,11 +290,46 @@ class D3Component {
         this.prev = {
           x: this.x.copy(),
           y: this.y.copy(),
-          stack: stackedData,
+          stack: this.stack,
           divs: this.divs,
           years: this.years,
         };
       });
+
+    barChart 
+      .on('mouseover', (e, d) => {
+        const rect: SVGRectElement = e.target;
+        d3.select(rect).classed('selected', true);
+          
+        this.onTooltipEnter(d.key, d.data.year);
+
+        const chart = this.svg.node()!.getBoundingClientRect();
+        const bar = rect.getBoundingClientRect();
+        const bandwidth = this.x.bandwidth();
+        const padding = bandwidth * this.x.padding();
+        transitionTooltip(d.key, {
+          chart,
+          bar,
+          bandwidth,
+          padding,
+        });
+      })
+      .on('mouseleave', (e, d) => {
+        d3.select(e.target).classed('selected', false);
+        this.onTooltipLeave(d.key, d.data.year);
+        removeTooltip();
+      })
+      .on('click', (e, d) => {
+        d3.select(e.target).classed('selected', false);
+        this.onBarClick(d.key, d.data.year);
+      });
+  }
+  
+  getStack(data: Data[], domain: string[], agg: keyof AggFields) {
+    return d3.stack<Data, string>()
+      .keys(domain)
+      .value((d, key) => d.aggs[key]?.[agg] ?? 0)
+      .order(d3.stackOrderNone)(data);
   }
 
   getXTransition(year: number, layout?: Layout) {
@@ -377,22 +346,20 @@ class D3Component {
     return this.x(year) ?? 0;
   }
   
-  getSelectionBBox(s: Selection<Element>) {
-    return s.node()!.getBoundingClientRect();
-  }
-  
+ 
   updateAxes() {
 
-    const domain = this.x.domain();
-    const padding = this.x(domain[0])!;
-    const range = [-15, 15];
-    const newDomain = Array.from({ length: domain.length + range[1] - range[0] }, (x, i) => domain[0] + range[0] + i);
-    const newRange = range.map((r, i) => ((i + 1) * padding) + (this.x.bandwidth() * (r + i * newDomain.length)));
-    const x2 = d3.scaleBand<number>()
-      .rangeRound(range.map((r, i) => padding + this.x.bandwidth() * (r + i * domain.length)))
-      .domain(newDomain)
-      .padding(0.2);
-    /**** */
+    /*
+    *const domain = this.x.domain();
+    *const padding = this.x(domain[0])!;
+    *const range = [-15, 15];
+    *const newDomain = Array.from({ length: domain.length + range[1] - range[0] }, (x, i) => domain[0] + range[0] + i);
+    *const newRange = range.map((r, i) => ((i + 1) * padding) + (this.x.bandwidth() * (r + i * newDomain.length)));
+    *const x2 = d3.scaleBand<number>()
+    *  .rangeRound(range.map((r, i) => padding + this.x.bandwidth() * (r + i * domain.length)))
+    *  .domain(newDomain)
+    *  .padding(0.2);
+    */
 
     this.xAxis.transition()
       .duration(this.animationDur)

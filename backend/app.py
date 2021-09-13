@@ -92,7 +92,7 @@ async def search(request: SearchRequest):
 
     toggle = (request.boolQuery == 'all')
 
-    result = await Q.year_division_aggregates(
+    return await Q.division_aggregates(
         aioes,
         toggle,
         terms=request.terms,
@@ -100,28 +100,19 @@ async def search(request: SearchRequest):
         fields=request.fields
     )
 
-    return SearchResponse(
-        per_division=result['aggregations']['years']['buckets'],
-        sum_total=result['aggregations']['divisions']['buckets'],
-    )
-    
 
 @app.post('/years', operation_id='years', response_model=YearsResponse)
 async def years(request: SearchRequest):
 
     toggle = (request.boolQuery == 'all')
 
-    result = await Q.year_aggregates(
+    return await Q.year_aggregates(
         aioes,
         toggle,
         terms=request.terms,
         fields=request.fields
     )
 
-    return YearsResponse(
-        per_year=result['aggregations']['years']['buckets'],
-    )
- 
 
 @app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead')
 async def typeahead(prefix: str):

@@ -7,14 +7,12 @@ import AwesomeDebouncePromise from 'awesome-debounce-promise';
 export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] => {
   
   const ref = useRef<T>(null);
-  // const dims = useRef<DOMRect>();
   const padding = useRef<number>(0);
 
   useEffect(() => {
     if (ref.current) {
       const bbox = ref.current.getBoundingClientRect();
       const parent = ref.current.parentElement?.getBoundingClientRect();
-      console.log('parent', ref.current.parentElement);
       if (parent && bbox.width) {
         padding.current = parent.width - bbox.width;
       }
