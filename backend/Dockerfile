@@ -19,6 +19,10 @@ COPY . .
 
 # EXPOSE 8888
 
+RUN python -m nltk.downloader stopwords \
+  && python -m nltk.downloader punkt \
+  && python -m nltk.downloader wordnet
+
 # Kick things off
 ENTRYPOINT [ "poetry" ]
 CMD ["run", "python", "app.py", "--host", "0.0.0.0"]

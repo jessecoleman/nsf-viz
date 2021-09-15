@@ -68,6 +68,20 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
                 row[2],  # abstract
             ]
 
+def data_source_elasticsearch() -> Generator:
+    from elasticsearch import Elasticsearch
+    from elasticsearch_dsl import Search
+
+    host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
+    client = Elasticsearch([{"host": host}], timeout=60)
+
+    search = Search(using=client, index='nsf-dev')
+    for doc in search.scan():
+        yield [
+            doc.title,
+            doc.abstract,
+        ]
+
 
 def get_data(intermediate_file: str, data_source: Union[Iterable, str] = 'mysql'):
     intermediate_file = Path(intermediate_file).resolve()
@@ -239,6 +253,8 @@ def dispatch(args):
             data_source = data_source_mysql()
         elif args.data_source.endswith('.csv'):
             data_source = data_source_csv(args.data_source)
+        elif args.data_source.lower().startswith('elastic') or args.data_source.lower() == 'es':
+            data_source = data_source_elasticsearch()
         else:
             raise ValueError('invalid value for argument "data-source"')
         get_data(args.output, data_source=data_source)

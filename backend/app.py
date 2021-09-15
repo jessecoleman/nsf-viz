@@ -35,7 +35,7 @@ async def startup():
     # look for the environment variable ELASTICSEARCH_HOST. if not set, use default 'localhost'
     host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
     aioes = Elasticsearch([{"host": host}])
-    word_vecs = Word2Vec.load('assets/nsf_fasttext_model').wv
+    word_vecs = Word2Vec.load('assets/pipelinetest2/nsf_w2v_model').wv
 
 
 @app.on_event('shutdown')

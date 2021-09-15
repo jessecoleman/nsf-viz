@@ -3,3 +3,4 @@ __pycache__/
 venv
 assets/*
 !assets/README*
+api.json
