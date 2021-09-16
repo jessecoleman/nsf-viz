@@ -102,15 +102,18 @@ def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Genera
     Grant.init()
 
     for r in tqdm(data_source):
-        g = Grant(
-            title=r[0],
-            abstract=r[1],
-            amount=r[2],
-            date=r[3],
-            division=r[4],
-            division_key=div_map.get(r[4].lower(), "unknown"),
-        )
-        yield g.to_dict(True)
+        try:
+            g = Grant(
+                title=r[0],
+                abstract=r[1],
+                amount=r[2],
+                date=r[3],
+                division=r[4],
+                division_key=div_map[r[4].lower()],
+            )
+            yield g.to_dict(True)
+        except KeyError:
+            continue
 
 
 def build_index(data_source: Iterable):
