@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as d3 from 'd3';
-import { Selection } from './D3utils';
+import { Padding, Selection } from './D3utils';
 
 export type BrushCallback = (selection: [ number, number ]) => void;
 
@@ -14,82 +15,114 @@ type TimelineProps = {
   chartWidth: number,
   chartHeight: number
   onBrushEnded: BrushCallback
-  padding: { top: number, bottom: number, left: number, right: number }
+  padding: Padding
 }
 
-class D3Timeline {
+export default class D3Timeline {
 
   animationDur = 1000;
   chart: Selection<SVGGElement>;
   chartWidth: number;
   chartHeight: number;
-  padding = { top: 10, bottom: 50, left: 50, right: 10 };
-  x: d3.ScaleBand<number>;
-  y: d3.ScaleLinear<number, number>;
+  padding: Padding;
+  x = d3.scaleBand<number>().padding(0.2);
+  y = d3.scaleLinear<number, number>().nice();
   xAxis: Selection<SVGGElement>;
   yAxis: Selection<SVGGElement>;
-  // gridLines: Selection<SVGGElement>;
-  getXAxis: () => d3.Axis<number>;
-  getYAxis: () => d3.Axis<number>;
-  // getGridLines: () => d3.Axis<number>;
   brush: d3.BrushBehavior<unknown>;
   gb: Selection<SVGGElement>;
+  data: TimelineData[] = [];
+  years: number[] = [];
+  yearRange: [ number, number ];
+  max = 0;
 
   constructor(props: TimelineProps) {
     
     this.chartHeight = props.chartHeight;
     this.chartWidth = props.chartWidth;
+    this.padding = props.padding;
     this.chart = props.svg
       .append('g')
       .classed('timeline', true)
       .attr('transform', `translate(${props.padding.left}, ${props.padding.top})`);
       
-    const [ min, max ] = [ 2000, 2021 ];
-    const domain = Array.from({ length: max - min }, (d, i) => i + min);
-    this.x = d3.scaleBand<number>()
-      .rangeRound([0, this.chartWidth])
-      .domain(domain)
-      .padding(0.2);
+    this.x.rangeRound([0, this.chartWidth]);
      
-    this.y = d3.scaleLinear()
-      .rangeRound([this.chartHeight, 0])
-      .nice();
+    this.y.rangeRound([this.chartHeight, 0]);
 
-    // this.getGridLines = () => d3.axisLeft<number>(this.y).tickSize(-this.chartWidth).tickFormat(() => '');
-    this.getXAxis = () => d3.axisBottom<number>(this.x).tickFormat(d3.format('d'));
-    this.getYAxis = () => d3.axisLeft<number>(this.y).tickFormat(d3.format('.2s'));
-    
+    // TODO set this dynamically
+    this.yearRange = [2000, 2020];
+   
     // setup brush
-    const defaultSelection = [this.x(2000), this.x(2020)];
+    this.gb = this.chart.append('g').raise();
+
     this.brush = d3.brushX()
-      .extent([
-        [0, 0],
-        [this.chartWidth, this.chartHeight]
-      ])
       .on('end', ({ target, sourceEvent, selection }) => {
         if (!sourceEvent || !selection) return;
         // inversed map is interval [s, e)
-        const yearRange = selection.map(this.xInverse);
-        props.onBrushEnded(yearRange);
-        // TODO test this
-        d3.select(sourceEvent.originalTarget.parentElement)
+        this.yearRange = selection.map(this.xInverse);
+        props.onBrushEnded(this.yearRange);
+        this.gb
           .transition()
-          .call(target.move, yearRange.map(this.getBrushBounds));
+          .duration(this.animationDur / 2)
+          .call(target.move, this.yearRange.map(this.getBrushBounds));
       });
 
-    this.gb = this.chart.append('g')
-      .call(this.brush)
-      .call(this.brush.move, defaultSelection);
-
     this.xAxis = this.chart.append('g')
-      .attr('class', 'axis axis-x')
+      .attr('class', 'axis axis-x');
+
+    this.yAxis = this.chart.append('g')
+      .attr('class', 'axis axis-y');
+
+    this.measure(this.padding, this.chartWidth, this.chartHeight);
+  }
+
+  getXAxis = () => d3.axisBottom<number>(this.x)
+    .tickFormat(d3.format('d'))
+    .tickValues(this.x.domain().filter(d => !(d % 5)));
+
+  getYAxis = () => d3.axisLeft<number>(this.y)
+    .tickFormat(d3.format('.2s'))
+    .tickValues([this.max]);
+
+  measure = (padding: Padding, width: number, height: number) => {
+    this.padding = padding;
+    this.chartWidth = width;
+    this.chartHeight = height;
+    this.chart
+      .transition()
+      .duration(this.animationDur)
+      .attr('transform', `translate(${this.padding.left}, ${this.padding.top})`);
+
+    this.x.rangeRound([0, this.chartWidth]);
+     
+    this.y.rangeRound([this.chartHeight, 0]);
+    
+    this.brush.extent([
+      [0, 0],
+      [this.chartWidth, this.chartHeight]
+    ]);
+
+    this.gb
+      .call(this.brush)
+      .transition()
+      .duration(this.animationDur)
+      .call(this.brush.move, this.yearRange.map(this.x));
+
+    this.redraw();
+  }
+
+  updateAxes = () => {
+    this.xAxis
+      .transition()
+      .duration(this.animationDur)
       .attr('transform', `translate(0, ${this.chartHeight})`)
       .call(this.getXAxis());
 
-    this.yAxis = this.chart.append('g')
-      .attr('class', 'axis axis-y')
+    this.yAxis
+      .transition()
+      .duration(this.animationDur)
       .call(this.getYAxis());
- 
   }
 
   xInverse = (y: number, idx: number) => {
@@ -103,31 +136,27 @@ class D3Timeline {
   }
 
   update = (data: TimelineData[]) => {
-
-    this.x.domain(data.map(d => d.year));
-    const max = Math.max(...data.map(d => d.count));
-    // multiply by 1.1 to add some padding
-    this.y.domain([0, max * 1.1]);
+    this.data = data;
+    this.years = data.map(d => d.year);
+    this.x.domain(this.years);
+    this.max = Math.max(...data.map(d => d.count));
+    this.y.domain([0, this.max]);
     // this.color.domain(this.divs);
- 
-    this.xAxis.transition()
-      .duration(this.animationDur)
-      .call(this.getXAxis());
+    this.redraw();
+  }
 
-    this.yAxis.transition()
-      .duration(this.animationDur)
-      .call(this.getYAxis().tickValues([max]));
-      
-    // this.gridLines.transition()
-    //   .duration(this.animationDur)
-    //   .call(this.getGridLines());
+  redraw = () => {
+
+    this.updateAxes();
 
     this.chart.selectAll<SVGRectElement, { year: number }>('.bar')
-      .data(data, d => d.year)
+      .data(this.data, d => d.year)
       .join(
         enter => enter
           .append('rect')
           .call(enter => enter
+            .attr('x', d => this.x(d.year)!)
+            .attr('width', this.x.bandwidth())
             .attr('y', this.chartHeight)
             .attr('height', 0)
             // .transition()
@@ -138,20 +167,18 @@ class D3Timeline {
         exit => exit.remove()
       )
       .classed('bar', true)
-      .attr('x', d => this.x(d.year)!)
-      .attr('width', this.x.bandwidth())
       .transition()
       .duration(this.animationDur)
+      .attr('x', d => this.x(d.year)!)
+      .attr('width', this.x.bandwidth())
       .attr('fill', 'green')
       .attr('y', d => this.y(d.count))
       .attr('height', d => this.chartHeight - this.y(d.count));
       
     this.gb
-      .call(this.brush.move, [
-        this.x.domain()[0],
-        this.x.domain().pop()
-      ].map(this.getBrushBounds))
-      .raise();
+      .transition()
+      .duration(this.animationDur)
+      .call(this.brush.move, this.yearRange.map(this.getBrushBounds));
   }
   
   getBrushBounds = (x: number | undefined, idx: number) => {
@@ -161,12 +188,4 @@ class D3Timeline {
     const endOffset = this.x.step() * idx;
     return this.x(x)! + endOffset - padding / 2 ?? 0;
   }
-  
-  brushed = (brush, invScale) => {
-    // if (brush.selection && invScale) {
-    //   console.log(brush.selection.map(s => invScale(s)));
-    // }
-  }
 }
-
-export default D3Timeline;

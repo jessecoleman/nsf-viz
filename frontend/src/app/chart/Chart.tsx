@@ -16,10 +16,9 @@ import { isFulfilled } from '@reduxjs/toolkit';
 let vis: D3Component;
 
 const ChartContainer = styled.div(({ theme }) => `
+  flex-grow: 1;
   position: relative;
   .axis {
-    padding: 16px;
-    height: 100%;
     font: Helvetica;
     font-size: 14px;
     font-family: "Open Sans", sans-serif;
@@ -58,24 +57,26 @@ const ChartContainer = styled.div(({ theme }) => `
   }
 `);
 
-const Chart = () => {
+type ChartProps = {
+  width: number
+  height: number
+}
+
+const Chart = (props: ChartProps) => {
 
   const visRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const query = useQuery();
 
-  const { counts, amounts } = useAppSelector(getLegendFilters);
+  // TODO reimplement this?
+  // const { counts, amounts } = useAppSelector(getLegendFilters);
   const yearRange = useAppSelector(getYearRange);
-  const data = useAppSelector(state => getStackedData(state, query.divisions));
+  const data = useAppSelector(getStackedData);
   const divisions = useAppSelector(getSortedDivisionAggs);
-  // TODO why does sorting by name not work
-  // console.log(divisions);
+  // TODO why are colors not persistent
   const divDomain = divisions.map(d => d.key)
     .filter(key => query.divisions.includes(key));
 
-  // update colors globally with new domain
-  Object.values(colorScales).forEach(s => s.domain(divisions.map(d => d.key)));
- 
   const highlightedDivision = useAppSelector(getHighlightedDivision);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const loading = useAppSelector(isLoadingData);
@@ -83,26 +84,32 @@ const Chart = () => {
   const { bool } = useAppSelector(getLegendFilters);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
 
+  // update colors globally with new domain
   useEffect(() => {
-    if (visRef.current && !vis && data.length) {
+    Object.values(colorScales).forEach(s => s.domain(divisions.map(d => d.key)));
+  }, []);
+
+  // mount chart on first load
+  useEffect(() => {
+    if (visRef.current && !vis) {
       vis = new D3Component({
+        dimensions: props,
         containerEl: visRef.current,
-        data,
-        divDomain,
         onTooltipEnter: handleTooltipEnter,
         onTooltipLeave: handleTooltipLeave,
         onBarClick: handleBarClick,
         onBrushEnded: handleBrush,
       });
     }
-  }, [data.length, visRef.current]);
+  }, [visRef.current]);
   
+  // update data on filter changes
   useEffect(() => {
     if (vis && !loading) {
       if (isAgg(order)) {
-        vis.update(data, divDomain, order);
+        vis.updateData(data, divDomain, order);
       } else {
-        vis.update(data, divDomain);
+        vis.updateData(data, divDomain);
       }
     }
   }, [vis, loading, order, JSON.stringify(query.divisions)]);
@@ -112,9 +119,14 @@ const Chart = () => {
   }, [highlightedDivision]);
 
   useEffect(() => {
+    if (props.height) vis.measure(props.width, props.height);
+  }, [props.width, props.height]);
+
+  useEffect(() => {
     dispatch(loadData(query));
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, yearRange, bool ])]);
 
+  // TODO split this like the others
   useEffect(() => {
     if (vis) {
       dispatch(loadYears(query)).then((action) => {
@@ -141,14 +153,6 @@ const Chart = () => {
   };
 
   const handleBarClick = (key: string, year: number) => {
-    // TODO this is horribly clunky
-    // don't show popup unless there's data
-    // const total = e.activePayload?.reduce((sum, year) => (
-    //   sum + Object.entries(year.payload as Record<string, number>).reduce((divSum: number, div: [string, number]) => (
-    //     div[0].endsWith('count') || div[0].endsWith('amount') ? divSum + div[1] : divSum
-    //   ), 0)
-    // ), 0);
-    // if (total) {
     dispatch(clearGrants());
     dispatch(setGrantFilter({ year }));
     dispatch(setGrantDialogOpen(true));

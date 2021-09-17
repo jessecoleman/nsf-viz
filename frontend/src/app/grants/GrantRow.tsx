@@ -1,6 +1,6 @@
 import { CSSProperties } from 'react';
 import { loadAbstract } from 'app/actions';
-import { alpha, Grid, GridSize, styled } from '@material-ui/core';
+import { alpha, styled } from '@material-ui/core';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getGrant } from 'app/selectors';
 import { Grant } from 'api/models/Grant';
@@ -10,24 +10,46 @@ type Column = {
   id: keyof Grant
   format: (s: any) => string,
   label: string,
-  gridSize: GridSize,
 }
 
 export const cols: Column[] = [
-  { id: 'title', format: t => t, label: 'Grant Title', gridSize: 7 },
-  { id: 'date', format: d => timeFormat('%b %Y')(timeParse('%Y-%m-%d')(d)!), label: 'Date', gridSize: 1 },
-  { id: 'amount', format: format('$,'), label: 'Amount', gridSize: 1 },
-  { id: 'division', format: d => d, label: 'Division', gridSize: 3 },
+  { id: 'title', format: t => t, label: 'Grant Title' },
+  { id: 'date', format: d => timeFormat('%b %Y')(timeParse('%Y-%m-%d')(d)!), label: 'Date' },
+  { id: 'amount', format: format('$,'), label: 'Amount' },
+  { id: 'division', format: d => d, label: 'Division' },
 ];
 
-const GrantListItem = styled(Grid)(({ theme }) => `
-    cursor: pointer;
-    padding-left: ${theme.spacing(3)};
-    padding-right: ${theme.spacing(1)};
-    border-bottom: 1px solid ${theme.palette.grey[300]};
-    &:hover {
-      background-color: ${alpha(theme.palette.grey[900], 0.05)};
-    }
+export const GrantListItem = styled('div')(({ theme }) => `
+  display: grid;
+  grid-template-columns: [title] auto [date] 8rem [amount] 8rem [division] 15rem;
+  cursor: pointer;
+  padding-left: ${theme.spacing(3)};
+  padding-right: ${theme.spacing(1)};
+  border-bottom: 1px solid ${theme.palette.grey[300]};
+  &:hover {
+    background-color: ${alpha(theme.palette.grey[900], 0.05)};
+  }
+  ${theme.breakpoints.down('sm')} {
+    grid-template-columns: [title] auto [date] 5em;
+  }
+`);
+
+export const GrantListHeader = styled(GrantListItem)(({ theme }) => `
+  height: 64px;
+  font-size: ${theme.typography.h6.fontSize};
+`);
+
+type ColumnStyles = {
+  column: string
+};
+
+export const GrantColumn = styled('div')<ColumnStyles>(({ theme, column }) => `
+  grid-column: ${column};
+  display: flex;
+  align-items: center;
+  ${theme.breakpoints.down('sm')} {
+    display: ${['amount', 'division'].includes(column) ? 'none' : 'initial'};
+  }
 `);
 
 type GrantRowProps = {
@@ -50,17 +72,16 @@ const GrantRow = (props: GrantRowProps) => {
 
   return (
     <GrantListItem 
-      container 
       key={index}
-      direction='row' 
-      alignItems='center' 
+      // direction='row' 
+      // alignItems='center' 
       style={style}
       onClick={setSelectedGrant}
     >
-      {cols.map(({ gridSize, format, id }, idx: number) => (
-        <Grid item xs={gridSize} key={idx}>
+      {cols.map(({ format, id }) => (
+        <GrantColumn key={id} column={id}>
           {format(grant[id])}
-        </Grid>
+        </GrantColumn>
       ))}
     </GrantListItem>
   );

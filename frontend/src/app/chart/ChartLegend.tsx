@@ -25,7 +25,6 @@ const ChartLegend = () => {
   const { counts, amounts, bool } = useAppSelector(getLegendFilters);
 
   const handleChangeFilters = (e: ChangeEvent, checked: boolean) => {
-    console.log(e, checked);
     const { name } = e.currentTarget as HTMLInputElement;
     dispatch(setLegendFilters({
       [name]: checked
