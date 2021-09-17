@@ -6,16 +6,12 @@ import { styled } from '@material-ui/core/styles';
 
 import { 
   Dialog,
-  DialogTitle,
-  DialogContent,
-  Grid,
   Button,
   Tooltip,
   TableSortLabel,
   DialogActions,
   Collapse,
   LinearProgress,
-  GridSize,
 } from '@material-ui/core';
 
 import { loadGrants } from 'app/actions';
@@ -27,17 +23,7 @@ import { clearGrantFilter, setGrantDialogOpen, setGrantOrder } from 'app/filterR
 import { useEffect } from 'react';
 import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
 import AbstractDialog from './AbstractDialog';
-import GrantRow, { cols } from './GrantRow';
-
-const GrantsDialogContent = styled(DialogContent)(({ theme }) => `
-  box-shadow: inset 0 4px 4px ${theme.palette.grey[300]};
-  padding: 0;
-  overflow-y: hidden;
-`);
-
-const GrantsCollapse = styled(Collapse)`
-  overflow-y: hidden;
-`;
+import GrantRow, { cols, GrantColumn, GrantListHeader } from './GrantRow';
 
 const ProgressBar = styled(LinearProgress)`
   margin-bottom: -4px;
@@ -47,7 +33,7 @@ const GrantsTable = () => {
 
   const dispatch = useAppDispatch();
   const query = useQuery();
-  const { height } = useWindowDimensions();
+  const [ , height ] = useWindowDimensions();
   const hasMountedRef = useRef(false);
   const grantsRef = useRef<InfiniteLoader>(null);
   const numGrants = useAppSelector(getNumGrants);
@@ -56,10 +42,8 @@ const GrantsTable = () => {
   const noMore = useAppSelector(noMoreGrants);
   
   useEffect(() => {
-    if (hasMountedRef.current) {
-      if (grantsRef.current) {
-        grantsRef.current.resetloadMoreItemsCache();
-      }
+    if (hasMountedRef.current && grantsRef.current) {
+      grantsRef.current.resetloadMoreItemsCache();
     }
     hasMountedRef.current = true;
   }, [ orderBy, order ]);
@@ -155,29 +139,22 @@ const GrantsDialog = () => {
         open={open}
         onClose={handleClose}
       >
-        <DialogTitle>
-          <Grid 
-            container 
-            direction='row'
-          >
-            {cols.map(c => (
-              <Grid key={c.id} item xs={(c.gridSize as GridSize)}>
-                <TableSortLabel
-                  active={orderBy === c.id}
-                  direction={order}
-                  onClick={handleSort(c.id)}
-                >
-                  {c.label}
-                </TableSortLabel>
-              </Grid>
-            ))}
-          </Grid>
-        </DialogTitle>
-        <GrantsDialogContent>
-          <GrantsCollapse in={firstOpen !== 1 || numGrants > 0}>
-            <GrantsTable />
-          </GrantsCollapse>
-        </GrantsDialogContent>
+        <GrantListHeader>
+          {cols.map(({ id, label }) => (
+            <GrantColumn key={id} column={id}>
+              <TableSortLabel
+                active={orderBy === id}
+                direction={order}
+                onClick={handleSort(id)}
+              >
+                {label}
+              </TableSortLabel>
+            </GrantColumn>
+          ))}
+        </GrantListHeader>
+        <Collapse in={firstOpen !== 1 || numGrants > 0}>
+          <GrantsTable />
+        </Collapse>
         {loading && <ProgressBar />}
         <DialogActions>
           <Button onClick={handleDownload}>

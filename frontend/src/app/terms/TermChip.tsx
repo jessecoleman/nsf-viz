@@ -1,7 +1,6 @@
 import { Chip, CircularProgress } from '@material-ui/core';
 import { alpha, styled } from '@material-ui/core/styles';
 import { format } from 'd3';
-import { Term } from 'app/filterReducer';
 import { forwardRef, MouseEvent } from 'react';
 
 const StyledChip = styled(Chip)(({ theme }) => `
@@ -28,7 +27,11 @@ const ChipContent = styled('span')(({ theme }) => `
   display: flex;
   flex-direction: row;
   align-items: center;
+  // count
   & > span {
+    ${theme.breakpoints.down('sm')} {
+      display: none;
+    }
     height: ${theme.spacing(3)};
     min-width: ${theme.spacing(3)};
     color: ${theme.palette.text.primary};
@@ -44,36 +47,32 @@ const ChipContent = styled('span')(({ theme }) => `
 `);
 
 export type TermChipProps = {
-  chip: Term,
+  term: string
+  count?: number
   onClick?: (e: MouseEvent, key: string) => void
   onDelete?: () => void
   selected?: boolean
 };
 
-const TermChip = forwardRef<HTMLDivElement, TermChipProps>((props: TermChipProps, ref) => {
-
-  const { selected, chip, onClick, onDelete } = props;
-
-  return (
-    <StyledChip
-      ref={ref}
-      variant='filled'
-      color={selected ? 'secondary' : undefined}
-      label={
-        <ChipContent>
-          <span> 
-            {chip.count 
-              ? format('.2s')(chip.count)
-              : <CircularProgress size='1.25em' color='secondary' />
-            }
-          </span>
-          {props.chip.term}
-        </ChipContent>
-      }
-      onClick={(e) => onClick?.(e, chip.term)}
-      onDelete={onDelete}
-    />
-  );
-});
+const TermChip = forwardRef<HTMLDivElement, TermChipProps>((props: TermChipProps, ref) => (
+  <StyledChip
+    ref={ref}
+    variant='filled'
+    color={props.selected ? 'secondary' : undefined}
+    label={
+      <ChipContent>
+        <span>
+          {props.count
+            ? format('.2s')(props.count)
+            : <CircularProgress size='1.25em' color='secondary' />
+          }
+        </span>
+        {props.term}
+      </ChipContent>
+    }
+    onClick={(e) => props.onClick?.(e, props.term)}
+    onDelete={props.onDelete}
+  />
+));
  
 export default TermChip;

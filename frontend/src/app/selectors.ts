@@ -1,7 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { DivisionAggregate } from 'api';
 import createCachedSelector from 're-reselect';
-import { Data, AggFields } from './chart/D3Chart';
+import { DivisionAggregate } from 'api';
+import { AggFields } from './chart/D3Chart';
 import { SortDirection } from './filterReducer';
 import type { RootState } from './store';
 
@@ -70,20 +70,19 @@ export const getSelectedGrant = createSelector(
 
 export const getSelectedAbstract = (state: RootState) => state.data.selectedAbstract;
 
-export const getDivisionsMap = (state: RootState) => state.filter.divisions.reduce((accum, div) => {
-  accum[div.key] = div.name;
-  return accum;
-}, {});
+export const getDivisionsMap = (state: RootState) => (
+  Object.fromEntries(state.filter.divisions.map(div => [div.key, div.name]))
+);
 
 const getGrantIdx = (state: RootState, idx: number) => idx;
 
 export const getGrant = createCachedSelector(
   getGrants,
-  getDivisionsMap,
   getGrantIdx, 
-  (grants, divMap, idx) => grants[idx]
+  (grants, idx) => grants[idx]
 )(getGrantIdx);
 
+// for use in DivisionTable
 export const getSortedDivisionAggs = createSelector(
   getDivisionAgg,
   getDivisionOrder,
@@ -92,33 +91,27 @@ export const getSortedDivisionAggs = createSelector(
 
 const getYear = (state: RootState, year: number | undefined) => year ?? 0;
 
+// for use in D3Tooltip
 export const getDivisionYear = createCachedSelector(
   getYear, 
   getYearDivisionAgg,
   getDivisionOrder,
-  (year, divisionAgg, order) => stableSort(
-    divisionAgg.find(d => d.key === year)?.divisions ?? [],
+  (year, agg, order) => stableSort(
+    agg.find(d => d.key === year)?.divisions ?? [],
     ...order
   )
 )(getYear);
 
-const getDivs = (state: RootState, divs: string[]) => divs;
-
-export const getStackedData = createCachedSelector(
+// for use in D3Chart
+export const getStackedData = createSelector(
   getYearDivisionAgg,
   getDivisionOrder,
-  getDivs,
-  (agg, order, divs) => agg.map((year): Data => ({
-    year: year.key,
-    //aggs: Object.fromEntries(divs.map(key => {
-    aggs: Object.fromEntries(
-      stableSort(year.divisions
-        .filter(div => divs.includes(div.key)),
-        ...order
-      ).map(({ key, ...aggs }) => [ key, aggs ])
+  (agg, order) => agg.map(({ key, divisions }) => ({
+    year: key,
+    aggs: Object.fromEntries(stableSort(divisions, ...order)
+      .map(({ key, ...aggs }) => [ key, aggs ])
     )
-  })))(
-  (state, divs) => JSON.stringify(divs)
+  }))
 );
 
 export const getTerms = (state: RootState) => state.filter.terms;

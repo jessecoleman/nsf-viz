@@ -7,6 +7,13 @@ export type Selection<
   PDatum = undefined
 > = d3.Selection<Element, Datum, PElement, PDatum>;
 
+export type Padding = {
+  top: number,
+  bottom: number,
+  left: number,
+  right: number,
+}
+
 export const debounce = () => {
   let timer: NodeJS.Timeout;
   return (fn: () => void, delay: number) => {

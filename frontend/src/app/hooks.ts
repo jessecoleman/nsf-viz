@@ -1,5 +1,5 @@
 import queryString from 'query-string';
-import { useState, useEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, useRef, RefObject, useLayoutEffect } from 'react';
 import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router';
 import { useAsync } from 'react-async-hook';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
@@ -36,6 +36,33 @@ export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] =>
   return [ ref, padding.current ];
 };
 
+type Dims = {
+  width: number
+  height: number
+}
+
+export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, Dims ] => {
+  
+  const ref = useRef<T>(null);
+  const [ dims, setBox ] = useState({ width: 0, height: 0 });
+  const [ windowWidth, windowHeight ] = useWindowDimensions();
+  const { terms } = useQuery();
+
+  useEffect(() => {
+    if (ref.current) {
+      const bbox = ref.current.getBoundingClientRect();
+      if (parent && bbox.height) {
+        setBox({
+          width: bbox.width,
+          height: windowHeight - bbox.height,
+        });
+      }
+    }
+  }, [ref.current, windowWidth, windowHeight, JSON.stringify(terms)]);
+ 
+  return [ ref, dims ];
+};
+
 type ResultBox<T> = { v: T }
 
 export const useConstant = <T extends unknown>(fn: () => T): T => {
@@ -48,21 +75,17 @@ export const useConstant = <T extends unknown>(fn: () => T): T => {
   return ref.current.v;
 };
 
-function getWindowDimensions() {
-  const { innerWidth: width, innerHeight: height } = window;
-  return {
-    width,
-    height
-  };
-}
+const getWindowDimensions = () => {
+  return [ window.innerWidth, window.innerHeight ];
+};
 
 export const useWindowDimensions = () => {
   const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
 
   useEffect(() => {
-    function handleResize() {
+    const handleResize = () => {
       setWindowDimensions(getWindowDimensions());
-    }
+    };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

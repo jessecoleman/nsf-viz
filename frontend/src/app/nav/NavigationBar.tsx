@@ -11,6 +11,7 @@ import TermsFilter from 'app/terms/TermsFilter';
 
 import nsf from 'app/images/nsf_logo.png';
 import DrawerToggle from './DrawerToggle';
+import { forwardRef } from 'react';
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => `
   display: flex;
@@ -59,25 +60,22 @@ const Title = styled(Typography)(({ theme }) => `
   }
 `);
 
-const SearchAppBar = () => {
-  
-  return (
-    <AppBar position='static'>
-      <StyledToolbar>
-        <TitleBar>
-          <DrawerToggle>
-            <Menu color='inherit' />
-          </DrawerToggle>
-          <Logo src={nsf} alt='national science foundation logo' />
-          <Title variant='h6' noWrap>
-            Grant Explorer
-          </Title>
-        </TitleBar>
-        <Box flexGrow={1} />
-        <TermsFilter />
-      </StyledToolbar>
-    </AppBar>
-  );
-};
+const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => (
+  <AppBar position='static' ref={ref}>
+    <StyledToolbar>
+      <TitleBar>
+        <DrawerToggle>
+          <Menu color='inherit' />
+        </DrawerToggle>
+        <Logo src={nsf} alt='national science foundation logo' />
+        <Title variant='h6' noWrap>
+          Grant Explorer
+        </Title>
+      </TitleBar>
+      <Box flexGrow={1} />
+      <TermsFilter />
+    </StyledToolbar>
+  </AppBar>
+));
 
 export default SearchAppBar;
