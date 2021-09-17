@@ -10,7 +10,7 @@ import {
   Tooltip,
   Box
 } from '@material-ui/core';
-import { FilterList } from '@material-ui/icons';
+import { FilterList, Close } from '@material-ui/icons';
 
 import GrantsDialog from 'app/grants/GrantsDialog';
 import { getSortedDivisionAggs, getDivisionOrder, getDivisionsMap } from 'app/selectors';
@@ -20,6 +20,7 @@ import { useDebouncedCallback, useMeasure, useNavigate } from 'app/hooks';
 import DivisionRow, { Row, NumberColumn, Column } from './DivisionRow';
 import { highlightDivision, setDivisionOrder, SortDirection } from 'app/filterReducer';
 import { colorScales } from 'theme';
+import DrawerToggle from 'app/nav/DrawerToggle';
 
 type Columns = {
   Component: typeof Column | typeof NumberColumn,
@@ -98,6 +99,7 @@ const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => `
   padding-right: ${theme.spacing(1)};
+  min-width: 0;
 `);
 
 
@@ -140,18 +142,13 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
             </IconButton>
           </Tooltip>
         )}
+        <DrawerToggle>
+          <Close />
+        </DrawerToggle>
       </Actions>
     </StyledToolbar>
   );
 };
-
-const Container = styled(Paper)`
-  width: 100%;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-`;
-
 
 const TableWrapper = styled('div')`
   overflow-x: hidden;
@@ -200,7 +197,7 @@ const DivisionTable = () => {
   };
   
   return (
-    <Container>
+    <div>
       <EnhancedTableToolbar numSelected={selectedDivisions.size} />
       <EnhancedTableHead
         scrollOffset={scrollOffset}
@@ -238,7 +235,7 @@ const DivisionTable = () => {
           }
         </FlipMove>
       </TableWrapper>
-    </Container>
+    </div>
   );
 };
 

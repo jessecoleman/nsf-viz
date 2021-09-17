@@ -30,6 +30,8 @@ import { clearTypeahead } from 'app/dataReducer';
 
 const SearchContainer = styled('div')(({ theme }) => `
   min-width: 25em;
+  max-height: 12em;
+  overflow-y: auto;
   display: flex;
   align-items: center;
   color: ${theme.palette.common.white};
@@ -39,10 +41,9 @@ const SearchContainer = styled('div')(({ theme }) => `
     background-color: ${alpha(theme.palette.common.white, 0.25)};
   }
   margin-left: 0;
-  ${theme.breakpoints.up('sm')}: {
+  ${theme.breakpoints.down('sm')} {
     width: 100%;
-    margin-left: ${theme.spacing(1)};
-    width: auto;
+    max-height: 8em;
   }
 `);
 
@@ -142,24 +143,25 @@ const TermsFilter = () => {
         <Search />
       </SearchIcon>
       <ChipContainer>
-        <FlipMove typeName={null}>
+        <FlipMove>
           {terms.map((chip, idx) => (
             <TermChip
               key={chip.term}
-              chip={chip}
+              term={chip.term}
+              count={chip.count}
               selected={selected.includes(chip.term)}
               onClick={handleClickChip}
               onDelete={handleDeleteChip(idx)}
             />
           ))}
+          <TermsInput
+            value={input}
+            onChange={handleChangeInput}
+            onAddChip={handleAddChip}
+            onDeleteLastChip={handleDeleteChip(terms.length - 1)}
+            onClearInput={handleClearInput}
+          />
         </FlipMove>
-        <TermsInput 
-          value={input}
-          onChange={handleChangeInput}
-          onAddChip={handleAddChip}
-          onDeleteLastChip={handleDeleteChip(terms.length - 1)}
-          onClearInput={handleClearInput}
-        />
       </ChipContainer>
       <Tooltip title={selected.length === 0 ? 'clear all terms' : 'clear selection'}>
         <IconButton

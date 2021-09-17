@@ -42,7 +42,6 @@ class YearDivisionAggregate(BaseModel):
 class SearchRequest(BaseModel):
     boolQuery: str
     terms: List[str]
-    dependant: str
     divisions: List[str]
     fields: List[str]
     year_range: Optional[List[int]]
