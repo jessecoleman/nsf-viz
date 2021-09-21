@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,11 +32,14 @@ word_vecs = None
 
 @app.on_event('startup')
 async def startup():
-    global aioes, word_vecs
+    global aioes, ASSETS_DIR, word_vecs
     # look for the environment variable ELASTICSEARCH_HOST. if not set, use default 'localhost'
     host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
     aioes = Elasticsearch([{"host": host}])
-    word_vecs = Word2Vec.load('assets/pipelinetest2/nsf_w2v_model').wv
+    ASSETS_DIR = os.environ.get('ASSETS_DIR', 'assets')
+    ASSETS_DIR = Path(ASSETS_DIR)
+    path_to_model = ASSETS_DIR.joinpath('nsf_w2v_model')
+    word_vecs = Word2Vec.load(path_to_model).wv
 
 
 @app.on_event('shutdown')
@@ -73,7 +77,7 @@ def main(toggle='any', terms=default_terms):
     if type(terms) is str:
         terms = terms.split(',')
 
-    with open('assets/divisions.csv', 'r') as divs:
+    with open(ASSETS_DIR.joinpath('divisions.csv'), 'r') as divs:
         divisions = [{
                 'title': d.strip()[:-2],
                 'default': d.strip()[-1] == 'y'
@@ -84,7 +88,7 @@ def main(toggle='any', terms=default_terms):
 
 @app.get('/divisions', operation_id='loadDivisions', response_model=List[Division])
 async def divisions():
-    return FileResponse('assets/divisions.json')
+    return FileResponse(ASSETS_DIR.joinpath('divisions.json'))
 
 
 @app.post('/search', operation_id='search', response_model=SearchResponse)
