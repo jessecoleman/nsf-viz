@@ -2,7 +2,7 @@
 
 Instructions for ingesting grants data from a CSV file into Elasticsearch, and training the gensim model.
 
-1. Put the grants data in the `assets` directory (we'll call it `grants_data.csv`)
+1. Put the grants data in the `assets` directory (we'll call it `grants_data.csv`).
 
 2. Make sure the docker containers are running. We'll need the backend container and the Elasticsearch container, with the appropriate volumes mounted and ports exposed. So, if they are not already running, in the base directory, run:
    ```sh
