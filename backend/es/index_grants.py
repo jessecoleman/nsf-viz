@@ -2,7 +2,7 @@ import os
 import json
 import csv
 from pathlib import Path
-from typing import Generator, Iterable, List, Union
+from typing import Generator, Iterable, List, Mapping, Optional, Union
 from elasticsearch_dsl import (
     Document,
     Date,
@@ -11,56 +11,47 @@ from elasticsearch_dsl import (
     Integer,
     Index,
     connections,
-    analyzer
+    analyzer,
 )
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl.analysis import token_filter
 from tqdm import tqdm
 import mysql.connector as conn
 
-host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
+host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
 es = connections.create_connection(hosts=[host], timeout=20)
 
-nsf = Index('nsf-dev')
+nsf = Index("nsf-dev")
 nsf.settings(
-        number_of_shards=8,
-        number_of_replicas=2,
-    )
-
-english_stop = token_filter(
-    'english_stop',
-    type='stop',
-    stopwords='_english_'
+    number_of_shards=8,
+    number_of_replicas=2,
 )
+
+english_stop = token_filter("english_stop", type="stop", stopwords="_english_")
 
 english_possessive_stemmer = token_filter(
-    'english_stemmer',
-    type='stemmer',
-    language='english'
+    "english_stemmer", type="stemmer", language="english"
 )
 
-english_stemmer = token_filter(
-    'english_stemmer',
-    type='stemmer',
-    language='english'
-)
+english_stemmer = token_filter("english_stemmer", type="stemmer", language="english")
 
 aggressive_analyzer = analyzer(
-    'aggressive_analyze',
-    tokenizer='standard',
+    "aggressive_analyze",
+    tokenizer="standard",
     filter=[
-        'lowercase',
+        "lowercase",
         english_possessive_stemmer,
         english_stemmer,
         english_stop,
-        'asciifolding'
-    ]
+        "asciifolding",
+    ],
 )
+
 
 @nsf.document
 class Grant(Document):
-    title = Text(fields={'raw': Keyword()})
-    abstract = Text(term_vector='with_positions_offsets', analyzer=aggressive_analyzer)
+    title = Text(fields={"raw": Keyword()})
+    abstract = Text(term_vector="with_positions_offsets", analyzer=aggressive_analyzer)
     date = Date()
     amount = Integer()
     division = Keyword()
@@ -68,15 +59,17 @@ class Grant(Document):
 
 
 def data_source_mysql() -> List:
-    db = conn.connect(database="nsf",
-        user="nsf",
-        password="!DLnsf333",
-        host="localhost")
+    db = conn.connect(
+        database="nsf", user="nsf", password="!DLnsf333", host="localhost"
+    )
 
     cur = db.cursor()
-    cur.execute("select AwardTitle, AbstractNarration, AwardAmount, AwardEffectiveDate, LongName from Award join Division on Award.AwardID = Division.AwardID")
+    cur.execute(
+        "select AwardTitle, AbstractNarration, AwardAmount, AwardEffectiveDate, LongName from Award join Division on Award.AwardID = Division.AwardID"
+    )
 
     return cur.fetchall()
+
 
 def data_source_csv(fpath: Union[str, Path]) -> Generator:
     # csv schema is: 'idx,AwardTitle,AbstractNarration,AwardAmount,AwardEffectiveDate,DivisionCode,DivisionLongName'
@@ -97,47 +90,60 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
             ]
 
 
-def get_data(data_source: Iterable):
-    
-    with open('../assets/divisions.json') as div_file:
-        divs = json.load(div_file)
-        div_map = {d['name'].lower(): d['key'] for d in divs}
+def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Generator:
+
+    if div_map is None:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        divisions_fpath = os.path.join(script_dir, "../assets/divisions.json")
+        with open(divisions_fpath) as div_file:
+            divs = json.load(div_file)
+            div_map = {d["name"].lower(): d["key"] for d in divs}
 
     Grant.init()
 
     for r in tqdm(data_source):
-        g = Grant(
-            title=r[0],
-            abstract=r[1],
-            amount=r[2],
-            date=r[3],
-            division=r[4],
-            division_key=div_map[r[4].lower()],
-        )
-        yield g.to_dict(True)
-        
-    
+        try:
+            g = Grant(
+                title=r[0],
+                abstract=r[1],
+                amount=r[2],
+                date=r[3],
+                division=r[4],
+                division_key=div_map[r[4].lower()],
+            )
+            yield g.to_dict(True)
+        except KeyError:
+            continue
+
+
 def build_index(data_source: Iterable):
     if nsf.exists():
         nsf.delete()
     nsf.create()
 
     bulk(es, get_data(data_source=data_source))
-    
+
+
 def main(args):
-    if args.data_source.lower() == 'mysql':
+    if args.data_source.lower() == "mysql":
         data_source = data_source_mysql()
         build_index(data_source=data_source)
-    elif args.data_source.endswith('.csv'):
+    elif args.data_source.endswith(".csv"):
         data_source = data_source_csv(args.data_source)
         build_index(data_source=data_source)
     else:
         raise ValueError('invalid value for argument "data-source"')
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-source", default='mysql', help="Source for data (default: mysql database)")
+    parser.add_argument(
+        "--data-source",
+        default="mysql",
+        help="Source for data (default: mysql database)",
+    )
     global args
     args = parser.parse_args()
     main(args)
