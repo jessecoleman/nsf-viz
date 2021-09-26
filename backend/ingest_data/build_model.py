@@ -3,41 +3,49 @@ import argparse
 from pathlib import Path
 import json
 from collections import Counter
-from itertools import chain
 from typing import Generator, Iterable, List, Union
 from tqdm import tqdm
 import numpy as np
-from gensim.models import Word2Vec, FastText
+from gensim.models import Word2Vec
 from gensim.models.phrases import Phrases, ENGLISH_CONNECTOR_WORDS
 from gensim.models.callbacks import CallbackAny2Vec
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import sent_tokenize
-from nltk.stem import WordNetLemmatizer
+from gensim.parsing.preprocessing import (
+    STOPWORDS,
+    preprocess_string,
+    strip_tags,
+    strip_punctuation,
+    strip_multiple_whitespaces,
+    strip_numeric,
+    remove_stopwords,
+    strip_short,
+    stem_text
+)
 import mysql.connector
 
-def nltk_download():
-    nltk.download('stopwords')
-    nltk.download('punkt')
-    nltk.download('wordnet')
 
-
-word_tokenizer = nltk.RegexpTokenizer(r'\w+') # TODO do we like this tokenizer?
-lemmatizer = WordNetLemmatizer()
-stop = set(stopwords.words('english'))
-stop.update({',', '.', 'this', 'also'})
 # keep connector words for ngram analysis
-stop = stop - ENGLISH_CONNECTOR_WORDS
+STOP = frozenset.union(
+    STOPWORDS - ENGLISH_CONNECTOR_WORDS,
+    {'this', 'also'}
+)
  
-filter_stop = lambda w: w.lower() not in stop
-norm_word = lambda w: lemmatizer.lemmatize(w.lower())
+# TODO
+norm_map = {}
 
+
+FILTERS = [
+    #strip_tags,
+    strip_punctuation,
+    strip_multiple_whitespaces,
+    strip_numeric,
+    # TODO
+    #lambda s: remove_stopwords(s, stopwords=STOP),
+    #strip_short,
+    #stem_text
+]
 
 def process_text(text: str):
-    t_text = sent_tokenize(text.replace('<br/>', ' '))
-    w_text = [word_tokenizer.tokenize(s) for s in t_text]
-    f_text = [norm_word(w) for w in chain.from_iterable(w_text) if filter_stop(w)]
-    return f_text
+    return preprocess_string(text, filters=FILTERS)
  
 
 def data_source_mysql() -> List:
@@ -51,6 +59,7 @@ def data_source_mysql() -> List:
     cursor.execute("select AwardTitle, AbstractNarration from Award")
   
     return cursor.fetchall()
+
 
 def data_source_csv(fpath: Union[str, Path]) -> Generator:
     import csv
@@ -90,57 +99,66 @@ def get_data(intermediate_file: str, data_source: Union[Iterable, str] = 'mysql'
     if data_source == 'mysql':
         data_source = data_source_mysql()
 
-    sentences = []
-    for title, abstract in tqdm(data_source):
-        sentences.extend([
-            process_text(title),
-            process_text(abstract)
-        ])
-        
-    print(f"saving to {intermediate_file}")
     with open(intermediate_file, 'w') as out:
-        json.dump(sentences, out)
-    
-    
-def build_gram_model(input_file, data_file):
+        for title, abstract in tqdm(data_source):
+            out.write(' '.join(preprocess_string(title, filters=FILTERS)))
+            if abstract:
+                out.write(' '.join(preprocess_string(abstract, filters=FILTERS)))
+        
+    print(f"saved to {intermediate_file}")
 
-    data_file = Path(data_file).resolve()
-    assert data_file.parent.exists()
+
+def stream_sentences(input_file):
 
     input_file = Path(input_file).resolve()
     print(f"reading input file: {input_file}")
     with open(input_file) as data:
-        sentences = json.load(data)
+        for line in tqdm(data):
+            yield line.strip().split()
         
+        
+def build_gram_model(input_file, data_file):
+        
+    data_file = Path(data_file).resolve()
+    assert data_file.parent.exists()
+
+    MIN_COUNT = 20
+
     bigram = Phrases(
-        sentences,
-        min_count=5,
+        sentences=stream_sentences(input_file),
+        min_count=MIN_COUNT,
         threshold=2,
         connector_words=ENGLISH_CONNECTOR_WORDS,
         progress_per=1000
     )
+    
+    bigram.save('bigrams.bin')
     
     print('built bigrams')
 
     trigram = Phrases(
-        bigram[sentences],
-        min_count=5,
+        bigram[stream_sentences(input_file)],
+        min_count=MIN_COUNT,
         threshold=2,
         connector_words=ENGLISH_CONNECTOR_WORDS,
         progress_per=1000
     )
     
+    trigram.save('bigrams.bin')
+    
     print('built trigrams')
 
-    quadgram = Phrases(
-        trigram[bigram[sentences]],
-        min_count=5,
-        threshold=2,
-        connector_words=ENGLISH_CONNECTOR_WORDS
-    )
+    # quadgram = Phrases(
+    #     trigram[bigram[sentences]],
+    #     min_count=MIN_COUNT,
+    #     threshold=2,
+    #     connector_words=ENGLISH_CONNECTOR_WORDS,
+    #     progress_per=1000
+    # )
 
-    print('built quadgrams')
-    sentences = [quadgram[trigram[bigram[s]]] for s in sentences]
+    # print('built quadgrams')
+    #sentences = [quadgram[trigram[bigram[s]]] for s in sentences]
+    sentences = [trigram[bigram[s]] for s in stream_sentences]
     
     counter = Counter()
     for s in sentences:
@@ -184,7 +202,7 @@ def count_phrases(data, model_file='../assets/nsf_fasttext_model', terms_file='.
         if f < 50:
             break
         # ignore stop words and short words
-        if w not in stop and len(w) > 3:
+        if w not in STOP and len(w) > 3:
             if w in model.wv:
                 # get magnitude of embedding vector
                 norm = np.linalg.norm(model.wv[w])

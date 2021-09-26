@@ -206,6 +206,7 @@ async def division_aggregates(
 
     return SearchResponse(
         per_year=[convert(bucket) for bucket in per_year_buckets],
+        #overall=[convert(bucket) for bucket in overall_buckets2 + overall_buckets],
         overall=[convert(bucket) for bucket in overall_buckets],
     )
  

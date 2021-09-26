@@ -9,12 +9,19 @@ from gensim.models.word2vec import Word2Vec
 import logging
 import json
 from functools import lru_cache
-from collections import defaultdict
 from aioelasticsearch import Elasticsearch
 from aioelasticsearch.helpers import Scan
 
-from models import Division, Grant, GrantsRequest, SearchRequest, SearchResponse, Term, YearsResponse
 import queries as Q
+from models import (
+    Directory,
+    Division,
+    Grant,
+    GrantsRequest,
+    SearchRequest,
+    SearchResponse,
+    YearsResponse
+)
 
 print("!!!!!!")
 
@@ -83,30 +90,20 @@ default_terms = [
 ]
 
 
-@app.get('/')
-@app.get('/<toggle>/<terms>')
-def main(toggle='any', terms=default_terms):
-    # ! DEPRECATED
-
-    if toggle not in ('any', 'all'):
-        raise HTTPException(404, detail='toggle not valid')
-
-    if type(terms) is str:
-        terms = terms.split(',')
-
-    with open(ASSETS_DIR.joinpath('divisions.csv'), 'r') as divs:
-        divisions = [{
-                'title': d.strip()[:-2],
-                'default': d.strip()[-1] == 'y'
-            } for i, d in enumerate(divs.readlines())]
-
-    # return render_template('index.html', toggle=toggle, divisions=divisions, terms=terms)
-
-
 @app.get('/divisions', operation_id='loadDivisions', response_model=List[Division])
 async def divisions():
     # return FileResponse(ASSETS_DIR.joinpath('divisions.json'))
     return Q.get_divisions()
+
+
+@app.get('/divisions/{org}', operation_id='loadDivisions', response_model=List[Division])
+async def divisions(org: str):
+    return FileResponse(f'assets/{org}_divisions.json')
+
+
+@app.get('/directory/{org}', operation_id='loadDirectory', response_model=List[Directory])
+async def divisions(org: str):
+    return FileResponse(f'assets/{org}_directory.json')
 
 
 @app.post('/search', operation_id='search', response_model=SearchResponse)
@@ -144,8 +141,8 @@ async def typeahead(prefix: str):
 
 @app.get('/keywords/related/{keywords}', operation_id='loadRelated')
 def related(keywords: str):
+
     terms = []
-    print(keywords)
     for term in keywords.split(','):
         # convert to ngram representation
         term = term.lower().replace(' ', '_')
@@ -161,6 +158,7 @@ def related(keywords: str):
 
 @app.get('/keywords/count/{terms}', operation_id='countTerm')
 async def count_term(terms: str):
+
     counts = await Q.term_freqs(aioes, terms.split(','), ['title', 'abstract'])
     return [c['count'] for c in counts]
 
@@ -180,19 +178,19 @@ async def grant_data(request: GrantsRequest):
             terms=request.terms,
             year_range=request.year_range,
         )
-    except Exception as e:
-        print(e)
+
+    except IndexError:
         raise HTTPException(404, detail='index out of bounds')
         
 
 @app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract', response_model=str)
-@app.get('/abstract/{_id}/', operation_id='loadAbstract', response_model=str)
 async def get_abstract(_id, terms=""):
     return await Q.abstract(aioes, _id, terms)
 
 
 @app.get('/generate_openapi_json')
 async def send_api_json():
+
     return app.openapi()
 
 

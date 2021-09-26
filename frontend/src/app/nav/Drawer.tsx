@@ -1,11 +1,13 @@
 import { Drawer, useMediaQuery } from '@material-ui/core';
 import { styled } from '@material-ui/core';
+import Directory from 'app/divisions/Directory';
 import DivisionTable from 'app/divisions/DivisionTable';
 import { useDrawer } from 'app/hooks';
     
 const Container = styled('nav')(({ theme }) => `
   & .MuiDrawer-paper {
     width: ${theme.drawerWidth};
+    height: 100%;
     ${theme.breakpoints.down('sm')} {
       width: 100%;
     }
@@ -29,7 +31,7 @@ const DivisionDrawer = () => {
           keepMounted: true, // Better open performance on mobile.
         }}
       >
-        <DivisionTable />
+        <Directory />
       </Drawer>
     </Container>
   );

@@ -72,7 +72,7 @@ const Chart = (props: ChartProps) => {
   // const { counts, amounts } = useAppSelector(getLegendFilters);
   const yearRange = useAppSelector(getYearRange);
   const data = useAppSelector(getStackedData);
-  const divisions = useAppSelector(getSortedDivisionAggs);
+  const divisions = Object.values(useAppSelector(getSortedDivisionAggs));
   // TODO why are colors not persistent
   const divDomain = divisions.map(d => d.key)
     .filter(key => query.divisions.includes(key));
@@ -87,7 +87,7 @@ const Chart = (props: ChartProps) => {
   // update colors globally with new domain
   useEffect(() => {
     Object.values(colorScales).forEach(s => s.domain(divisions.map(d => d.key)));
-  }, []);
+  }, [vis]);
 
   // mount chart on first load
   useEffect(() => {

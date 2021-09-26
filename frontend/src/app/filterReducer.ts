@@ -1,7 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { loadDivisions, loadTermCounts } from './actions';
+import { loadDirectory, loadDivisions, loadTermCounts } from './actions';
 import { Division } from '../api/models/Division';
-import { Grant } from 'api';
+import { Directory, Grant } from 'api';
+
+type Organizations = 'nsf' | 'nih';
 
 type Field = 'title' | 'abstract';
 
@@ -18,13 +20,16 @@ export type SortDirection = 'asc' | 'desc';
 export type GrantOrder = [ keyof Grant, SortDirection ];
 
 export type DivisionKey = 'name' | 'count' | 'amount';
+
 export type DivisionOrder = [ DivisionKey, SortDirection ];
 
 export type FilterState = {
   drawerOpen: boolean,
   boolQuery: 'any' | 'all',
   terms: Term[],
-  divisions: Division[],
+  organization: Organizations,
+  directory: Record<string, Directory[]>,
+  divisions: Record<string, Division[]>,
   highlightedDivision?: string,
   fields: Field[],
   divisionOrder: DivisionOrder,
@@ -45,7 +50,9 @@ const initialState: FilterState = {
   drawerOpen: false,
   boolQuery: 'any',
   terms: [],
-  divisions: [],
+  organization: 'nsf',
+  directory: {},
+  divisions: {},
   fields: ['title', 'abstract'],
   divisionOrder: ['name', 'desc'],
   grantOrder: ['date', 'desc'],
@@ -65,6 +72,9 @@ const filterSlice = createSlice({
   reducers: {
     toggleDrawerOpen: (state, action) => {
       state.drawerOpen = action.payload;
+    },
+    setOrganization: (state, action) => {
+      state.organization = action.payload;
     },
     setTerms: (state, action) => {
       state.terms = action.payload;
@@ -122,7 +132,14 @@ const filterSlice = createSlice({
   },
   extraReducers: builder => builder
     .addCase(loadDivisions.fulfilled, (state, action) => {
-      state.divisions = action.payload;
+      state.divisions = Object.fromEntries(action.payload.map((divs, i) => [
+        ['nsf', 'nih'][i], divs
+      ]));
+    })
+    .addCase(loadDirectory.fulfilled, (state, action) => {
+      state.directory = Object.fromEntries(action.payload.map((divs, i) => [
+        ['nsf', 'nih'][i], divs
+      ]));
     })
     .addCase(loadTermCounts.fulfilled, (state, action) => {
       action.meta.arg.split(',').forEach((t, i) => {
@@ -136,6 +153,7 @@ const filterSlice = createSlice({
 
 export const {
   toggleDrawerOpen,
+  setOrganization,
   setTerms,
   selectTerm,
   clearTermSelection,

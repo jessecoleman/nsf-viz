@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nsf-grant-viz"
-version = "0.2.0"
+version = "0.1.0"
 description = ""
 authors = ["Cole Chamberlin <colechamberlin@gmail.com>"]
 
@@ -14,7 +14,9 @@ mysql-connector = "^2.2.9"
 elasticsearch-dsl = "^7.4.0"
 aiofiles = "^0.7.0"
 matplotlib = "^3.4.3"
-humanfriendly = "^9.2"
+fuzzywuzzy = "^0.18.0"
+thefuzz = "^0.19.0"
+tqdm = "^4.62.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
