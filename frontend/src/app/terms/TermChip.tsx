@@ -1,7 +1,9 @@
+import { memo, MouseEvent } from 'react';
+import { Flipped } from 'react-flip-toolkit';
+import { animate } from 'motion';
 import { Chip, CircularProgress } from '@material-ui/core';
 import { alpha, styled } from '@material-ui/core/styles';
 import { format } from 'd3';
-import { forwardRef, MouseEvent } from 'react';
 
 const StyledChip = styled(Chip)(({ theme }) => `
   margin-right: ${theme.spacing(1)};
@@ -46,6 +48,20 @@ const ChipContent = styled('span')(({ theme }) => `
   }
 `);
 
+const animateIn = (e: HTMLElement) => (
+  animate(e, {
+    opacity: 100,
+    // transform: 'scale(100%)'
+  })
+);
+
+const animateOut = (e: HTMLElement) => (
+  animate(e, {
+    opacity: 0,
+    // transform: 'scale(0%)'
+  })
+);
+
 export type TermChipProps = {
   term: string
   count?: number
@@ -54,25 +70,30 @@ export type TermChipProps = {
   selected?: boolean
 };
 
-const TermChip = forwardRef<HTMLDivElement, TermChipProps>((props: TermChipProps, ref) => (
-  <StyledChip
-    ref={ref}
-    variant='filled'
-    color={props.selected ? 'secondary' : undefined}
-    label={
-      <ChipContent>
-        <span>
-          {props.count
-            ? format('.2s')(props.count)
-            : <CircularProgress size='1.25em' color='secondary' />
-          }
-        </span>
-        {props.term}
-      </ChipContent>
-    }
-    onClick={(e) => props.onClick?.(e, props.term)}
-    onDelete={props.onDelete}
-  />
-));
+const TermChip = (props: TermChipProps) => (
+  <Flipped
+    // onAppear={animateIn}
+    // onExit={animateOut}
+    flipId={props.term}
+  >
+    <StyledChip
+      variant='filled'
+      color={props.selected ? 'secondary' : undefined}
+      label={
+        <ChipContent>
+          <span>
+            {props.count
+              ? format('.2s')(props.count)
+              : <CircularProgress size='1.25em' color='secondary' />
+            }
+          </span>
+          {props.term}
+        </ChipContent>
+      }
+      onClick={(e) => props.onClick?.(e, props.term)}
+      onDelete={props.onDelete}
+    />
+  </Flipped>
+);
  
-export default TermChip;
+export default memo(TermChip);

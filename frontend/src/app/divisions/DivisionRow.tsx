@@ -1,6 +1,7 @@
+import { MouseEvent } from 'react';
 import { Box, Checkbox, styled, Typography } from '@material-ui/core';
 import { format } from 'd3';
-import { forwardRef } from 'react';
+import { forwardRef, ReactNode } from 'react';
 
 type RowStyles = {
   selected?: boolean;
@@ -13,15 +14,15 @@ export const Row = styled(Box)<RowStyles>(({ theme, checkable, selected, nohover
   cursor: pointer;
   display: grid;
   padding-right: ${scrollOffset ?? 0}px;
-  grid-template-columns: ${(checkable ? '[checkbox] 3em ' : '')
-    + '[name] auto [count] 4em [amount] 4em'};
-  border-bottom: 1px solid ${theme.palette.grey[200]};
+  grid-template-columns: ${(checkable ? '[checkbox] auto ' : '')
+    + '[name] minmax(0, 1fr) [count] 4em [amount] 4em'};
+  // border-bottom: 1px solid ${theme.palette.grey[200]};
   background-color: ${selected
-    ? theme.palette.grey[300]
-    : theme.palette.common.white};
-  &:hover {
-    background-color: ${nohover ? theme.palette.common.white : theme.palette.grey[100]};
-  }
+    ? theme.palette.action.selected
+    : 'default'};
+  //&:hover {
+  //  background-color: ${nohover ? theme.palette.common.white : theme.palette.action.hover};
+  //}
 `);
 
 type ColumnStyles = {
@@ -33,11 +34,11 @@ type TextStyles = {
 }
 
 export const Column = styled(Box)<ColumnStyles>(({ theme, column }) => `
-  height: 2.5em;
+  height: 3em;
   grid-column: ${column};
   display: flex;
   align-items: center;
-  padding: ${theme.spacing(0, 1)};
+  padding: ${column === 'checkbox' ? 0 : theme.spacing(0, 1)};
 `);
 
 export const NumberColumn = styled(Column)<ColumnStyles & TextStyles>(({ theme, light }) => `
@@ -53,10 +54,10 @@ export type CellData = {
 type RowProps = RowStyles & {
   id?: string
   dataKey: string
-  title: string
+  name: string | ReactNode
   cells: CellData[]
   header?: boolean
-  onCheck?: (checked: boolean) => void
+  onCheck?: (e: MouseEvent, key: string, checked: boolean) => void
   onMouseOver?: (key: string) => void
   onMouseOut?: (key: string) => void
   checked?: boolean
@@ -72,12 +73,12 @@ const rgb2hsl = (hex?: string) => {
 
 const DivisionRow = forwardRef((props: RowProps, ref) => (
   <Row
+    ref={ref}
     id={props.id}
     checkable={props.checkable}
     scrollOffset={props.scrollOffset}
-    ref={ref}
     selected={props.selected}
-    onClick={() => props.onCheck?.(!props.checked)}
+    onClick={(e) => props.onCheck?.(e, props.dataKey, !props.checked)}
     onMouseOver={() => props.onMouseOver?.(props.dataKey)}
     onMouseOut={() => props.onMouseOut?.(props.dataKey)}
   >
@@ -88,10 +89,10 @@ const DivisionRow = forwardRef((props: RowProps, ref) => (
     }
     <Column column='name'>
       <Typography variant={props.header ? 'h6' : undefined}>
-        {props.title}
+        {props.name}
       </Typography>
     </Column>
-    {props.cells.map((c, idx) => (
+    {props.cells.map(c => (
       <NumberColumn
         key={c.name}
         column={c.name}

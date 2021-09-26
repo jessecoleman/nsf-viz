@@ -208,20 +208,61 @@ export default class D3Component {
    
     this.updateAxes();
 
+    const prevDivIndices = Object.fromEntries(this.prev?.divs.map((d, i) => [d, i]) ?? []);
+    const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
+
+    const sameDomain = (
+      this.prev &&
+      this.prev.years[0] === this.years[0] &&
+      this.prev.years.length === this.years.length
+    );
+ 
+    const offsets = {};
+    if (this.prev && this.prev.divs.length !== this.divs.length) {
+      // determine whether groups were added or removed
+      const [ sub, sup ] = this.prev.divs.length < this.divs.length 
+        ? [ this.prev.divs, this.divs ]
+        : [ this.divs, this.prev.divs ];
+      
+      let offset = 0; // track offset between sub/sup
+      sub.forEach((key, i) => {
+        while (key !== sup[i + offset]) {
+          offsets[sup[i + offset]] = offset;
+          offset += 1;
+        }
+      });
+    } else {
+      this.divs.forEach(d => {
+        offsets[d] = -1;
+      });
+    }
+ 
     const stacks = this.chart.selectAll<SVGGElement, Series>('.bars')
       .data(this.stack, d => d.key)
       .join(
         enter => enter.append('g')
           .attr('class', d => `bars ${d.key}`),
         update => update,
+        // only applies to exiting div groups, not year stacks
         exit => {
-          // only applies to exiting div groups, not year stacks
-          exit.selectAll<SVGGElement, Series>('.bar')
-            .transition()
-            .duration(this.animationDur)
-            .attr('height', 0)
-            .attr('y', d => this.y(d[0]))
-            .remove();
+          exit.each((div, i, stack) => {
+            d3.select<SVGGElement, Series[]>(stack[i])
+              .selectAll<SVGGElement, Series>('.bar')
+              .transition()
+              .duration(this.animationDur)
+              .attr('height', 0)
+              .attr('y', (d, i) => {
+                if (this.prev) {
+                  const idx = prevDivIndices[div.key];
+                  const prevGroup = this.stack[idx - offsets[div.key]];
+                  if (prevGroup) {
+                    return this.y(prevGroup[i][0]);
+                  }
+                }
+                return this.y(d[0]);
+              })
+              .remove();
+          });
           exit.transition()
             .duration(this.animationDur)
             .remove();
@@ -233,7 +274,7 @@ export default class D3Component {
       .duration(this.animationDur)
       .attr('fill', d => this.color(d.key));
       
-    const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
+   
     stacks.each((div, i, stack) => {
       const bars = d3.select<SVGGElement, Series[]>(stack[i])
         .selectAll<SVGRectElement, Series>('.bar')
@@ -242,19 +283,20 @@ export default class D3Component {
           enter => enter
             .append('rect')
             .classed('bar', true)
-            .attr('width', this.prev ? this.prev.x.bandwidth : this.x.bandwidth())
-            .attr('height', 0)
             .attr('x', d => this.getXTransition(d.data.year, this.prev))
+            .attr('width', this.prev ? this.prev.x.bandwidth : this.x.bandwidth())
+            // TODO we need these transitions for entering years
+            // .attr('y', d => this.prev ? this.prev.y(d[1]) : 0)
+            // .attr('height', d => this.prev ? this.prev.y(d[0]) - this.prev.y(d[1]) : 0)
+            .attr('height', 0)
             // necessary to align new bars vertically during transition
             .attr('y', (d, i) => {
               if (this.prev) {
                 const idx = divIndices[div.key];
                 // will be undefined if bottom of stack
-                const prevGroup = this.prev.stack[idx - 1];
-                const sameMin = this.prev.years[0] === this.years[0];
-                const sameDomain = sameMin && this.prev.years.length === this.years.length;
+                const prevGroup = this.prev.stack[idx - offsets[div.key]];
                 if (prevGroup && sameDomain) {
-                  return this.prev.y(prevGroup[i][1]);
+                  return this.prev.y(prevGroup[i][0]);
                 }
               }
               // first group in stack, first load, or entering years
@@ -269,8 +311,8 @@ export default class D3Component {
             .duration(this.animationDur)
             .attr('width', this.x.bandwidth())
             .attr('x', d => this.getXTransition(d.data.year, this))
-            .attr('height', 0)
-            .attr('y', this.chartHeight)
+            .attr('height', d => this.y(d[0]) - this.y(d[1]))
+            .attr('y', d => this.y(d[1]))
             .style('opacity', 0)
             .remove()
         );

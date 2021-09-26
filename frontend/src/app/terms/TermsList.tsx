@@ -1,11 +1,19 @@
 import { List, ListItem, ListItemIcon, ListItemText, ListSubheader, styled } from '@material-ui/core';
 import { AddCircle } from '@material-ui/icons';
-import match from 'autosuggest-highlight/match';
-import parse from 'autosuggest-highlight/parse';
+import Highlight from 'app/Highlight';
+import { Flipped } from 'react-flip-toolkit';
 import FlipMove from 'react-flip-move';
 
-const StyledIcon = styled(ListItemIcon)(({ theme }) => `
-  min-width: 0;
+const StyledListItem = styled(ListItem)(({ theme }) => `
+  background-color: white;
+  border-top: 1px solid ${theme.palette.grey[200]};
+  &:hover {
+    cursor: pointer;
+    background-color: ${theme.palette.grey[200]};
+  }
+  & .MuiListItemIcon-root {
+    min-width: 0;
+  }
 `);
 
 type TermsListProps = {
@@ -18,31 +26,27 @@ type TermsListProps = {
 
 const TermsList = (props: TermsListProps) => (
   <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
-    <FlipMove
-      typeName={null}
-      enterAnimation='fade'
-      leaveAnimation='fade'
-    >
-      {props.terms.filter(t => props.filter.indexOf(t) === -1).map(t => (
-        <ListItem
+    {props.terms.filter(t => props.filter.indexOf(t) === -1).map(t => (
+      <Flipped key={t} flipId={`${t}-suggest`}>
+        <div>
+        <StyledListItem
           key={t}
           dense
-          button
           onClick={() => props.onAddChip(t)}
         >
           <ListItemText>
-            {parse(t, match(t, props.input)).map((part, idx) => (
-              <span key={idx} style={{ fontWeight: part.highlight ? 700 : 400}}>
-                {part.text}
-              </span>
-            ))}
+            <Highlight
+              value={t}
+              query={props.input}
+            />
           </ListItemText>
-          <StyledIcon>
+          <ListItemIcon>
             <AddCircle />
-          </StyledIcon>
-        </ListItem>
-      ))}
-    </FlipMove>
+          </ListItemIcon>
+        </StyledListItem>
+        </div>
+      </Flipped>
+    ))}
   </List>
 );
 

@@ -176,6 +176,7 @@ export default class D3Timeline {
       .attr('height', d => this.chartHeight - this.y(d.count));
       
     this.gb
+      .raise()
       .transition()
       .duration(this.animationDur)
       .call(this.brush.move, this.yearRange.map(this.getBrushBounds));

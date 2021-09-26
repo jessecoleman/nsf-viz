@@ -1,7 +1,7 @@
 import { FocusEvent, forwardRef, KeyboardEvent, useRef, useState } from 'react';
+import { Flipper } from 'react-flip-toolkit';
 import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
 import TermsList from './TermsList';
-import { Divider } from '@material-ui/core';
 import { useAppSelector } from 'app/store';
 import { getRelated, getTerms, getTypeahead } from 'app/selectors';
 
@@ -109,6 +109,7 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
           {({ TransitionProps }) => (
             <Fade {...TransitionProps} timeout={350}>
               <Dropdown>
+                <Flipper flipKey={JSON.stringify([typeahead, related])}>
                 <List>
                   {props.value
                     ? <TermsList
@@ -127,6 +128,7 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
                     />
                   }
                 </List>
+                </Flipper>
               </Dropdown>
             </Fade>
           )}

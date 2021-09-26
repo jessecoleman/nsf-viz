@@ -15,6 +15,18 @@ class BaseModel(PyBaseModel):
         # alias_generator = to_camel
 
 
+class SubDirectory(BaseModel):
+    abbr: str
+    name: str
+    href: str
+    est: Optional[int]
+    desc: Optional[str]
+
+
+class Directory(SubDirectory):
+    departments: List[SubDirectory]
+    
+
 class Division(BaseModel):
     key: str
     name: str

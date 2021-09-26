@@ -1,3 +1,4 @@
+from collections import Counter, defaultdict
 import os
 import json
 import csv
@@ -17,6 +18,9 @@ from elasticsearch.helpers import bulk
 from elasticsearch_dsl.analysis import token_filter
 from tqdm import tqdm
 import mysql.connector as conn
+from gen_keys import normalize
+import urllib.parse
+
 
 host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
 es = connections.create_connection(hosts=[host], timeout=20)
@@ -64,7 +68,8 @@ class Grant(Document):
     date = Date()
     amount = Integer()
     division = Keyword()
-    division_key = Keyword()
+    key1 = Keyword()
+    key2 = Keyword()
 
 
 def data_source_mysql() -> List:
@@ -99,23 +104,43 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
 
 def get_data(data_source: Iterable):
     
-    with open('../assets/divisions.json') as div_file:
+    #with open('../assets/nsf_divisions.json') as div_file:
+    #    divs = json.load(div_file)
+    #    div_map = {d['name'].lower(): d['key'] for d in divs}
+
+    with open('./associated.json') as div_file:
         divs = json.load(div_file)
-        div_map = {d['name'].lower(): d['key'] for d in divs}
+        div_map = {normalize(key): (d['parent'], d['abbr']) for key, d in divs.items()}
 
     Grant.init()
 
-    for r in tqdm(data_source):
-        g = Grant(
-            title=r[0],
-            abstract=r[1],
-            amount=r[2],
-            date=r[3],
-            division=r[4],
-            division_key=div_map[r[4].lower()],
-        )
-        yield g.to_dict(True)
+    missing = Counter()
+    count = defaultdict(Counter)
+
+    for i, (title, abstract, amount, date, div) in enumerate(tqdm(data_source)):
+
+        normed = normalize(div)
+        count[normed][div] += 1
+
+        if normed not in div_map:
+            missing[div] += 1
+        else:
+            key1, key2 = div_map[normed]
+            g = Grant(
+                title=title,
+                abstract=abstract,
+                amount=amount,
+                date=date,
+                division=div,
+                key1=key1,
+                key2=key2,
+            )
+            yield g.to_dict(True)
         
+    with open('norm_map.json', 'w') as nm:
+        print(missing)
+        json.dump(count, nm)
+
     
 def build_index(data_source: Iterable):
     if nsf.exists():
@@ -123,6 +148,7 @@ def build_index(data_source: Iterable):
     nsf.create()
 
     bulk(es, get_data(data_source=data_source))
+
     
 def main(args):
     if args.data_source.lower() == 'mysql':
@@ -133,6 +159,7 @@ def main(args):
         build_index(data_source=data_source)
     else:
         raise ValueError('invalid value for argument "data-source"')
+
 
 if __name__ == '__main__':
     import argparse

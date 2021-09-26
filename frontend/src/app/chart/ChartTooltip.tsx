@@ -2,7 +2,7 @@ import FlipMove from 'react-flip-move';
 import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
-import { getSortedDivisionAggs, getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
+import { getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
 import { useMeasure, useQuery } from 'app/hooks';
 import { colorScales } from '../../theme';
 
@@ -50,28 +50,22 @@ const ChartTooltip = (props: TooltipProps) => {
       <DivisionRow
         scrollOffset={scrollOffset}
         dataKey='header'
-        title={year?.toString() ?? ''}
+        name={year?.toString() ?? ''}
         cells={cells}
         header
       />
       <ScrollableDiv>
         <div ref={widthRef} />
-        <FlipMove
-          delay={100}
-          enterAnimation='fade'
-          leaveAnimation='fade'
-        >
-          {rows.map(([ key, cells ]) => (
-            <DivisionRow
-              key={key}
-              id={`${key}-tooltip`}
-              selected={dataKey?.split('-')[0] === key}
-              dataKey={key}
-              title={divMap[key]}
-              cells={cells}
-            />
-          ))}
-        </FlipMove>
+        {rows.map(([ key, cells ]) => (
+          <DivisionRow
+            key={key}
+            id={`${key}-tooltip`}
+            selected={dataKey?.split('-')[0] === key}
+            dataKey={key}
+            name={divMap[key]}
+            cells={cells}
+          />
+        ))}
       </ScrollableDiv>
     </Paper>
   );

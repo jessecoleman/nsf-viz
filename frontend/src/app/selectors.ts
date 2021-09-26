@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 import createCachedSelector from 're-reselect';
-import { DivisionAggregate } from 'api';
+import { Directory, DivisionAggregate, SubDirectory } from 'api';
 import { AggFields } from './chart/D3Chart';
 import { SortDirection } from './filterReducer';
 import type { RootState } from './store';
@@ -9,14 +9,14 @@ type SortableKeys = 'name' | 'count' | 'amount';
 
 export const isAgg = (key: SortableKeys): key is keyof AggFields => ['count', 'amount'].includes(key);
 
-const desc = (a: DivisionAggregate, b: DivisionAggregate, key: SortableKeys) => {
+const desc = <T>(a: T, b: T, key: SortableKeys) => {
   if (b[key] < a[key]) return -1;
   else if (b[key] > a[key]) return 1;
   else return 0;
 };
 
-const stableSort = (array: DivisionAggregate[], key: SortableKeys, direction: SortDirection): DivisionAggregate[] => {
-  const stabilizedThis = array.map((el, index): [DivisionAggregate, number] => [el, index]);
+const stableSort = <T>(array: T[], key: SortableKeys, direction: SortDirection): T[] => {
+  const stabilizedThis = array.map((el, index): [T, number] => [el, index]);
   const sign = direction === 'desc' ? 1 : -1;
   stabilizedThis.sort((a, b) => {
     const order = sign * desc(a[0], b[0], key);
@@ -32,7 +32,13 @@ export const getYearDivisionAgg = (state: RootState) => state.data.yearDivisionA
 
 export const getDivisionAgg = (state: RootState) => state.data.divisionAgg;
 
-export const getDivisions = (state: RootState) => state.filter.divisions;
+const getDivisionMap = createSelector(
+  getDivisionAgg,
+  (agg) => Object.fromEntries(agg.map(d => [
+    d.key,
+    d
+  ]))
+);
 
 export const getHighlightedDivision = (state: RootState) => state.filter.highlightedDivision;
 
@@ -70,8 +76,13 @@ export const getSelectedGrant = createSelector(
 
 export const getSelectedAbstract = (state: RootState) => state.data.selectedAbstract;
 
+export const getOrganization = (state: RootState) => state.filter.organization;
+
 export const getDivisionsMap = (state: RootState) => (
-  Object.fromEntries(state.filter.divisions.map(div => [div.key, div.name]))
+  Object.fromEntries(state.filter.directory[state.filter.organization]?.flatMap(dir => [
+    [dir.abbr, dir.name],
+    ...(dir.departments?.map(dep => [dep.abbr, dep.name]) ?? [])
+  ]) ?? [])
 );
 
 const getGrantIdx = (state: RootState, idx: number) => idx;
@@ -82,11 +93,52 @@ export const getGrant = createCachedSelector(
   (grants, idx) => grants[idx]
 )(getGrantIdx);
 
+export const getOrg = (state: RootState, org: string) => org;
+
+export const getDirectory = (state: RootState) => state.filter.directory;
+
+const getOrgDirectory = createCachedSelector(
+  getOrg,
+  getDirectory,
+  (org, directory) => directory[org] ?? []
+)(getOrg);
+
+export const getDepartmentMap = createSelector(
+  getOrgDirectory,
+  (directory) => Object.fromEntries(directory.map(dir => [
+    dir.abbr,
+    dir.departments?.map(d => d.abbr) ?? []
+  ]))
+);
+
+export const getDirectoryAggs = createSelector(
+  getOrgDirectory,
+  getDivisionMap,
+  getDivisionOrder,
+  (directory, divisions, order) => (
+    stableSort(directory.map(dir => ({
+      ...dir,
+      key: dir.abbr,
+      count: divisions[dir.abbr]?.count ?? 0,
+      amount: divisions[dir.abbr]?.amount ?? 0,
+      departments: stableSort(dir.departments?.map(dep => ({
+        ...dep,
+        key: dep.abbr,
+        count: divisions[dep.abbr]?.count ?? 0,
+        amount: divisions[dep.abbr]?.amount ?? 0
+      })) ?? [], ...order),
+    })) ?? [], ...order)
+  )
+);
+
 // for use in DivisionTable
 export const getSortedDivisionAggs = createSelector(
   getDivisionAgg,
   getDivisionOrder,
-  (agg, order) => stableSort(agg, ...order)
+  (agg, order) => Object.fromEntries(stableSort(agg, ...order).map((div, idx) => [
+    div.key,
+    { ...div, idx }
+  ]))
 );
 
 const getYear = (state: RootState, year: number | undefined) => year ?? 0;
