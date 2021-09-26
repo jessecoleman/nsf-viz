@@ -26,6 +26,8 @@ const stableSort = <T>(array: T[], key: SortableKeys, direction: SortDirection):
   return stabilizedThis.map(el => el[0]);
 };
 
+export const isYearsLoading = (state: RootState) => state.data.loadingYears;
+
 export const getYearAgg = (state: RootState) => state.data.yearAgg;
 
 export const getYearDivisionAgg = (state: RootState) => state.data.yearDivisionAgg;

@@ -1,4 +1,4 @@
-import { getSortedDivisionAggs, getDivisionOrder, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, getYearRange, isAgg, isLoadingData } from 'app/selectors';
+import { getSortedDivisionAggs, getDivisionOrder, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, getYearRange, isAgg, isLoadingData, getYearAgg, isYearsLoading } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
 
@@ -72,6 +72,7 @@ const Chart = (props: ChartProps) => {
   // const { counts, amounts } = useAppSelector(getLegendFilters);
   const yearRange = useAppSelector(getYearRange);
   const data = useAppSelector(getStackedData);
+  const yearData = useAppSelector(getYearAgg);
   const divisions = Object.values(useAppSelector(getSortedDivisionAggs));
   // TODO why are colors not persistent
   const divDomain = divisions.map(d => d.key)
@@ -80,6 +81,7 @@ const Chart = (props: ChartProps) => {
   const highlightedDivision = useAppSelector(getHighlightedDivision);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const loading = useAppSelector(isLoadingData);
+  const yearLoading = useAppSelector(isYearsLoading);
   const [ order, ] = useAppSelector(getDivisionOrder);
   const { bool } = useAppSelector(getLegendFilters);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
@@ -107,12 +109,22 @@ const Chart = (props: ChartProps) => {
   useEffect(() => {
     if (vis && !loading) {
       if (isAgg(order)) {
-        vis.updateData(data, divDomain, order);
+        vis.update(data, divDomain, order);
       } else {
-        vis.updateData(data, divDomain);
+        vis.update(data, divDomain);
       }
     }
   }, [vis, loading, order, JSON.stringify(query.divisions)]);
+  
+  useEffect(() => {
+    if (vis && !yearLoading) {
+      if (isAgg(order)) {
+        vis.timeline.update(yearData, order);
+      } else {
+        vis.timeline.update(yearData);
+      }
+    }
+  }, [vis, yearLoading, order]);
   
   useEffect(() => {
     vis?.highlightGroup(highlightedDivision);
@@ -124,21 +136,11 @@ const Chart = (props: ChartProps) => {
 
   useEffect(() => {
     dispatch(loadData(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, yearRange, bool ])]);
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool, yearRange ])]);
 
-  // TODO split this like the others
   useEffect(() => {
-    if (vis) {
-      dispatch(loadYears(query)).then((action) => {
-        if (isFulfilled(action)) {
-          vis.updateYears(action.payload.per_year.map(d => ({
-            year: d.key,
-            ...d
-          })));
-        }
-      });
-    }
-  }, [vis, JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
+    dispatch(loadYears(query));
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {
     setTooltipProps({ dataKey, year });

@@ -1,14 +1,17 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as d3 from 'd3';
-import { Padding, Selection } from './D3utils';
+import { AggFields } from './D3Chart';
+import { Padding, Selection, TickFormat } from './D3utils';
 
 export type BrushCallback = (selection: [ number, number ]) => void;
 
 export type TimelineData = {
-  year: number
+  key: number
   count: number
   amount: number
 }
+
+
 
 type TimelineProps = {
   svg: Selection<SVGSVGElement>,
@@ -16,6 +19,7 @@ type TimelineProps = {
   chartHeight: number
   onBrushEnded: BrushCallback
   padding: Padding
+  tickFormat: TickFormat 
 }
 
 export default class D3Timeline {
@@ -29,12 +33,14 @@ export default class D3Timeline {
   y = d3.scaleLinear<number, number>().nice();
   xAxis: Selection<SVGGElement>;
   yAxis: Selection<SVGGElement>;
+  tickFormat: TickFormat;
   brush: d3.BrushBehavior<unknown>;
   gb: Selection<SVGGElement>;
   data: TimelineData[] = [];
   years: number[] = [];
   yearRange: [ number, number ];
   max = 0;
+  agg: keyof AggFields = 'count';
 
   constructor(props: TimelineProps) {
     
@@ -52,6 +58,7 @@ export default class D3Timeline {
 
     // TODO set this dynamically
     this.yearRange = [2000, 2020];
+    this.tickFormat = props.tickFormat;
    
     // setup brush
     this.gb = this.chart.append('g').raise();
@@ -78,11 +85,11 @@ export default class D3Timeline {
   }
 
   getXAxis = () => d3.axisBottom<number>(this.x)
-    .tickFormat(d3.format('d'))
+    .tickFormat(this.tickFormat.x)
     .tickValues(this.x.domain().filter(d => !(d % 5)));
 
   getYAxis = () => d3.axisLeft<number>(this.y)
-    .tickFormat(d3.format('.2s'))
+    .tickFormat(this.tickFormat.y)
     .tickValues([this.max]);
 
   measure = (padding: Padding, width: number, height: number) => {
@@ -135,11 +142,12 @@ export default class D3Timeline {
     return domain[Math.max(0, Math.min(x, domain.length - 1))];
   }
 
-  update = (data: TimelineData[]) => {
+  update = (data: TimelineData[], agg?: keyof AggFields) => {
     this.data = data;
-    this.years = data.map(d => d.year);
+    if (agg) this.agg = agg;
+    this.years = data.map(d => d.key);
     this.x.domain(this.years);
-    this.max = Math.max(...data.map(d => d.count));
+    this.max = Math.max(...data.map(d => d[this.agg]));
     this.y.domain([0, this.max]);
     // this.color.domain(this.divs);
     this.redraw();
@@ -149,13 +157,13 @@ export default class D3Timeline {
 
     this.updateAxes();
 
-    this.chart.selectAll<SVGRectElement, { year: number }>('.bar')
-      .data(this.data, d => d.year)
+    this.chart.selectAll<SVGRectElement, TimelineData>('.bar')
+      .data(this.data, d => d.key)
       .join(
         enter => enter
           .append('rect')
           .call(enter => enter
-            .attr('x', d => this.x(d.year)!)
+            .attr('x', d => this.x(d.key)!)
             .attr('width', this.x.bandwidth())
             .attr('y', this.chartHeight)
             .attr('height', 0)
@@ -169,11 +177,11 @@ export default class D3Timeline {
       .classed('bar', true)
       .transition()
       .duration(this.animationDur)
-      .attr('x', d => this.x(d.year)!)
+      .attr('x', d => this.x(d.key)!)
       .attr('width', this.x.bandwidth())
-      .attr('fill', 'green')
-      .attr('y', d => this.y(d.count))
-      .attr('height', d => this.chartHeight - this.y(d.count));
+      .attr('fill', this.agg === 'count' ? '#673AB7' : '#4CAF50')
+      .attr('y', d => this.y(d[this.agg]))
+      .attr('height', d => this.chartHeight - this.y(d[this.agg]));
       
     this.gb
       .raise()

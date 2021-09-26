@@ -119,6 +119,7 @@ export default class D3Component {
       chartWidth: this.chartWidth,
       chartHeight: this.timelineLayout.height,
       onBrushEnded: props.onBrushEnded,
+      tickFormat: this.tickFormat,
     });
       
     const defs = this.svg.append('defs');
@@ -142,10 +143,13 @@ export default class D3Component {
   }
   
   // TODO better formatting of decimals
-  numberFormat = (d: number) => d3.format('.2s')(d)
-    .replace(/G/, 'B')
-    .replace(/\.0$/, '')
-    .replace(/\d+m/, '');
+  tickFormat = {
+    x: d3.format('d'),
+    y: (d: number) => (this.agg === 'amount' ? '$' : '') + d3.format('.2s')(d)
+      .replace(/G/, 'B')
+      .replace(/\.0$/, '')
+      .replace(/\d+m/, '')
+  }
       
   getGridLines = () => d3.axisLeft<number>(this.y)
     .tickSize(-this.chartWidth)
@@ -153,10 +157,10 @@ export default class D3Component {
 
   // takes scale as prop to support animating between prev/next state
   getXAxis = (scale: d3.ScaleBand<number>) => d3.axisBottom<number>(scale)
-    .tickFormat(d3.format('d'));
+    .tickFormat(this.tickFormat.x);
 
   getYAxis = () => d3.axisLeft<number>(this.y)
-    .tickFormat(this.numberFormat)
+    .tickFormat(this.tickFormat.y)
     .ticks(5);
     
   measure = (width: number, height: number) => {
@@ -186,11 +190,7 @@ export default class D3Component {
     );
   }
  
-  updateYears = (data: TimelineData[]) => {
-    this.timeline.update(data);
-  }
-  
-  updateData = (data: Data[], divDomain: string[], agg?: keyof AggFields) => {
+  update = (data: Data[], divDomain: string[], agg?: keyof AggFields) => {
 
     this.years = data.map(d => d.year);
     this.divs = divDomain;

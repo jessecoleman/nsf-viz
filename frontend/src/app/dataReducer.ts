@@ -17,6 +17,7 @@ type GrantState = {
   selectedGrantId?: string,
   loadingData: boolean,
   loadingGrants: boolean,
+  loadingYears: boolean,
   selectedAbstract?: string,
 }
 
@@ -30,6 +31,7 @@ const initialState: GrantState = {
   noMoreGrants: false,
   loadingData: false,
   loadingGrants: false,
+  loadingYears: false,
 };
 
 const dataSlice = createSlice({
@@ -66,8 +68,15 @@ const dataSlice = createSlice({
     .addCase(loadData.rejected, (state) => {
       state.loadingData = false;
     })
+    .addCase(loadYears.pending, (state) => {
+      state.loadingYears = true;
+    })
     .addCase(loadYears.fulfilled, (state, action) => {
+      state.loadingYears = false;
       state.yearAgg = action.payload.per_year;
+    })
+    .addCase(loadYears.rejected, (state) => {
+      state.loadingYears = false;
     })
     .addCase(loadGrants.pending, (state) => {
       state.loadingGrants = true;
