@@ -113,7 +113,6 @@ const Directory = () => {
   const divisions = useAppSelector(getSortedDivisionAggs);
   const directory = useAppSelector(state => getDirectoryAggs(state, org));
   const depMap = useAppSelector(state => getDepartmentMap(state, org));
-  console.log(directory);
   const divMap = useAppSelector(getDivisionsMap);
 
   const debouncedHighlight = useDebouncedCallback(key => {
@@ -137,13 +136,11 @@ const Directory = () => {
   
   const handleSelect = (e: SyntheticEvent, nodeIds: string[]) => {
     e.stopPropagation();
-    console.log('selected', nodeIds);
   };
 
   const handleCheck = (e: MouseEvent, key: string, checked: boolean) => {
     // don't trigger expand section
     e.stopPropagation();
-    console.log('checked', key);
     // setSelected(nodeIds);
     let keys = [key];
     if (expanded.includes(key)) {
@@ -176,8 +173,6 @@ const Directory = () => {
   };
   
   const handleToggle = (e: React.SyntheticEvent, keys: string[]) => {
-    console.log(e);
-    console.log(keys.length, expanded.length);
     let toggled: string;
     let add: boolean;
     if (keys.length < expanded.length) {
@@ -189,12 +184,9 @@ const Directory = () => {
     }
     // only selected nested elements if parent is selected
     const nested = query.divisions.includes(toggled) ? depMap[toggled] : [];
-    console.log('nested', nested);
     const selected = add
       ? query.divisions.concat(nested)
       : query.divisions.filter(key => !nested.includes(key));
-
-    console.log(new Set(selected));
 
     push({
       component: 'divisions',

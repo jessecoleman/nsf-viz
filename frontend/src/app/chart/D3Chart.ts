@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { Selection } from './D3utils';
-import D3Timeline, { BrushCallback, TimelineData } from './D3Timeline';
+import D3Timeline, { BrushCallback } from './D3Timeline';
 import { colorScales } from 'theme';
 import { removeTooltip, transitionTooltip } from './D3Tooltip';
 
@@ -40,6 +40,7 @@ export type Layout = {
   y: d3.ScaleLinear<number, number>;
   stack: d3.Series<Data, string>[];
   divs: string[];
+  invDivs: Record<string, number>;
   years: number[];
  };
  
@@ -60,6 +61,9 @@ export default class D3Component {
   // data
   stack: d3.Series<Data, string>[] = [];
   divs: string[] = [];
+  invDivs: Record<string, number> = {};
+  offsets: Record<string, number> = {};
+  domainUpdated = false;
   years: number[] = [];
   agg: keyof AggFields = 'count';
   color: d3.ScaleOrdinal<string, string> = colorScales[this.agg];
@@ -194,6 +198,13 @@ export default class D3Component {
 
     this.years = data.map(d => d.year);
     this.divs = divDomain;
+    this.invDivs = Object.fromEntries(this.divs.map((d, i) => [d, i]));
+    this.offsets = this.getStackOrderOffsets();
+    this.domainUpdated = !(
+      this.prev?.years[0] === this.years[0] &&
+      this.prev?.years.length === this.years.length
+    );
+ 
     if (agg) this.agg = agg;
 
     this.stack = this.getStack(data, divDomain, this.agg);
@@ -208,59 +219,40 @@ export default class D3Component {
    
     this.updateAxes();
 
-    const prevDivIndices = Object.fromEntries(this.prev?.divs.map((d, i) => [d, i]) ?? []);
-    const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
-
-    const sameDomain = (
-      this.prev &&
-      this.prev.years[0] === this.years[0] &&
-      this.prev.years.length === this.years.length
-    );
- 
-    const offsets = {};
-    if (this.prev && this.prev.divs.length !== this.divs.length) {
-      // determine whether groups were added or removed
-      const [ sub, sup ] = this.prev.divs.length < this.divs.length 
-        ? [ this.prev.divs, this.divs ]
-        : [ this.divs, this.prev.divs ];
-      
-      let offset = 0; // track offset between sub/sup
-      sub.forEach((key, i) => {
-        while (key !== sup[i + offset]) {
-          offsets[sup[i + offset]] = offset;
-          offset += 1;
-        }
-      });
-    } else {
-      this.divs.forEach(d => {
-        offsets[d] = -1;
-      });
-    }
- 
     const stacks = this.chart.selectAll<SVGGElement, Series>('.bars')
       .data(this.stack, d => d.key)
       .join(
-        enter => enter.append('g')
-          .attr('class', d => `bars ${d.key}`),
+        enter => {
+          const entered = enter.append('g')
+            .attr('class', d => `bars ${d.key}`);
+          
+          return entered;
+            
+        // TODO
+        // console.log(entered);
+        // entered.each((div, i, stack) => {
+        //   console.log(stack[i]);
+        //   d3.select<SVGGElement, Series[]>(stack[i])
+        //     .selectAll<SVGRectElement, Series>('.bar')
+        //     .data(d => d, d => d.data.year)
+        //     .append('rect')
+        //     .transition()
+        //     .duration(this.animationDur)
+        //     .attr('height', 0)
+        //     .attr('y', (d, i) => this.getYTransition(div.key, d, i, this.prev, this));
+        // });
+        // return entered;
+        },
         update => update,
         // only applies to exiting div groups, not year stacks
         exit => {
           exit.each((div, i, stack) => {
             d3.select<SVGGElement, Series[]>(stack[i])
-              .selectAll<SVGGElement, Series>('.bar')
+              .selectAll<SVGRectElement, Series>('.bar')
               .transition()
               .duration(this.animationDur)
               .attr('height', 0)
-              .attr('y', (d, i) => {
-                if (this.prev) {
-                  const idx = prevDivIndices[div.key];
-                  const prevGroup = this.stack[idx - offsets[div.key]];
-                  if (prevGroup) {
-                    return this.y(prevGroup[i][0]);
-                  }
-                }
-                return this.y(d[0]);
-              })
+              .attr('y', (d, i) => this.getYTransition(div.key, d, i, this, this.prev))
               .remove();
           });
           exit.transition()
@@ -276,7 +268,7 @@ export default class D3Component {
       
    
     stacks.each((div, i, stack) => {
-      const bars = d3.select<SVGGElement, Series[]>(stack[i])
+      const bars = d3.select<SVGGElement, Series[]>(stack[i] as any)
         .selectAll<SVGRectElement, Series>('.bar')
         .data(d => d, d => d.data.year)
         .join(
@@ -290,18 +282,7 @@ export default class D3Component {
             // .attr('height', d => this.prev ? this.prev.y(d[0]) - this.prev.y(d[1]) : 0)
             .attr('height', 0)
             // necessary to align new bars vertically during transition
-            .attr('y', (d, i) => {
-              if (this.prev) {
-                const idx = divIndices[div.key];
-                // will be undefined if bottom of stack
-                const prevGroup = this.prev.stack[idx - offsets[div.key]];
-                if (prevGroup && sameDomain) {
-                  return this.prev.y(prevGroup[i][0]);
-                }
-              }
-              // first group in stack, first load, or entering years
-              return this.chartHeight;
-            })
+            .attr('y', (d, i) => this.getYTransition(div.key, d, i, this.prev, this))
             // only fade in from sides
             .style('opacity', d => this.prev?.x(d.data.year) ? 1 : 0),
           update => update,
@@ -324,16 +305,7 @@ export default class D3Component {
         .attr('x', d => this.x(d.data.year) ?? 0)
         .attr('height', d => this.y(d[0]) - this.y(d[1]))
         .attr('y', d => this.y(d[1]))
-        .style('opacity', 1)
-        .on('end', () => {
-          this.prev = {
-            x: this.x.copy(),
-            y: this.y.copy(),
-            stack: this.stack,
-            divs: this.divs,
-            years: this.years,
-          };
-        });
+        .style('opacity', 1);
 
       bars
         .on('mouseover', (e, d) => {
@@ -364,6 +336,16 @@ export default class D3Component {
           this.onBarClick(d.key, d.data.year);
         });
     });
+
+    // save current state for next transition
+    this.prev = {
+      x: this.x.copy(),
+      y: this.y.copy(),
+      stack: this.stack,
+      divs: this.divs,
+      invDivs: this.invDivs,
+      years: this.years,
+    };
   }
   
   getStack = (data: Data[], domain: string[], agg: keyof AggFields) => (
@@ -372,6 +354,19 @@ export default class D3Component {
       .value((d, key) => d.aggs[key]?.[agg] ?? 0)
       .order(d3.stackOrderNone)(data)
   )
+  
+  getStackOrderOffsets = () => {
+    if (this.prev && this.prev.divs.length !== this.divs.length) {
+      // determine whether groups were added or removed
+      const [ sub, sup ] = this.prev.divs.length < this.divs.length 
+        ? [ this.prev.divs, this.divs ]
+        : [ this.divs, this.prev.divs ];
+        
+      return Object.fromEntries(sup.filter(s => !sub.includes(s)).map((s, i) => [s, i]));
+    } else {
+      return Object.fromEntries(this.divs.map(d => [d, 0]));
+    }
+  }
 
   // TODO make this implement ScaleBand interface
   getXTransition = (year: number, layout?: Layout) => {
@@ -392,6 +387,27 @@ export default class D3Component {
     return this.x(year) ?? 0;
   }
   
+  getYTransition = (
+    key: string,
+    d: Series,
+    i: number,
+    from?: Layout,
+    to?: Layout,
+  ) => {
+    // to is null on initial render
+    if (from && to) {
+      const idx = to.invDivs[key];
+      // will be undefined if bottom of stack
+      const prevGroup = from.stack[idx - this.offsets[key]];
+      if (prevGroup && !this.domainUpdated) {
+        return from.y(prevGroup[i][0]);
+      }
+    } else if (from) {
+      return from.y(d[0]);
+    }
+    // first group in stack, first load, or entering years
+    return this.chartHeight;
+  }
  
   updateAxes = () => {
 
