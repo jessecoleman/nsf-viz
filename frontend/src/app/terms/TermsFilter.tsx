@@ -1,6 +1,5 @@
 import { MouseEvent, ChangeEvent } from 'react';
-
-import FlipMove from 'react-flip-move';
+import { Flipper } from 'react-flip-toolkit';
 import { styled } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles';
 
@@ -61,14 +60,24 @@ const SearchIcon = styled('div')(({ theme }) => `
   justify-content: center;
 `);
 
+const exitThenFlipThenEnter = ({
+  hideEnteringElements,
+  animateEnteringElements,
+  animateExitingElements,
+  animateFlippedElements
+}) => {
+  hideEnteringElements();
+  animateExitingElements()
+    .then(animateFlippedElements)
+    .then(animateEnteringElements);
+};
+
 const TermsFilter = () => {
 
   const dispatch = useAppDispatch();
-  const { input, setInput } = useDebouncedSearch((input) => {
-    if (input.length) {
-      dispatch(loadTypeahead(input));
-    }
-  }, 300);
+  const { input, setInput } = useDebouncedSearch(input => (
+    dispatch(loadTypeahead(input))
+  ), 300);
   const terms = useAppSelector(getTerms);
   const selected = useAppSelector(getSelectedTerms);
 
@@ -138,12 +147,15 @@ const TermsFilter = () => {
   };
   
   return (
-    <SearchContainer>
-      <SearchIcon>
-        <Search />
-      </SearchIcon>
-      <ChipContainer>
-        <FlipMove>
+    <Flipper
+      flipKey={terms.length}
+      // handleEnterUpdateDelete={exitThenFlipThenEnter}
+    >
+      <SearchContainer>
+        <SearchIcon>
+          <Search />
+        </SearchIcon>
+        <ChipContainer>
           {terms.map((chip, idx) => (
             <TermChip
               key={chip.term}
@@ -161,20 +173,20 @@ const TermsFilter = () => {
             onDeleteLastChip={handleDeleteChip(terms.length - 1)}
             onClearInput={handleClearInput}
           />
-        </FlipMove>
-      </ChipContainer>
-      <Tooltip title={selected.length === 0 ? 'clear all terms' : 'clear selection'}>
-        <IconButton
-          color='inherit'
-          onClick={handleClearTerms}
-        >
-          {selected.length === 0
-            ? <ClearAll />
-            : <HighlightOff />
-          }
-        </IconButton>
-      </Tooltip>
-    </SearchContainer>
+        </ChipContainer>
+        <Tooltip title={selected.length === 0 ? 'clear all terms' : 'clear selection'}>
+          <IconButton
+            color='inherit'
+            onClick={handleClearTerms}
+          >
+            {selected.length === 0
+              ? <ClearAll />
+              : <HighlightOff />
+            }
+          </IconButton>
+        </Tooltip>
+      </SearchContainer>
+    </Flipper>
   );
 };
 

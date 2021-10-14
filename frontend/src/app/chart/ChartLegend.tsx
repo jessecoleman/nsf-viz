@@ -8,7 +8,7 @@ import { ChangeEvent } from 'react';
 
 const Container = styled(Paper)(({ theme }) => `
   padding: ${theme.spacing(1, 2)};
-  width: 14em;
+  width: 8em;
     display: flex;
     flex-direction: row;
 `);
@@ -66,7 +66,7 @@ const ChartLegend = () => {
 
   return (
     <Container id='legend'>
-      <FormGroup>
+      {/*<FormGroup>
         {units.map(u => (
           <FormControlLabel 
             key={u.value}
@@ -80,7 +80,7 @@ const ChartLegend = () => {
             label={<Label><u.icon fontSize='small' />{u.label}</Label>}
           />
         ))}
-      </FormGroup>
+        </FormGroup> */}
       <RadioGroup
         aria-label='bool toggle'
         name='boolToggle'
