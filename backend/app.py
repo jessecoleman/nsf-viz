@@ -39,7 +39,7 @@ async def startup():
     ASSETS_DIR = os.environ.get('ASSETS_DIR', 'assets')
     ASSETS_DIR = Path(ASSETS_DIR)
     path_to_model = ASSETS_DIR.joinpath('nsf_w2v_model')
-    word_vecs = Word2Vec.load(path_to_model).wv
+    word_vecs = Word2Vec.load(str(path_to_model)).wv
 
 
 @app.on_event('shutdown')
