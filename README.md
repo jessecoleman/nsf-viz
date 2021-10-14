@@ -23,8 +23,10 @@ This project is built with React, Redux, Typescript, Recharts on the frontend an
 In the base directory, run:
 
 ```
-docker-compose up --build
+docker-compose --compatibility up --build
 ```
+
+(The `--compatibility` flag may be needed for docker-compose to respect the memory limit specified in the `docker-compose.yaml` file.)
 
 The app will be served at `http://localhost:8080`
 
