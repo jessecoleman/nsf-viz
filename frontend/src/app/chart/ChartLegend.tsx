@@ -8,7 +8,7 @@ import { ChangeEvent } from 'react';
 
 const Container = styled(Paper)(({ theme }) => `
   padding: ${theme.spacing(1, 2)};
-  width: 14em;
+  width: 8em;
     display: flex;
     flex-direction: row;
 `);
