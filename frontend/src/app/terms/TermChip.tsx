@@ -1,7 +1,8 @@
+import { memo, MouseEvent } from 'react';
+import { Flipped } from 'react-flip-toolkit';
 import { Chip, CircularProgress } from '@material-ui/core';
 import { alpha, styled } from '@material-ui/core/styles';
 import { format } from 'd3';
-import { forwardRef, MouseEvent } from 'react';
 
 const StyledChip = styled(Chip)(({ theme }) => `
   margin-right: ${theme.spacing(1)};
@@ -54,25 +55,26 @@ export type TermChipProps = {
   selected?: boolean
 };
 
-const TermChip = forwardRef<HTMLDivElement, TermChipProps>((props: TermChipProps, ref) => (
-  <StyledChip
-    ref={ref}
-    variant='filled'
-    color={props.selected ? 'secondary' : undefined}
-    label={
-      <ChipContent>
-        <span>
-          {props.count
-            ? format('.2s')(props.count)
-            : <CircularProgress size='1.25em' color='secondary' />
-          }
-        </span>
-        {props.term}
-      </ChipContent>
-    }
-    onClick={(e) => props.onClick?.(e, props.term)}
-    onDelete={props.onDelete}
-  />
-));
+const TermChip = (props: TermChipProps) => (
+  <Flipped flipId={props.term}>
+    <StyledChip
+      variant='filled'
+      color={props.selected ? 'secondary' : undefined}
+      label={
+        <ChipContent>
+          <span>
+            {props.count
+              ? format('.2s')(props.count)
+              : <CircularProgress size='1.25em' color='secondary' />
+            }
+          </span>
+          {props.term}
+        </ChipContent>
+      }
+      onClick={(e) => props.onClick?.(e, props.term)}
+      onDelete={props.onDelete}
+    />
+  </Flipped>
+);
  
-export default TermChip;
+export default memo(TermChip);

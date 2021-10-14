@@ -66,7 +66,7 @@ const ChartLegend = () => {
 
   return (
     <Container id='legend'>
-      <FormGroup>
+      {/*<FormGroup>
         {units.map(u => (
           <FormControlLabel 
             key={u.value}
@@ -80,7 +80,7 @@ const ChartLegend = () => {
             label={<Label><u.icon fontSize='small' />{u.label}</Label>}
           />
         ))}
-      </FormGroup>
+        </FormGroup> */}
       <RadioGroup
         aria-label='bool toggle'
         name='boolToggle'

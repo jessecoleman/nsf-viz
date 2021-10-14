@@ -5,11 +5,11 @@ import {
   Box,
   styled
 } from '@material-ui/core';
-import { Menu } from '@material-ui/icons';
+import { Menu } from '@mui/icons-material';
 
 import TermsFilter from 'app/terms/TermsFilter';
 
-import nsf from 'app/images/nsf_logo.png';
+import grantExplorer from 'app/images/grant-explorer.svg';
 import DrawerToggle from './DrawerToggle';
 import { forwardRef } from 'react';
 
@@ -67,7 +67,7 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => (
         <DrawerToggle>
           <Menu color='inherit' />
         </DrawerToggle>
-        <Logo src={nsf} alt='national science foundation logo' />
+        <Logo src={grantExplorer} alt='national science foundation logo' />
         <Title variant='h6' noWrap>
           Grant Explorer
         </Title>

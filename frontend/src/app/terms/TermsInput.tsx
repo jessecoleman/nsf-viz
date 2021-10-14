@@ -1,7 +1,7 @@
 import { FocusEvent, forwardRef, KeyboardEvent, useRef, useState } from 'react';
+import { Flipper } from 'react-flip-toolkit';
 import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
 import TermsList from './TermsList';
-import { Divider } from '@material-ui/core';
 import { useAppSelector } from 'app/store';
 import { getRelated, getTerms, getTypeahead } from 'app/selectors';
 
@@ -109,24 +109,26 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
           {({ TransitionProps }) => (
             <Fade {...TransitionProps} timeout={350}>
               <Dropdown>
-                <List>
-                  {props.value
-                    ? <TermsList
-                      input={props.value}
-                      header='autocomplete'
-                      filter={terms.map(t => t.term)}
-                      terms={typeahead}
-                      onAddChip={onAddChip}
-                    />
-                    : <TermsList
-                      input={props.value}
-                      header='related terms'
-                      filter={terms.map(t => t.term)}
-                      terms={related}
-                      onAddChip={onAddChip}
-                    />
-                  }
-                </List>
+                <Flipper flipKey={JSON.stringify([typeahead, related])}>
+                  <List>
+                    {props.value
+                      ? <TermsList
+                        input={props.value}
+                        header='autocomplete'
+                        filter={terms.map(t => t.term)}
+                        terms={typeahead}
+                        onAddChip={onAddChip}
+                      />
+                      : <TermsList
+                        input={props.value}
+                        header='related terms'
+                        filter={terms.map(t => t.term)}
+                        terms={related}
+                        onAddChip={onAddChip}
+                      />
+                    }
+                  </List>
+                </Flipper>
               </Dropdown>
             </Fade>
           )}
