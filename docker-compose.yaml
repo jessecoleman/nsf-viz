@@ -50,5 +50,9 @@ services:
         ports: 
             - 127.0.0.1:9200:9200
             - 127.0.0.1:9300:9300
+        deploy:
+            resources:
+                limits:
+                    memory: 1G
 volumes:
     docker_openapi:
