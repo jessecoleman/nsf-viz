@@ -9,7 +9,7 @@ Dockerfile
 node_modules/
 
 # UI build output
-build/
+# build/
 
 # UI package manager debug output
 *.log
