@@ -25,7 +25,10 @@ services:
         depends_on: 
             - backend
     proxy:
-        build: ./proxy
+        build: 
+            context: ./proxy
+            args:
+                CONF_FILE: prod.conf
         ports:
             - 8080:80
         depends_on:
