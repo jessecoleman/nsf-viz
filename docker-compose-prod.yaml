@@ -29,7 +29,7 @@ services:
         ports:
             - 8080:80
         depends_on:
-            - frontend
+            - frontend-prod
             - backend
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
