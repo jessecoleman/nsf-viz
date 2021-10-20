@@ -4,6 +4,7 @@
 .dockerignore
 
 venv
+assets
 
 # Docker artifacts
 Dockerfile

@@ -1,0 +1,15 @@
+FROM node:14.16-slim
+
+WORKDIR /usr/local/src/app/frontend
+
+RUN yarn global add serve
+
+RUN mkdir build
+
+# Copy in the source code
+COPY build build
+
+ENV NODE_ENV $NODE_ENV
+
+ENTRYPOINT [ "serve" ]
+CMD [ "-l", "3000", "-s", "build" ]

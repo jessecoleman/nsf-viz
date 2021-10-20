@@ -14,21 +14,10 @@ services:
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
         # ports:
         #     - 8888:8888
-    frontend:
-        build: ./frontend
-        # We can't mount the entire UI directory, since JavaScript dependencies
-        # (`node_modules`) live at that location.
-        volumes:
-            - ./frontend/src:/usr/local/src/app/frontend/src
-            - ./frontend/public:/usr/local/src/app/frontend/public
-            - ./frontend/build:/usr/local/src/app/frontend/build
-            - ./frontend/package.json:/usr/local/src/app/frontend/package.json
-            - ./frontend/tsconfig.json:/usr/local/src/app/frontend/tsconfig.json
-            - ./frontend/yarn.lock:/usr/local/src/app/frontend/yarn.lock
-            # We don't want to mount the codegen-generated api directory since it will
-            # be generated in Docker, so specify it as a persistent Docker named volume:
-            # https://stackoverflow.com/a/38601156
-            - docker_openapi:/usr/local/src/app/frontend/src/api
+    frontend-prod:
+        build: 
+            context: ./frontend
+            dockerfile: Dockerfile-prod
         environment: 
             - ELASTICSEARCH_HOST=elasticsearch
         # ports:
@@ -36,11 +25,14 @@ services:
         depends_on: 
             - backend
     proxy:
-        build: ./proxy
+        build: 
+            context: ./proxy
+            args:
+                CONF_FILE: prod.conf
         ports:
             - 8080:80
         depends_on:
-            - frontend
+            - frontend-prod
             - backend
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
