@@ -12,8 +12,9 @@ from elasticsearch_dsl import (
 
 host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
 es = connections.create_connection(hosts=[host], timeout=20)
+index_name = os.environ.get("ELASTICSEARCH_SUGGEST_INDEX", "grants-suggest")
 
-suggestions = Index('nsf-suggest')
+suggestions = Index(index_name)
 suggestions.settings(
     number_of_shards=8,
     number_of_replicas=2,

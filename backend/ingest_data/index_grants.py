@@ -20,9 +20,10 @@ import mysql.connector as conn
 
 host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
 es = connections.create_connection(hosts=[host], timeout=20)
+index_name = os.environ.get("ELASTICSEARCH_GRANT_INDEX", "grants")
 
-nsf = Index("nsf-dev")
-nsf.settings(
+es_index = Index(index_name)
+es_index.settings(
     number_of_shards=8,
     number_of_replicas=2,
 )
@@ -48,8 +49,9 @@ aggressive_analyzer = analyzer(
 )
 
 
-@nsf.document
+@es_index.document
 class Grant(Document):
+    # see also: Grant class in models.py
     title = Text(fields={"raw": Keyword()})
     abstract = Text(term_vector="with_positions_offsets", analyzer=aggressive_analyzer)
     date = Date()
@@ -58,6 +60,7 @@ class Grant(Document):
     division_key = Keyword()
 
 
+# DEPRECATED
 def data_source_mysql() -> List:
     db = conn.connect(
         database="nsf", user="nsf", password="!DLnsf333", host="localhost"
@@ -117,9 +120,9 @@ def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Genera
 
 
 def build_index(data_source: Iterable):
-    if nsf.exists():
-        nsf.delete()
-    nsf.create()
+    if es_index.exists():
+        es_index.delete()
+    es_index.create()
 
     bulk(es, get_data(data_source=data_source))
 

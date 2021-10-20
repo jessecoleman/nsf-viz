@@ -1,3 +1,4 @@
+import os
 import asyncio
 from models import Grant, SearchResponse, YearsResponse
 import re
@@ -8,7 +9,8 @@ from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import query
 
-INDEX = 'nsf-dev'
+INDEX = os.environ.get("ELASTICSEARCH_GRANT_INDEX", "grants")
+INDEX_SUGGEST = os.environ.get("ELASTICSEARCH_SUGGEST_INDEX", "grants-suggest")
 
 with open('assets/divisions.json') as div_file:
     divisions = json.load(div_file)
@@ -349,7 +351,7 @@ async def abstract(aioes, _id: str, terms: str):
 
  
 async def typeahead(aioes, prefix: str):
-    result = await aioes.search(index='nsf-suggest', body={
+    result = await aioes.search(index=INDEX_SUGGEST, body={
             'suggest': {
                 'gram-suggest': {
                     'prefix': prefix,
