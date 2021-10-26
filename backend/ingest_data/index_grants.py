@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import dateutil.parser
 from pathlib import Path
 from typing import Generator, Iterable, List, Mapping, Optional, Union
 from elasticsearch_dsl import (
@@ -48,17 +49,67 @@ aggressive_analyzer = analyzer(
     ],
 )
 
+# ================== CATEGORIES / ABBREVIATIONS ============
+
+FILENAME_ABBREVIATIONS = "abbreviations.json"
+FILENAME_NSF_MAPPED = 'mapped.json'
+
+def normalize(div: str):
+    normed = []
+    for w in div.split():
+        if (w[0].isalpha() and w.lower() not in ('of', 'and', 'for', '&')
+            and not (w.lower().startswith('div') and not w.lower() == 'diversity')
+            and not w.lower().startswith('office')
+            and not w.lower().startswith('direct')):
+
+            normed.append(w.lower())
+
+    return ' '.join(normed)
+
+script_dirpath = Path(os.path.dirname(os.path.realpath(__file__)))
+
+fp = script_dirpath.joinpath(FILENAME_ABBREVIATIONS)
+abbrevs = json.loads(fp.read_text())
+
+fp = script_dirpath.joinpath(FILENAME_NSF_MAPPED)
+nsf_mapped = json.loads(fp.read_text())
+
+
+nsf_mapped_reversed = {}
+for k, v in nsf_mapped.items():
+    for item in v:
+        assert item not in nsf_mapped_reversed.keys()
+        nsf_mapped_reversed[item] = k
+
+abbrevs_flat = {}
+for agency, v in abbrevs.items():
+    for abbrev, longname in v.items():
+        assert longname not in abbrevs_flat.keys()
+        abbrevs_flat[normalize(longname)] = abbrev.lower()
+
+# /================== CATEGORIES / ABBREVIATIONS ============
 
 @es_index.document
 class Grant(Document):
     # see also: Grant class in models.py
+    grant_id = Keyword()
+    agency = Keyword()
     title = Text(fields={"raw": Keyword()})
     abstract = Text(term_vector="with_positions_offsets", analyzer=aggressive_analyzer)
     date = Date()
     amount = Integer()
-    division = Keyword()
-    division_key = Keyword()
+    # TODO there will be hierarchical categories, up to 3 (e.g., Division, Subdivision)
+    # for now, there is just one level, in cat1
+    cat1 = Keyword()
+    cat1_raw = Keyword()
+    cat2 = Keyword()
+    cat2_raw = Keyword()
+    cat3 = Keyword()
+    cat3_raw = Keyword()
 
+def format_date(date_str: str) -> str:
+    dt = dateutil.parser.parse(date_str)
+    return dt.strftime('%Y-%m-%d')
 
 # DEPRECATED
 def data_source_mysql() -> List:
@@ -75,7 +126,7 @@ def data_source_mysql() -> List:
 
 
 def data_source_csv(fpath: Union[str, Path]) -> Generator:
-    # csv schema is: 'idx,AwardTitle,AbstractNarration,AwardAmount,AwardEffectiveDate,DivisionCode,DivisionLongName'
+    # csv schema is: 'idx,grant_id,title,abstract,amount,date,cat1_raw,agency'
     fpath = Path(fpath)
     with fpath.open() as f:
         reader = csv.reader(f)
@@ -84,13 +135,23 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
                 # header row
                 continue
 
-            yield [
-                row[1],  # title
-                row[2],  # abstract
-                row[3],  # amount
-                row[4],  # date
-                row[6],  # division name
-            ]
+            # yield [
+            #     row[1],  # title
+            #     row[2],  # abstract
+            #     row[3],  # amount
+            #     row[4],  # date
+            #     row[6],  # division name
+            # ]
+
+            yield {
+                'grant_id': row[1],
+                'title': row[2],
+                'abstract': row[3],
+                'amount': row[4],
+                'date': row[5],
+                'cat1_raw': row[6],
+                'agency': row[7],
+            }
 
 
 def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Generator:
@@ -105,14 +166,25 @@ def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Genera
     Grant.init()
 
     for r in tqdm(data_source):
+        cat1_raw = r['cat1_raw']
+        if not cat1_raw:
+            # throw away rows with missing category info
+            continue
+        mapped_longname = nsf_mapped_reversed.get(cat1_raw, cat1_raw)
+        mapped_abbrev = abbrevs_flat.get(normalize(mapped_longname))
+        if not mapped_abbrev:
+            # TODO: for now, throw away rows without mapped category. revisit this
+            continue
         try:
             g = Grant(
-                title=r[0],
-                abstract=r[1],
-                amount=r[2],
-                date=r[3],
-                division=r[4],
-                division_key=div_map[r[4].lower()],
+                grant_id = r['grant_id'],
+                title=r['title'],
+                abstract=r['abstract'],
+                amount=r['amount'],
+                # date=r['date'],
+                date=format_date(r['date']),
+                cat1_raw=cat1_raw,
+                cat1=mapped_abbrev,
             )
             yield g.to_dict(True)
         except KeyError:

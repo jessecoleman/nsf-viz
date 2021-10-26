@@ -114,7 +114,8 @@ async def division_aggregates(
         'aggs': {
             'divisions': {
                 'terms': {
-                    'field': 'division_key',
+                    # 'field': 'division_key',
+                    'field': 'cat1',
                     'min_doc_count': 0,
                     'size': 100,
                 },

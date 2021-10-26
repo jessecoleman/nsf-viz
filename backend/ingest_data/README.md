@@ -11,7 +11,7 @@ Instructions for ingesting grants data from a CSV file into Elasticsearch, and t
 3. In another terminal window, connect to the backend container by running:
 
    ```sh
-   docker exec -it nsf-viz_backend_1 /bin/bash
+   docker-compose run --entrypoint /bin/bash backend
    ```
 
    This will start an interactive terminal running bash in the directory `/usr/local/src/app/backend`
