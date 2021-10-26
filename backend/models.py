@@ -65,14 +65,12 @@ class Grant(BaseModel):
     title: str
     date: str
     amount: int
-    # division: str
-    # division_key: str
-    cat1 = str
-    cat1_raw = str
-    cat2 = str
-    cat2_raw = str
-    cat3 = str
-    cat3_raw = str
+    cat1: str
+    cat1_raw: str
+    cat2: str
+    cat2_raw: str
+    cat3: str
+    cat3_raw: str
 
 
 class Order(str, Enum):

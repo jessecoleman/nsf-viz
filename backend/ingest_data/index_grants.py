@@ -185,6 +185,7 @@ def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Genera
                 date=format_date(r['date']),
                 cat1_raw=cat1_raw,
                 cat1=mapped_abbrev,
+                agency=r['agency'],
             )
             yield g.to_dict(True)
         except KeyError:
