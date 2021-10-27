@@ -19,6 +19,8 @@ from elasticsearch_dsl.analysis import token_filter
 from tqdm import tqdm
 import mysql.connector as conn
 
+from parse_abbrevs import abbrevs_flat, normalize, nsf_mapped_reversed
+
 host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
 es = connections.create_connection(hosts=[host], timeout=20)
 index_name = os.environ.get("ELASTICSEARCH_GRANT_INDEX", "grants")
@@ -49,45 +51,6 @@ aggressive_analyzer = analyzer(
     ],
 )
 
-# ================== CATEGORIES / ABBREVIATIONS ============
-
-FILENAME_ABBREVIATIONS = "abbreviations.json"
-FILENAME_NSF_MAPPED = 'mapped.json'
-
-def normalize(div: str):
-    normed = []
-    for w in div.split():
-        if (w[0].isalpha() and w.lower() not in ('of', 'and', 'for', '&')
-            and not (w.lower().startswith('div') and not w.lower() == 'diversity')
-            and not w.lower().startswith('office')
-            and not w.lower().startswith('direct')):
-
-            normed.append(w.lower())
-
-    return ' '.join(normed)
-
-script_dirpath = Path(os.path.dirname(os.path.realpath(__file__)))
-
-fp = script_dirpath.joinpath(FILENAME_ABBREVIATIONS)
-abbrevs = json.loads(fp.read_text())
-
-fp = script_dirpath.joinpath(FILENAME_NSF_MAPPED)
-nsf_mapped = json.loads(fp.read_text())
-
-
-nsf_mapped_reversed = {}
-for k, v in nsf_mapped.items():
-    for item in v:
-        assert item not in nsf_mapped_reversed.keys()
-        nsf_mapped_reversed[item] = k
-
-abbrevs_flat = {}
-for agency, v in abbrevs.items():
-    for abbrev, longname in v.items():
-        assert longname not in abbrevs_flat.keys()
-        abbrevs_flat[normalize(longname)] = abbrev.lower()
-
-# /================== CATEGORIES / ABBREVIATIONS ============
 
 @es_index.document
 class Grant(Document):
@@ -107,9 +70,11 @@ class Grant(Document):
     cat3 = Keyword()
     cat3_raw = Keyword()
 
+
 def format_date(date_str: str) -> str:
     dt = dateutil.parser.parse(date_str)
-    return dt.strftime('%Y-%m-%d')
+    return dt.strftime("%Y-%m-%d")
+
 
 # DEPRECATED
 def data_source_mysql() -> List:
@@ -144,29 +109,22 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
             # ]
 
             yield {
-                'grant_id': row[1],
-                'title': row[2],
-                'abstract': row[3],
-                'amount': row[4],
-                'date': row[5],
-                'cat1_raw': row[6],
-                'agency': row[7],
+                "grant_id": row[1],
+                "title": row[2],
+                "abstract": row[3],
+                "amount": row[4],
+                "date": row[5],
+                "cat1_raw": row[6],
+                "agency": row[7],
             }
 
 
-def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Generator:
-
-    if div_map is None:
-        script_dir = os.path.dirname(os.path.realpath(__file__))
-        divisions_fpath = os.path.join(script_dir, "../assets/divisions.json")
-        with open(divisions_fpath) as div_file:
-            divs = json.load(div_file)
-            div_map = {d["name"].lower(): d["key"] for d in divs}
+def get_data(data_source: Iterable) -> Generator:
 
     Grant.init()
 
     for r in tqdm(data_source):
-        cat1_raw = r['cat1_raw']
+        cat1_raw = r["cat1_raw"]
         if not cat1_raw:
             # throw away rows with missing category info
             continue
@@ -177,15 +135,15 @@ def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Genera
             continue
         try:
             g = Grant(
-                grant_id = r['grant_id'],
-                title=r['title'],
-                abstract=r['abstract'],
-                amount=r['amount'],
+                grant_id=r["grant_id"],
+                title=r["title"],
+                abstract=r["abstract"],
+                amount=r["amount"],
                 # date=r['date'],
-                date=format_date(r['date']),
+                date=format_date(r["date"]),
                 cat1_raw=cat1_raw,
                 cat1=mapped_abbrev,
-                agency=r['agency'],
+                agency=r["agency"],
             )
             yield g.to_dict(True)
         except KeyError:

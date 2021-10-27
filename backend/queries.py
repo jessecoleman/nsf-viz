@@ -3,7 +3,7 @@ import asyncio
 from models import Grant, SearchResponse, YearsResponse
 import re
 import json
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
@@ -12,10 +12,23 @@ from elasticsearch_dsl import query
 INDEX = os.environ.get("ELASTICSEARCH_GRANT_INDEX", "grants")
 INDEX_SUGGEST = os.environ.get("ELASTICSEARCH_SUGGEST_INDEX", "grants-suggest")
 
-with open('assets/divisions.json') as div_file:
-    divisions = json.load(div_file)
-    div_map = {d['name']: d['key'] for d in divisions}
-    inv_div_map = {d['key']: d['name'] for d in divisions}
+def get_divisions() -> List[Dict]:
+    from ingest_data.parse_abbrevs import abbrevs, normalize
+    divisions = []
+    for agency, v in abbrevs.items():
+        for abbrev, longname in v.items():
+            divisions.append({
+                'key': abbrev.lower(),
+                'name': f"{normalize(longname)} ({agency})",
+                'selected': False,
+            })
+    return divisions
+
+# with open('assets/divisions.json') as div_file:
+#     divisions = json.load(div_file)
+divisions = get_divisions()
+div_map = {d['name']: d['key'] for d in divisions}
+inv_div_map = {d['key']: d['name'] for d in divisions}
 
 
 def convert(bucket):
