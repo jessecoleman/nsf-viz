@@ -70,7 +70,7 @@ default_terms = [
 @app.get('/')
 @app.get('/<toggle>/<terms>')
 def main(toggle='any', terms=default_terms):
-    # ! Is this deprecated?
+    # ! DEPRECATED
 
     if toggle not in ('any', 'all'):
         raise HTTPException(404, detail='toggle not valid')
