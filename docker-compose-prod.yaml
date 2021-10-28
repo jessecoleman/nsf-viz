@@ -4,6 +4,8 @@ services:
         build:
             context: ./backend
             dockerfile: Dockerfile-prod
+        volumes:
+            - ./backend/assets:/usr/local/src/app/backend/assets
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
