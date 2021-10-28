@@ -1,9 +1,9 @@
 version: '3'
 services:
-    backend:
-        build: ./backend
-        volumes:
-            - ./backend:/usr/local/src/app/backend
+    backend-prod:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile-prod
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
@@ -23,7 +23,7 @@ services:
         # ports:
         #     - 3000:3000
         depends_on: 
-            - backend
+            - backend-prod
     proxy:
         build: 
             context: ./proxy
@@ -33,7 +33,7 @@ services:
             - 8080:80
         depends_on:
             - frontend-prod
-            - backend
+            - backend-prod
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
         volumes: 
