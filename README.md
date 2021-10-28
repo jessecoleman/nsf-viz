@@ -1,5 +1,7 @@
 # Grant Explorer
 
+![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/jessecoleman/nsf-viz?include_prereleases)
+
 This project is built with React, Redux, Typescript, Recharts on the frontend and FastAPI, Gensim, Elasticsearch on the backend. 
 
 - [Grant Explorer](#grant-explorer)
