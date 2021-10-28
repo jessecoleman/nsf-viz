@@ -4,3 +4,4 @@ venv
 assets/*
 !assets/README*
 api.json
+api*.json

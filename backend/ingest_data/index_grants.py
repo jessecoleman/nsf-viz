@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import dateutil.parser
 from pathlib import Path
 from typing import Generator, Iterable, List, Mapping, Optional, Union
 from elasticsearch_dsl import (
@@ -18,11 +19,14 @@ from elasticsearch_dsl.analysis import token_filter
 from tqdm import tqdm
 import mysql.connector as conn
 
+from parse_abbrevs import abbrevs_flat, normalize, nsf_mapped_reversed
+
 host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
 es = connections.create_connection(hosts=[host], timeout=20)
+index_name = os.environ.get("ELASTICSEARCH_GRANT_INDEX", "grants")
 
-nsf = Index("nsf-dev")
-nsf.settings(
+es_index = Index(index_name)
+es_index.settings(
     number_of_shards=8,
     number_of_replicas=2,
 )
@@ -48,16 +52,31 @@ aggressive_analyzer = analyzer(
 )
 
 
-@nsf.document
+@es_index.document
 class Grant(Document):
+    # see also: Grant class in models.py
+    grant_id = Keyword()
+    agency = Keyword()
     title = Text(fields={"raw": Keyword()})
     abstract = Text(term_vector="with_positions_offsets", analyzer=aggressive_analyzer)
     date = Date()
     amount = Integer()
-    division = Keyword()
-    division_key = Keyword()
+    # TODO there will be hierarchical categories, up to 3 (e.g., Division, Subdivision)
+    # for now, there is just one level, in cat1
+    cat1 = Keyword()
+    cat1_raw = Keyword()
+    cat2 = Keyword()
+    cat2_raw = Keyword()
+    cat3 = Keyword()
+    cat3_raw = Keyword()
 
 
+def format_date(date_str: str) -> str:
+    dt = dateutil.parser.parse(date_str)
+    return dt.strftime("%Y-%m-%d")
+
+
+# DEPRECATED
 def data_source_mysql() -> List:
     db = conn.connect(
         database="nsf", user="nsf", password="!DLnsf333", host="localhost"
@@ -72,7 +91,7 @@ def data_source_mysql() -> List:
 
 
 def data_source_csv(fpath: Union[str, Path]) -> Generator:
-    # csv schema is: 'idx,AwardTitle,AbstractNarration,AwardAmount,AwardEffectiveDate,DivisionCode,DivisionLongName'
+    # csv schema is: 'idx,grant_id,title,abstract,amount,date,cat1_raw,agency'
     fpath = Path(fpath)
     with fpath.open() as f:
         reader = csv.reader(f)
@@ -81,35 +100,50 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
                 # header row
                 continue
 
-            yield [
-                row[1],  # title
-                row[2],  # abstract
-                row[3],  # amount
-                row[4],  # date
-                row[6],  # division name
-            ]
+            # yield [
+            #     row[1],  # title
+            #     row[2],  # abstract
+            #     row[3],  # amount
+            #     row[4],  # date
+            #     row[6],  # division name
+            # ]
+
+            yield {
+                "grant_id": row[1],
+                "title": row[2],
+                "abstract": row[3],
+                "amount": row[4],
+                "date": row[5],
+                "cat1_raw": row[6],
+                "agency": row[7],
+            }
 
 
-def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Generator:
-
-    if div_map is None:
-        script_dir = os.path.dirname(os.path.realpath(__file__))
-        divisions_fpath = os.path.join(script_dir, "../assets/divisions.json")
-        with open(divisions_fpath) as div_file:
-            divs = json.load(div_file)
-            div_map = {d["name"].lower(): d["key"] for d in divs}
+def get_data(data_source: Iterable) -> Generator:
 
     Grant.init()
 
     for r in tqdm(data_source):
+        cat1_raw = r["cat1_raw"]
+        if not cat1_raw:
+            # throw away rows with missing category info
+            continue
+        mapped_longname = nsf_mapped_reversed.get(cat1_raw, cat1_raw)
+        mapped_abbrev = abbrevs_flat.get(normalize(mapped_longname))
+        if not mapped_abbrev:
+            # TODO: for now, throw away rows without mapped category. revisit this
+            continue
         try:
             g = Grant(
-                title=r[0],
-                abstract=r[1],
-                amount=r[2],
-                date=r[3],
-                division=r[4],
-                division_key=div_map[r[4].lower()],
+                grant_id=r["grant_id"],
+                title=r["title"],
+                abstract=r["abstract"],
+                amount=r["amount"],
+                # date=r['date'],
+                date=format_date(r["date"]),
+                cat1_raw=cat1_raw,
+                cat1=mapped_abbrev,
+                agency=r["agency"],
             )
             yield g.to_dict(True)
         except KeyError:
@@ -117,9 +151,9 @@ def get_data(data_source: Iterable, div_map: Optional[Mapping] = None) -> Genera
 
 
 def build_index(data_source: Iterable):
-    if nsf.exists():
-        nsf.delete()
-    nsf.create()
+    if es_index.exists():
+        es_index.delete()
+    es_index.create()
 
     bulk(es, get_data(data_source=data_source))
 

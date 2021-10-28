@@ -16,7 +16,7 @@ export const cols: Column[] = [
   { id: 'title', format: t => t, label: 'Grant Title' },
   { id: 'date', format: d => timeFormat('%b %Y')(timeParse('%Y-%m-%d')(d)!), label: 'Date' },
   { id: 'amount', format: format('$,'), label: 'Amount' },
-  { id: 'division', format: d => d, label: 'Division' },
+  { id: 'cat1_raw', format: d => d, label: 'Division' },
 ];
 
 export const GrantListItem = styled('div')(({ theme }) => `

@@ -57,13 +57,20 @@ class YearsResponse(BaseModel):
 
 
 class Grant(BaseModel):
+    # see also: Grant class in index_grants.py
     id: str
+    grant_id: str  # e.g. NSF AwardID
+    agency: str
     score: float
     title: str
     date: str
     amount: int
-    division: str
-    division_key: str
+    cat1: str
+    cat1_raw: str
+    cat2: str
+    cat2_raw: str
+    cat3: str
+    cat3_raw: str
 
 
 class Order(str, Enum):

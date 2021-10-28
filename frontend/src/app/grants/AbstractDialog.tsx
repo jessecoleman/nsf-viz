@@ -51,7 +51,7 @@ const AbstractDialog = () => {
     >
       <DialogTitle>
         <Title variant='h5'>{selectedGrant.title}</Title>
-        <Subtitle variant='h6'>{selectedGrant.division}</Subtitle>
+        <Subtitle variant='h6'>{selectedGrant.cat1_raw}</Subtitle>
         <Subtitle variant='h6'>{timeConvert(selectedGrant.date)}</Subtitle>
         <Subtitle variant='h6'>{d3.format('$,')(selectedGrant.amount)}</Subtitle>
       </DialogTitle>

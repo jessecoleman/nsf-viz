@@ -70,6 +70,7 @@ default_terms = [
 @app.get('/')
 @app.get('/<toggle>/<terms>')
 def main(toggle='any', terms=default_terms):
+    # ! DEPRECATED
 
     if toggle not in ('any', 'all'):
         raise HTTPException(404, detail='toggle not valid')
@@ -88,7 +89,8 @@ def main(toggle='any', terms=default_terms):
 
 @app.get('/divisions', operation_id='loadDivisions', response_model=List[Division])
 async def divisions():
-    return FileResponse(ASSETS_DIR.joinpath('divisions.json'))
+    # return FileResponse(ASSETS_DIR.joinpath('divisions.json'))
+    return Q.get_divisions()
 
 
 @app.post('/search', operation_id='search', response_model=SearchResponse)
