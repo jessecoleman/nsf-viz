@@ -1,9 +1,11 @@
 version: '3'
 services:
-    backend:
-        build: ./backend
+    backend-prod:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile-prod
         volumes:
-            - ./backend:/usr/local/src/app/backend
+            - ./backend/assets:/usr/local/src/app/backend/assets
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
@@ -11,6 +13,10 @@ services:
             - LOG_LEVEL=DEBUG
             - DEV_MODE=1
             - ELASTICSEARCH_HOST=elasticsearch
+        networks:
+            default:
+                aliases:
+                    - backend
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
         # ports:
         #     - 8888:8888
@@ -22,8 +28,12 @@ services:
             - ELASTICSEARCH_HOST=elasticsearch
         # ports:
         #     - 3000:3000
+        networks:
+            default:
+                aliases:
+                    - frontend
         depends_on: 
-            - backend
+            - backend-prod
     proxy:
         build: 
             context: ./proxy
@@ -33,7 +43,7 @@ services:
             - 8080:80
         depends_on:
             - frontend-prod
-            - backend
+            - backend-prod
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
         volumes: 

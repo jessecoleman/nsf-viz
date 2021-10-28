@@ -44,7 +44,7 @@ docker-compose run frontend build
 # save the frontend-prod image and the backend image
 docker-compose -f docker-compose-prod.yaml build frontend-prod \
   && docker save -o deploy/nsf-viz_frontend-prod.docker.tar nsf-viz_frontend-prod \
-  && docker save -o deploy/nsf-viz_backend.docker.tar nsf-viz_backend
+  && docker save -o deploy/nsf-viz_backend-prod.docker.tar nsf-viz_backend-prod
 
 # upload the two images to the server
 scp -r deploy <address_and_path_to_server>
@@ -54,7 +54,7 @@ scp -r deploy <address_and_path_to_server>
 
 # load the docker images
 docker load -i deploy/nsf-viz_frontend-prod.docker.tar \
-  && docker load -i deploy/nsf-viz_backend.docker.tar
+  && docker load -i deploy/nsf-viz_backend-prod.docker.tar
 
 # start all the containers
 docker-compose -f docker-compose-prod.yaml --compatibility up
