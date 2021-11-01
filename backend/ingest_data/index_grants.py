@@ -3,7 +3,7 @@ import json
 import csv
 import dateutil.parser
 from pathlib import Path
-from typing import Generator, Iterable, List, Mapping, Optional, Union
+from typing import Generator, Iterable, List, Mapping, Optional, Type, Union
 from elasticsearch_dsl import (
     Document,
     Date,
@@ -128,6 +128,14 @@ def get_data(data_source: Iterable) -> Generator:
         if not cat1_raw:
             # throw away rows with missing category info
             continue
+
+        # validate amount field
+        try:
+            amount = int(r['amount'])
+        except (ValueError, TypeError):
+            # throw away invalid rows
+            continue
+
         mapped_longname = nsf_mapped_reversed.get(cat1_raw, cat1_raw)
         mapped_abbrev = abbrevs_flat.get(normalize(mapped_longname))
         if not mapped_abbrev:
@@ -138,7 +146,7 @@ def get_data(data_source: Iterable) -> Generator:
                 grant_id=r["grant_id"],
                 title=r["title"],
                 abstract=r["abstract"],
-                amount=r["amount"],
+                amount=amount,
                 # date=r['date'],
                 date=format_date(r["date"]),
                 cat1_raw=cat1_raw,

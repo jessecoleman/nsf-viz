@@ -9,6 +9,10 @@ from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import query
 
+import logging
+root_logger = logging.getLogger()
+logger = logging.getLogger('uvicorn')
+
 INDEX = os.environ.get("ELASTICSEARCH_GRANT_INDEX", "grants")
 INDEX_SUGGEST = os.environ.get("ELASTICSEARCH_SUGGEST_INDEX", "grants-suggest")
 
@@ -248,10 +252,10 @@ async def grants(aioes,
     must_or_should = 'must' if toggle else 'should'
     
     query = {
-        'size': 50,
+        'size': 50,  # for infinite scrolling / lazy loading
         'from': idx,
         '_source': {
-            'exclude': ['abstract']
+            'exclude': ['abstract']  # don't return the abstract
         },
         'query': {
             'bool': {
@@ -259,7 +263,7 @@ async def grants(aioes,
                     'bool': {
                         'should': [{
                             'term': {
-                                'division': inv_div_map[div]
+                                'cat1': div,
                             }
                         } for div in divisions]
                     }

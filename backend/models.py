@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel as PyBaseModel
@@ -67,10 +67,10 @@ class Grant(BaseModel):
     amount: int
     cat1: str
     cat1_raw: str
-    cat2: str
-    cat2_raw: str
-    cat3: str
-    cat3_raw: str
+    cat2: Optional[str]
+    cat2_raw: Optional[str]
+    cat3: Optional[str]
+    cat3_raw: Optional[str]
 
 
 class Order(str, Enum):

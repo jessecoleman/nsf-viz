@@ -41,9 +41,12 @@ This needs the elasticsearch data to be available in directory: `./elasticsearch
 # build the frontend
 docker-compose run frontend build
 
-# save the frontend-prod image and the backend image
+# save the frontend-prod image
 docker-compose -f docker-compose-prod.yaml build frontend-prod \
-  && docker save -o deploy/nsf-viz_frontend-prod.docker.tar nsf-viz_frontend-prod \
+  && docker save -o deploy/nsf-viz_frontend-prod.docker.tar nsf-viz_frontend-prod
+
+# save the backend-prod image
+docker-compose -f docker-compose-prod.yaml build backend-prod \
   && docker save -o deploy/nsf-viz_backend-prod.docker.tar nsf-viz_backend-prod
 
 # upload the two images to the server
