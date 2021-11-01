@@ -16,8 +16,8 @@ from aioelasticsearch.helpers import Scan
 from models import Division, Grant, GrantsRequest, SearchRequest, SearchResponse, Term, YearsResponse
 import queries as Q
 
-#logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('uvicorn')
+print("!!!!!!")
+
 
 app = FastAPI(servers=[{'url': '/data'}])
 app.add_middleware(
@@ -25,7 +25,18 @@ app.add_middleware(
     allow_origins=['*'],
     allow_methods=['*']
 )
-app.debug = True
+# app.debug = True
+
+#logging.basicConfig(level=logging.DEBUG)
+# logger = logging.getLogger('uvicorn')
+root_logger = logging.getLogger()
+# logger = root_logger.getChild(__name__)
+logger = root_logger.getChild('uvicorn')
+# from fastapi.logger import logger
+# root_logger.setLevel('DEBUG')
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
+logger.setLevel(log_level)
+
 
 aioes = None
 word_vecs = None
@@ -40,6 +51,11 @@ async def startup():
     ASSETS_DIR = Path(ASSETS_DIR)
     path_to_model = ASSETS_DIR.joinpath('nsf_w2v_model')
     word_vecs = Word2Vec.load(str(path_to_model)).wv
+    logger.error(f"logLevel: {logger.level}")
+    logger.error(f"root logLevel: {root_logger.level}")
+    logger.error('error logger')
+    logger.info('info logger')
+    logger.debug('debug logger')
 
 
 @app.on_event('shutdown')
@@ -182,18 +198,32 @@ async def send_api_json():
 app.mount('/data', app)
 
 if __name__ == '__main__':
+    logger.error("MAIN")
     import uvicorn
     import argparse
+    # handler = logging.StreamHandler()
+    # handler.setFormatter(
+    #     logging.Formatter(
+    #         fmt="%(asctime)s %(name)s.%(lineno)d %(levelname)s : %(message)s",
+    #         datefmt="%H:%M:%S",
+    #     )
+    # )
+    # root_logger.addHandler(handler)
+    # root_logger.setLevel(logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default='localhost')
     parser.add_argument("-p", "--port", type=int, default=8888)
-    parser.add_argument("--log-level", default='info')
+    parser.add_argument("--log-level")
     args = parser.parse_args()
     app.servers = [{ 'url': 'http://localhost:8888' }]
     with open('api.json', 'w') as api:
         json.dump(app.openapi(), api)
     dev_mode = os.environ.get('DEV_MODE')
+    log_level = args.log_level
+    if not log_level:
+        log_level = os.environ.get('LOG_LEVEL', 'info')
+    # root_logger.setLevel(log_level.upper())
     if dev_mode:
-        uvicorn.run("app:app", host=args.host, port=args.port, log_level=args.log_level, reload=True)
+        uvicorn.run("app:app", host=args.host, port=args.port, log_level=log_level.lower(), reload=True)
     else:
-        uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
+        uvicorn.run(app, host=args.host, port=args.port, log_level=log_level.lower())
