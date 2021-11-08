@@ -186,7 +186,8 @@ async def grant_data(request: GrantsRequest):
         
 
 @app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract', response_model=str)
-async def get_abstract(_id, terms):
+@app.get('/abstract/{_id}/', operation_id='loadAbstract', response_model=str)
+async def get_abstract(_id, terms=""):
     return await Q.abstract(aioes, _id, terms)
 
 
