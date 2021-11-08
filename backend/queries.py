@@ -3,7 +3,7 @@ import asyncio
 from models import Grant, SearchResponse, YearsResponse
 import re
 import json
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
@@ -35,7 +35,8 @@ div_map = {d['name']: d['key'] for d in divisions}
 inv_div_map = {d['key']: d['name'] for d in divisions}
 
 
-def convert(bucket):
+# def convert(bucket, keys=['key1', 'key2']):
+def convert(bucket, keys=['cat1']):
     if 'key_as_string' in bucket:
         bucket['key'] = int(bucket.pop('key_as_string'))
             
@@ -47,10 +48,85 @@ def convert(bucket):
     else:
         bucket['amount'] = 0
     
-    if 'divisions' in bucket:
-        bucket['divisions'] = [convert(bucket) for bucket in bucket['divisions']['buckets']]
+    bucket['divisions'] = []
+    for key in keys:
+        if key in bucket:
+            bucket['divisions'] += [convert(bucket) for bucket in bucket[key]['buckets']]
 
     return bucket
+
+
+def terms_multi_match(terms: List[str], fields: List[str], must_or_should: Optional[str] = None):
+    if terms is None or len(terms) == 0:
+        return {
+            'match_all': {}
+        }
+
+    query = {
+        'bool': {
+            must_or_should: [{
+                'multi_match': {
+                    'fields': fields,
+                    'query': term,
+                    'type': 'phrase',
+                }
+            } for term in terms]
+        },
+    }
+
+    if must_or_should == 'should':
+        query['bool']['minimum_should_match'] = 1
+        
+    return query
+    
+    
+def year_range_filter(year_range: Tuple[int, int]):
+    return {
+        'range': {
+            'date': {
+                'format': 'yyyy',
+                'gte': year_range[0],
+                'lt': year_range[1] + 1,
+            }
+        }
+    }
+    
+
+def year_histogram(aggs: Dict[str, Any]):
+    return {
+        'years': {
+            'date_histogram': {
+                'field': 'date',
+                'interval': 'year',
+                'format': 'yyyy',
+                #'min_doc_count': 0,
+                #'size': 100,
+            },
+            'aggs': aggs
+        }
+    }
+
+
+grant_amount_agg = {
+    'grant_amounts': {
+        'sum': {
+            'field': 'amount'
+        }
+    }
+}
+
+
+def term_agg(agg_field: str):
+    return {
+        agg_field: {
+            'terms': {
+                'field': agg_field,
+                'min_doc_count': 0,
+                'size': 100, # TODO: number of divisions
+            },
+            'aggs': grant_amount_agg
+        }
+    }
 
 
 async def year_aggregates(
@@ -63,51 +139,14 @@ async def year_aggregates(
     must_or_should = 'must' if toggle else 'should'
 
     query = {
-        'query': {},
-        'aggs': {
-            'years': {
-                'date_histogram': {
-                    'field': 'date',
-                    'interval': 'year',
-                    'format': 'yyyy',
-                    #'min_doc_count': 0,
-                    #'size': 100,
-                },
-                'aggs': {
-                    'grant_amounts': {
-                        'sum': {
-                            'field': 'amount',
-                        }
-                    }
-                }
-            },
-        }
+        'query': {
+            'bool': {}
+        },
+        'aggs': year_histogram(grant_amount_agg)
     }
 
-    if terms is not None and len(terms) > 0:
-
-        query['query'] = {
-            'bool': {
-                must_or_should: [
-                    {
-                        'multi_match': {
-                            'fields': fields,
-                            'query': term,
-                            'type': 'phrase',
-                        }
-                    }
-                for term in terms],
-            },
-        }
+    query['query'] = terms_multi_match(terms, fields, must_or_should)
         
-    if must_or_should == 'should':
-        query['query']['bool']['minimum_should_match'] = 1
-        
-    if len(query['query']) == 0:
-        query['query'] = {
-            'match_all': {}
-        }
-  
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
     return YearsResponse(
@@ -119,7 +158,7 @@ async def division_aggregates(
         aioes: Elasticsearch,
         toggle: bool,
         terms: List[str] = None,
-        year_range: Tuple[int, int] = None,
+        year_range: Tuple[int, int] = None, #TODO maybe make this required
         fields = ('title', 'abstract'),
         sort = False
     ):
@@ -127,98 +166,50 @@ async def division_aggregates(
     must_or_should = 'must' if toggle else 'should'
 
     query = {
-        'query': {},
+        'query': terms_multi_match(terms, fields, must_or_should),
+        # 'aggs': {
+        #     **term_agg('key1'),
+        #     **term_agg('key2'),
+        #     **year_histogram({
+        #         **term_agg('key1'),
+        #         **term_agg('key2')
+        #     })
+        # }
         'aggs': {
-            'divisions': {
-                'terms': {
-                    # 'field': 'division_key',
-                    'field': 'cat1',
-                    'min_doc_count': 0,
-                    'size': 100,
-                },
-                'aggs': {
-                    'grant_amounts': {
-                        'sum': {
-                            'field': 'amount',
-                        }
-                    }
-                }
-            },
-            'years': {
-                'date_histogram': {
-                    'field': 'date',
-                    'interval': 'year',
-                    'format': 'yyyy',
-                },
-                'aggs': {
-                    'divisions': {
-                        'terms': {
-                            # 'field': 'division_key',
-                            'field': 'cat1',
-                            'size': 100, # TODO: number of divisions
-                        },
-                        'aggs': {
-                            'grant_amounts': {
-                                'sum': {
-                                    'field': 'amount'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            **term_agg('cat1'),
+            **year_histogram({
+                **term_agg('cat1'),
+            })
         }
     }
 
-    if terms is not None and len(terms) > 0:
-
-        query['query'] = {
-            'bool': {
-                must_or_should: [
-                    {
-                        'multi_match': {
-                            'fields': fields,
-                            'query': term,
-                            'type': 'phrase',
-                        }
-                    }
-                for term in terms],
-            },
-        }
-        
-    if must_or_should == 'should':
-        query['query']['bool']['minimum_should_match'] = 1
-        
     if year_range is not None:
 
+        # if terms is None
+        if 'bool' not in query['query']:
+            query['query'] = {
+                'bool': {}
+            }
+
+        # if toggle == "should"
         if 'must' not in query['query']['bool']:
             query['query']['bool']['must'] = []
 
-        query['query']['bool']['must'].append({
-            'range': {
-                'date': {
-                    'format': 'yyyy',
-                    'gte': year_range[0],
-                    'lt': year_range[1] + 1,
-                }
-            }
-        })
-        
-    if len(query['query']) == 0:
-        query['query'] = {
-            'match_all': {}
-        }
+        query['query']['bool']['must'].append(year_range_filter(year_range))
   
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
-    overall_buckets = hits['aggregations']['divisions']['buckets']
+    # TODO better way to merge these
+    # overall_buckets = hits['aggregations']['key1']['buckets']
+    # overall_buckets = hits['aggregations']['key1']['buckets']
+    # overall_buckets2 = hits['aggregations']['key2']['buckets']
+    overall_buckets = hits['aggregations']['cat1']['buckets']
 
     return SearchResponse(
         per_year=[convert(bucket) for bucket in per_year_buckets],
         overall=[convert(bucket) for bucket in overall_buckets],
     )
  
-
 
 async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):
 
@@ -246,16 +237,22 @@ async def grants(aioes,
         divisions: List[str],
         fields: List[str],
         terms: List[str],
-        year_range: Tuple[int, int]
+        year_range: Tuple[int, int],
+        limit: int = 50,
     ):
 
     must_or_should = 'must' if toggle else 'should'
     
+    must_query = [terms_multi_match(terms, fields, must_or_should)]
+
+    if year_range is not None:
+        must_query.append(year_range_filter(year_range))
+ 
     query = {
-        'size': 50,  # for infinite scrolling / lazy loading
+        'size': limit,
         'from': idx,
         '_source': {
-            'exclude': ['abstract']  # don't return the abstract
+            'exclude': ['abstract']
         },
         'query': {
             'bool': {
@@ -263,24 +260,12 @@ async def grants(aioes,
                     'bool': {
                         'should': [{
                             'term': {
-                                'cat1': div,
+                                'cat1': div
                             }
                         } for div in divisions]
                     }
                 }],
-                'must': [{
-                    'bool': {
-                        must_or_should: [
-                            {
-                                'multi_match': {
-                                    'fields': fields,
-                                    'query': term,
-                                    'type': 'phrase',
-                                }
-                            }
-                        for term in terms],
-                    }
-                }]
+                'must': must_query
             }
         },
         'sort': [
@@ -293,38 +278,20 @@ async def grants(aioes,
         'track_scores': True
     }
     
-    if must_or_should == 'should':
-        query['query']['bool']['must'][0]['bool']['minimum_should_match'] = 1
-
-    if year_range is not None:
-
-        query['query']['bool']['must'].append({
-            'range': {
-                'date': {
-                    'format': 'yyyy',
-                    'gte': year_range[0],
-                    'lt': year_range[1] + 1,
-                }
-            }
-        })
- 
     try:
         response = await aioes.search(index=INDEX, body=query)
+
     except RequestError as e:
         print(e.info)
 
     if response['hits']['total'] == 0:
-        raise Exception(404, detail='index out of bounds')
+        raise IndexError(404, detail='index out of bounds')
 
-    grants = []
-    for hit in response['hits']['hits']:
-        grants.append(Grant(
-                id=hit['_id'],
-                score=hit['_score'],
-                **hit['_source'],
-            ))
-            
-    return grants
+    return [Grant(
+        id=hit['_id'],
+        score=hit['_score'],
+        **hit['_source'],
+    ) for hit in response['hits']['hits']]
  
     
 async def abstract(aioes, _id: str, terms: str):
@@ -362,15 +329,17 @@ async def abstract(aioes, _id: str, terms: str):
 
     response = await aioes.search(index=INDEX, body=query)
     hit = response['hits']['hits'][0]
-    if hit.get('highlight'):
+    if 'highlight' in hit:
         highlight = hit['highlight']['abstract'][0]
+        # this is an unfortunate limitation of ES highlight that requires merging
+        # adjacent <em> spans manually
         return re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
     else:
         return hit['_source']['abstract']
 
  
 async def typeahead(aioes, prefix: str):
-    result = await aioes.search(index=INDEX_SUGGEST, body={
+    result = await aioes.search(index='nsf-suggest', body={
             'suggest': {
                 'gram-suggest': {
                     'prefix': prefix,
@@ -386,7 +355,6 @@ async def typeahead(aioes, prefix: str):
             }
         })
 
-    print(json.dumps(result, indent=2))
     return [
         g['_source']['term']
         for g in result['suggest']['gram-suggest'][0]['options']
