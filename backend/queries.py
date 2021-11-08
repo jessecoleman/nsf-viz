@@ -201,7 +201,6 @@ async def division_aggregates(
     per_year_buckets = hits['aggregations']['years']['buckets']
     # TODO better way to merge these
     # overall_buckets = hits['aggregations']['key1']['buckets']
-    # overall_buckets = hits['aggregations']['key1']['buckets']
     # overall_buckets2 = hits['aggregations']['key2']['buckets']
     overall_buckets = hits['aggregations']['cat1']['buckets']
 
@@ -260,7 +259,7 @@ async def grants(aioes,
                     'bool': {
                         'should': [{
                             'term': {
-                                'cat1': div
+                                'cat1': div,
                             }
                         } for div in divisions]
                     }
@@ -339,7 +338,7 @@ async def abstract(aioes, _id: str, terms: str):
 
  
 async def typeahead(aioes, prefix: str):
-    result = await aioes.search(index='nsf-suggest', body={
+    result = await aioes.search(index=INDEX_SUGGEST, body={
             'suggest': {
                 'gram-suggest': {
                     'prefix': prefix,
