@@ -19,6 +19,11 @@ from elasticsearch_dsl.analysis import token_filter
 from tqdm import tqdm
 import mysql.connector as conn
 
+import logging
+
+root_logger = logging.getLogger()
+logger = root_logger.getChild(__name__)
+
 from parse_abbrevs import abbrevs_flat, normalize, nsf_mapped_reversed
 
 host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
@@ -123,23 +128,26 @@ def get_data(data_source: Iterable) -> Generator:
 
     Grant.init()
 
-    for r in tqdm(data_source):
+    for i, r in enumerate(tqdm(data_source)):
         cat1_raw = r["cat1_raw"]
         if not cat1_raw:
             # throw away rows with missing category info
+            logger.debug(f"no 'cat1_raw' found for line {i}. skipping...")
             continue
 
         # validate amount field
         try:
-            amount = int(r['amount'])
+            amount = int(float(r['amount']))
         except (ValueError, TypeError):
             # throw away invalid rows
+            logger.debug(f"for line {i}, 'amount' value is {r['amount']}, which is not valid. skipping...")
             continue
 
         mapped_longname = nsf_mapped_reversed.get(cat1_raw, cat1_raw)
         mapped_abbrev = abbrevs_flat.get(normalize(mapped_longname))
         if not mapped_abbrev:
             # TODO: for now, throw away rows without mapped category. revisit this
+            logger.debug(f"no cat1 found for line {i}. 'cat1_raw' is {cat1_raw}. skipping...")
             continue
         try:
             g = Grant(
@@ -155,6 +163,7 @@ def get_data(data_source: Iterable) -> Generator:
             )
             yield g.to_dict(True)
         except KeyError:
+            logger.debug(f"KeyError encountered for line {i}. skipping...")
             continue
 
 

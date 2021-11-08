@@ -59,6 +59,10 @@ scp -r deploy <address_and_path_to_server>
 docker load -i deploy/nsf-viz_frontend-prod.docker.tar \
   && docker load -i deploy/nsf-viz_backend-prod.docker.tar
 
+# may be necessary to change permissions on `elasticsearch_data` directory
+sudo chown -R elasticsearch:elasticsearch elasticsearch_data/ \
+  && sudo chmod -R a+w elasticsearch_data/
+
 # start all the containers
 docker-compose -f docker-compose-prod.yaml --compatibility up
 ```
