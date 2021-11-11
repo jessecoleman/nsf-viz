@@ -98,7 +98,7 @@ export const loadAbstract = createAsyncThunk<
     if (selected.length) {
       terms = selected;
     }
-    return await Service.loadAbstract(payload, terms);
+    return await Service.loadAbstract(payload, terms.join(','));
   }
 );
 
