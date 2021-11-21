@@ -44,7 +44,7 @@ export type Layout = {
   years: number[];
  };
  
-export default class D3Component {
+export default class BarChart {
   // DOM layout
   containerEl: HTMLDivElement;
   tooltip?: Selection<HTMLDivElement>;
@@ -204,7 +204,7 @@ export default class D3Component {
       this.prev?.years[0] === this.years[0] &&
       this.prev?.years.length === this.years.length
     );
- 
+
     if (agg) this.agg = agg;
 
     this.stack = this.getStack(data, divDomain, this.agg);
@@ -266,9 +266,8 @@ export default class D3Component {
       .duration(this.animationDur)
       .attr('fill', d => this.color(d.key));
       
-   
     stacks.each((div, i, stack) => {
-      const bars = d3.select<SVGGElement, Series[]>(stack[i] as any)
+      const bars = d3.select<SVGGElement, Series[]>(stack[i])
         .selectAll<SVGRectElement, Series>('.bar')
         .data(d => d, d => d.data.year)
         .join(

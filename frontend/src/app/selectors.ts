@@ -2,7 +2,7 @@ import { createSelector } from '@reduxjs/toolkit';
 import createCachedSelector from 're-reselect';
 import { Directory, DivisionAggregate, SubDirectory } from 'api';
 import { AggFields } from './chart/D3Chart';
-import { SortDirection } from './filterReducer';
+import { DivisionOrder, SortDirection } from './filterReducer';
 import type { RootState } from './store';
 
 type SortableKeys = 'name' | 'count' | 'amount';
@@ -112,6 +112,16 @@ export const getDepartmentMap = createSelector(
     dir.departments?.map(d => d.abbr) ?? []
   ]))
 );
+
+// TODO recursive aggregate
+// const getOrderedDirectory = (dir: Directory[], order: DivisionOrder) => {
+//     stableSort(dir.map(dir => ({
+//       ...dir,
+//       key: dir.abbr,
+//       count: divisions[dir.abbr]?.count ?? 0,
+//       amount: divisions[dir.abbr]?.amount ?? 0,
+//       departments: 
+// }
 
 export const getDirectoryAggs = createSelector(
   getOrgDirectory,

@@ -2,7 +2,7 @@ import re
 from typing import Any, List, Optional, Tuple
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel as PyBaseModel
+from pydantic import BaseModel as PyBaseModel, Field
 
 
 def to_camel(snake: str):
@@ -12,7 +12,8 @@ def to_camel(snake: str):
 class BaseModel(PyBaseModel):
     class Config:
         pass
-        # alias_generator = to_camel
+        alias_generator = to_camel
+        allow_population_by_field_name = True
 
 
 class SubDirectory(BaseModel):
@@ -52,7 +53,7 @@ class YearDivisionAggregate(BaseModel):
    
 
 class SearchRequest(BaseModel):
-    boolQuery: str
+    bool_query = Field(..., alias='boolQuery')
     terms: List[str]
     divisions: List[str]
     fields: List[str]
@@ -104,7 +105,6 @@ class GrantsRequest(SearchRequest):
     idx: int
     order: str #Order,
     order_by: Optional[str] = 'title'
-    toggle: bool
     
 
 class Term(BaseModel):

@@ -8,12 +8,11 @@ import { setGrantDialogOpen, setGrantFilter, setYearRange } from 'app/filterRedu
 import { clearGrants } from 'app/dataReducer';
 import { loadData, loadYears } from 'app/actions';
 import { useEffect, useRef, useState } from 'react';
-import D3Component from './D3Chart';
+import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { colorScales } from 'theme';
-import { isFulfilled } from '@reduxjs/toolkit';
 
-let vis: D3Component;
+let vis: BarChart;
 
 const ChartContainer = styled.div(({ theme }) => `
   flex-grow: 1;
@@ -94,7 +93,7 @@ const Chart = (props: ChartProps) => {
   // mount chart on first load
   useEffect(() => {
     if (visRef.current && !vis) {
-      vis = new D3Component({
+      vis = new BarChart({
         dimensions: props,
         containerEl: visRef.current,
         onTooltipEnter: handleTooltipEnter,
@@ -116,6 +115,7 @@ const Chart = (props: ChartProps) => {
     }
   }, [vis, loading, order, JSON.stringify(query.divisions)]);
   
+  // update timeline on year change
   useEffect(() => {
     if (vis && !yearLoading) {
       if (isAgg(order)) {
@@ -126,14 +126,17 @@ const Chart = (props: ChartProps) => {
     }
   }, [vis, yearLoading, order]);
   
+  // update bar styles on highlight
   useEffect(() => {
     vis?.highlightGroup(highlightedDivision);
   }, [highlightedDivision]);
 
+  // update chart on window resize
   useEffect(() => {
     if (props.height) vis.measure(props.width, props.height);
   }, [props.width, props.height]);
 
+  // query backend on query change
   useEffect(() => {
     dispatch(loadData(query));
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool, yearRange ])]);

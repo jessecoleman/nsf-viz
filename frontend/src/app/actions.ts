@@ -1,6 +1,6 @@
 import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { Grant, SearchResponse, Service } from 'api';
+import { Grant, SearchResponse, ServiceService as Service } from 'api';
 import type { FilterState } from './filterReducer';
 import { YearsResponse } from 'api/models/YearsResponse';
 
@@ -28,7 +28,7 @@ export const loadData = createAsyncThunk<
     return await Service.search({
       ...rest,
       ...query,
-      boolQuery: legendFilters.bool,
+      bool_query: legendFilters.bool,
       year_range: yearRange,
     });
   });
@@ -55,7 +55,7 @@ export const loadYears = createAsyncThunk<
     return await Service.years({
       ...rest,
       ...query,
-      boolQuery: legendFilters.bool,
+      bool_query: legendFilters.bool,
     });
   });
 
@@ -80,7 +80,7 @@ export const loadGrants = createAsyncThunk<
       ...query,
       order,
       order_by: orderBy === 'title' ? 'title.raw' : orderBy,
-      toggle: legendFilters.bool === 'all',
+      bool_query: 'all',
       year_range: grantFilter.yearRange,
     });
   });
