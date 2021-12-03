@@ -10,6 +10,12 @@ from elasticsearch_dsl import (
     connections,
 )
 
+import logging
+
+root_logger = logging.getLogger()
+logger = root_logger.getChild(__name__)
+
+
 host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
 es = connections.create_connection(hosts=[host], timeout=20)
 index_name = os.environ.get("ELASTICSEARCH_SUGGEST_INDEX", "grants-suggest")
@@ -37,7 +43,13 @@ def get_data(terms_file='../assets/terms.txt'):
     terms_file = Path(terms_file).resolve()
     with open(terms_file, 'r') as terms:
         for line in terms:
-            weight, term = line.strip().split()
+            try:
+                weight, term = line.strip().split()
+            except ValueError:
+                logger.warning(f"ERROR!! line: {line}")
+                continue
+            if float(weight) < 0:
+                continue
             term = term.replace('_', ' ')
             words = term.split()
         

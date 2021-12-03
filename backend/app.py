@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse
 from gensim.models.word2vec import Word2Vec
+from gensim.models import KeyedVectors
 import logging
 import json
 from functools import lru_cache
@@ -15,9 +16,6 @@ from aioelasticsearch.helpers import Scan
 
 from models import Division, Grant, GrantsRequest, SearchRequest, SearchResponse, Term, YearsResponse
 import queries as Q
-
-print("!!!!!!")
-
 
 app = FastAPI(servers=[{'url': '/data'}])
 app.add_middleware(
@@ -41,6 +39,17 @@ logger.setLevel(log_level)
 aioes = None
 word_vecs = None
 
+def load_word_vecs(path_to_model: Union[str, Path]) -> KeyedVectors:
+    # if the model is a '.txt' file, assume it is a text keyed vectors file
+    # otherwise, assume it is a full word2vec model file
+    # we'll probably want to change this
+    path_to_model = Path(path_to_model)
+    logger.info(f"loading similarity model from {path_to_model}")
+    if path_to_model.suffix == '.txt':
+        return KeyedVectors.load_word2vec_format(str(path_to_model), binary=False)
+    else:
+        return Word2Vec.load(str(path_to_model)).wv
+
 @app.on_event('startup')
 async def startup():
     global aioes, ASSETS_DIR, word_vecs
@@ -49,8 +58,12 @@ async def startup():
     aioes = Elasticsearch([{"host": host}])
     ASSETS_DIR = os.environ.get('ASSETS_DIR', 'assets')
     ASSETS_DIR = Path(ASSETS_DIR)
-    path_to_model = ASSETS_DIR.joinpath('nsf_w2v_model')
-    word_vecs = Word2Vec.load(str(path_to_model)).wv
+    MODEL_FILENAME = os.environ.get('WORD_VECTORS_FILENAME', '')
+    if not MODEL_FILENAME:
+        MODEL_FILENAME = 'nsf_w2v_model'  # default value
+    # path_to_model = ASSETS_DIR.joinpath('combined_nsfandnih_scispacy_entity_vectors.txt')
+    path_to_model = ASSETS_DIR.joinpath(MODEL_FILENAME)
+    word_vecs = load_word_vecs(path_to_model)
     logger.error(f"logLevel: {logger.level}")
     logger.error(f"root logLevel: {root_logger.level}")
     logger.error('error logger')

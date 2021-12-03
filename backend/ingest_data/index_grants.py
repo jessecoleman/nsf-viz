@@ -62,7 +62,7 @@ class Grant(Document):
     # see also: Grant class in models.py
     grant_id = Keyword()
     agency = Keyword()
-    title = Text(fields={"raw": Keyword()})
+    title = Text(fields={"raw": Keyword()}, analyzer=aggressive_analyzer)
     abstract = Text(term_vector="with_positions_offsets", analyzer=aggressive_analyzer)
     date = Date()
     amount = Integer()
