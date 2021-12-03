@@ -17,7 +17,6 @@ from elasticsearch_dsl import (
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl.analysis import token_filter
 from tqdm import tqdm
-import mysql.connector as conn
 
 import logging
 
@@ -81,20 +80,6 @@ def format_date(date_str: str) -> str:
     return dt.strftime("%Y-%m-%d")
 
 
-# DEPRECATED
-def data_source_mysql() -> List:
-    db = conn.connect(
-        database="nsf", user="nsf", password="!DLnsf333", host="localhost"
-    )
-
-    cur = db.cursor()
-    cur.execute(
-        "select AwardTitle, AbstractNarration, AwardAmount, AwardEffectiveDate, LongName from Award join Division on Award.AwardID = Division.AwardID"
-    )
-
-    return cur.fetchall()
-
-
 def data_source_csv(fpath: Union[str, Path]) -> Generator:
     # csv schema is: 'idx,grant_id,title,abstract,amount,date,cat1_raw,agency'
     fpath = Path(fpath)
@@ -137,17 +122,21 @@ def get_data(data_source: Iterable) -> Generator:
 
         # validate amount field
         try:
-            amount = int(float(r['amount']))
+            amount = int(float(r["amount"]))
         except (ValueError, TypeError):
             # throw away invalid rows
-            logger.debug(f"for line {i}, 'amount' value is {r['amount']}, which is not valid. skipping...")
+            logger.debug(
+                f"for line {i}, 'amount' value is {r['amount']}, which is not valid. skipping..."
+            )
             continue
 
         mapped_longname = nsf_mapped_reversed.get(cat1_raw, cat1_raw)
         mapped_abbrev = abbrevs_flat.get(normalize(mapped_longname))
         if not mapped_abbrev:
             # TODO: for now, throw away rows without mapped category. revisit this
-            logger.debug(f"no cat1 found for line {i}. 'cat1_raw' is {cat1_raw}. skipping...")
+            logger.debug(
+                f"no cat1 found for line {i}. 'cat1_raw' is {cat1_raw}. skipping..."
+            )
             continue
         try:
             g = Grant(
@@ -176,10 +165,7 @@ def build_index(data_source: Iterable):
 
 
 def main(args):
-    if args.data_source.lower() == "mysql":
-        data_source = data_source_mysql()
-        build_index(data_source=data_source)
-    elif args.data_source.endswith(".csv"):
+    if args.data_source.endswith(".csv"):
         data_source = data_source_csv(args.data_source)
         build_index(data_source=data_source)
     else:
@@ -192,8 +178,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--data-source",
-        default="mysql",
-        help="Source for data (default: mysql database)",
+        help="Source for data",
     )
     global args
     args = parser.parse_args()
