@@ -71,7 +71,6 @@ const Chart = (props: ChartProps) => {
   // const { counts, amounts } = useAppSelector(getLegendFilters);
   const yearRange = useAppSelector(getYearRange);
   const data = useAppSelector(getStackedData);
-  const yearData = useAppSelector(getYearAgg);
   const divisions = Object.values(useAppSelector(getSortedDivisionAggs));
   // TODO why are colors not persistent
   const divDomain = divisions.map(d => d.key)

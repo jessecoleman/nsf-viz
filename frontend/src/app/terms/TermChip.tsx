@@ -71,7 +71,11 @@ export type TermChipProps = {
 };
 
 const TermChip = (props: TermChipProps) => (
-  <Flipped flipId={props.term}>
+  <Flipped
+    // onAppear={animateIn}
+    // onExit={animateOut}
+    flipId={props.term}
+  >
     <StyledChip
       variant='filled'
       color={props.selected ? 'secondary' : undefined}

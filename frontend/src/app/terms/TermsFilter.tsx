@@ -1,5 +1,5 @@
 import { MouseEvent, ChangeEvent } from 'react';
-import { Flipper } from 'react-flip-toolkit';
+import { Flipper, Flipped } from 'react-flip-toolkit';
 import { styled } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles';
 
@@ -75,9 +75,10 @@ const exitThenFlipThenEnter = ({
 const TermsFilter = () => {
 
   const dispatch = useAppDispatch();
-  const { input, setInput } = useDebouncedSearch(input => (
+  const { input, setInput, results } = useDebouncedSearch(input => (
     dispatch(loadTypeahead(input))
   ), 300);
+  // console.log(results);
   const terms = useAppSelector(getTerms);
   const selected = useAppSelector(getSelectedTerms);
 

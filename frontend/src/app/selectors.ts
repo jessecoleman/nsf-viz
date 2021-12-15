@@ -113,16 +113,6 @@ export const getDepartmentMap = createSelector(
   ]))
 );
 
-// TODO recursive aggregate
-// const getOrderedDirectory = (dir: Directory[], order: DivisionOrder) => {
-//     stableSort(dir.map(dir => ({
-//       ...dir,
-//       key: dir.abbr,
-//       count: divisions[dir.abbr]?.count ?? 0,
-//       amount: divisions[dir.abbr]?.amount ?? 0,
-//       departments: 
-// }
-
 export const getDirectoryAggs = createSelector(
   getOrgDirectory,
   getDivisionMap,

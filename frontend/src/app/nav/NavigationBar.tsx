@@ -5,9 +5,10 @@ import {
   Box,
   styled
 } from '@material-ui/core';
-import { Menu } from '@mui/icons-material';
+import { Menu, CleanHands } from '@mui/icons-material';
 
 import TermsFilter from 'app/terms/TermsFilter';
+
 import grantExplorer from 'app/images/grant-explorer.svg';
 import DrawerToggle from './DrawerToggle';
 import { forwardRef } from 'react';

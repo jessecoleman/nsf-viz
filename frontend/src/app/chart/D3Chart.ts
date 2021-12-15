@@ -219,6 +219,35 @@ export default class BarChart {
    
     this.updateAxes();
 
+    const prevDivIndices = Object.fromEntries(this.prev?.divs.map((d, i) => [d, i]) ?? []);
+    const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
+
+    const sameDomain = (
+      this.prev &&
+      this.prev.years[0] === this.years[0] &&
+      this.prev.years.length === this.years.length
+    );
+ 
+    const offsets = {};
+    if (this.prev && this.prev.divs.length !== this.divs.length) {
+      // determine whether groups were added or removed
+      const [ sub, sup ] = this.prev.divs.length < this.divs.length 
+        ? [ this.prev.divs, this.divs ]
+        : [ this.divs, this.prev.divs ];
+      
+      let offset = 0; // track offset between sub/sup
+      sub.forEach((key, i) => {
+        while (key !== sup[i + offset]) {
+          offsets[sup[i + offset]] = offset;
+          offset += 1;
+        }
+      });
+    } else {
+      this.divs.forEach(d => {
+        offsets[d] = -1;
+      });
+    }
+ 
     const stacks = this.chart.selectAll<SVGGElement, Series>('.bars')
       .data(this.stack, d => d.key)
       .join(
