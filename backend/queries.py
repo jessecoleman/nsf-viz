@@ -56,7 +56,7 @@ def convert(bucket, keys=['cat1']):
     return bucket
 
 
-def terms_multi_match(terms: List[str], fields: List[str], must_or_should: Optional[str] = None):
+def terms_multi_match(terms: List[str], match: List[str], must_or_should: Optional[str] = None):
     if terms is None or len(terms) == 0:
         return {
             'match_all': {}
@@ -66,7 +66,7 @@ def terms_multi_match(terms: List[str], fields: List[str], must_or_should: Optio
         'bool': {
             must_or_should: [{
                 'multi_match': {
-                    'fields': fields,
+                    'fields': match,
                     'query': term,
                     'type': 'phrase',
                 }
@@ -80,16 +80,21 @@ def terms_multi_match(terms: List[str], fields: List[str], must_or_should: Optio
     return query
     
     
-def year_range_filter(year_range: Tuple[int, int]):
-    return {
+def year_range_filter(start: int, end: int):
+    subquery = {
         'range': {
             'date': {
                 'format': 'yyyy',
-                'gte': year_range[0],
-                'lt': year_range[1] + 1,
             }
         }
     }
+    if start:
+        subquery['range']['date']['gte'] = start
+
+    if end:
+        subquery['range']['date']['lt'] = end + 1
+
+    return subquery
     
 
 def year_histogram(aggs: Dict[str, Any]):
@@ -131,12 +136,15 @@ def term_agg(agg_field: str):
 
 async def year_aggregates(
     aioes: Elasticsearch,
-    toggle: bool,
+    intersection: bool,
     terms: List[str] = None,
-    fields = ('title', 'abstract'),
+    match = ('title', 'abstract'),
     sort = False
 ):
-    must_or_should = 'must' if toggle else 'should'
+    must_or_should = 'must' if intersection else 'should'
+
+    if len(match) == 0:
+        match = ('title', 'abstract')
 
     query = {
         'query': {
@@ -145,7 +153,7 @@ async def year_aggregates(
         'aggs': year_histogram(grant_amount_agg)
     }
 
-    query['query'] = terms_multi_match(terms, fields, must_or_should)
+    query['query'] = terms_multi_match(terms, match, must_or_should)
         
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
@@ -156,17 +164,21 @@ async def year_aggregates(
 
 async def division_aggregates(
         aioes: Elasticsearch,
-        toggle: bool,
+        intersection: bool,
+        start: Optional[int],
+        end: Optional[int],
+        match: List[str],
         terms: List[str] = None,
-        year_range: Tuple[int, int] = None, #TODO maybe make this required
-        fields = ('title', 'abstract'),
         sort = False
     ):
     
-    must_or_should = 'must' if toggle else 'should'
+    must_or_should = 'must' if intersection else 'should'
+
+    if len(match) == 0:
+        match = ('title', 'abstract')
 
     query = {
-        'query': terms_multi_match(terms, fields, must_or_should),
+        'query': terms_multi_match(terms, match, must_or_should),
         # 'aggs': {
         #     **term_agg('key1'),
         #     **term_agg('key2'),
@@ -183,7 +195,7 @@ async def division_aggregates(
         }
     }
 
-    if year_range is not None:
+    if start is not None or end is not None:
 
         # if terms is None
         if 'bool' not in query['query']:
@@ -195,8 +207,8 @@ async def division_aggregates(
         if 'must' not in query['query']['bool']:
             query['query']['bool']['must'] = []
 
-        query['query']['bool']['must'].append(year_range_filter(year_range))
-  
+        query['query']['bool']['must'].append(year_range_filter(start, end))
+        
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
     # TODO better way to merge these
@@ -211,12 +223,12 @@ async def division_aggregates(
     )
  
 
-async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):
+async def term_freqs(aioes: Elasticsearch, terms: List[str], match: List[str]):
 
     queries = [{
         'query': {
             'multi_match': {
-                'fields': fields,
+                'fields': match,
                 'query': term,
                 'type': 'phrase',
             }
@@ -231,22 +243,23 @@ async def term_freqs(aioes: Elasticsearch, terms: List[str], fields: List[str]):
     
 async def grants(aioes,
         idx: int,
-        toggle: bool,
+        intersection: bool,
         order_by: str,
         order: str,
         divisions: List[str],
-        fields: List[str],
+        match: List[str],
         terms: List[str],
-        year_range: Tuple[int, int],
+        start: Optional[int],
+        end: Optional[int],
         limit: int = 50,
     ):
 
-    must_or_should = 'must' if toggle else 'should'
+    must_or_should = 'must' if intersection else 'should'
     
-    must_query = [terms_multi_match(terms, fields, must_or_should)]
+    must_query = [terms_multi_match(terms, match, must_or_should)]
 
-    if year_range is not None:
-        must_query.append(year_range_filter(year_range))
+    if start is not None or end is not None:
+        must_query.append(year_range_filter(start, end))
  
     query = {
         'size': limit,

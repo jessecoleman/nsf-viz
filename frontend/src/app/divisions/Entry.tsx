@@ -62,6 +62,8 @@ const DirectoryEntry = (props: DirectoryProps) => {
     onCheck,
     ...other
   } = props;
+  
+  // console.log(props);
 
   return (
     <Tooltip title={desc ?? ''}>

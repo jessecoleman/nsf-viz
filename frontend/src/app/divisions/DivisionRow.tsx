@@ -31,6 +31,7 @@ type ColumnStyles = {
 
 type TextStyles = {
   light: boolean
+  backgroundColor?: string
 }
 
 export const Column = styled(Box)<ColumnStyles>(({ theme, column }) => `
@@ -41,8 +42,9 @@ export const Column = styled(Box)<ColumnStyles>(({ theme, column }) => `
   padding: ${column === 'checkbox' ? 0 : theme.spacing(0, 1)};
 `);
 
-export const NumberColumn = styled(Column)<ColumnStyles & TextStyles>(({ theme, light }) => `
+export const NumberColumn = styled(Column)<ColumnStyles & TextStyles>(({ theme, light, backgroundColor }) => `
   color: ${light ? theme.palette.common.black : theme.palette.common.white};
+  background-color: ${backgroundColor};
 `);
 
 export type CellData = {
@@ -63,12 +65,23 @@ type RowProps = RowStyles & {
   checked?: boolean
 }
 
+// return brightness of hex value to determine if text should be black or white to meet
+// contrast ratio accessibility requirement
 const rgb2hsl = (hex?: string) => {
   if (hex === undefined || hex === 'white') return 1;
-  let [ r, g, b ] = /(\w{2})(\w{2})(\w{2})/.exec(hex)!.map(v => parseInt(v, 16)).slice(1);
-  r /= 255, g /= 255, b /= 255;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const [ r, g, b ] = /(\w{2})(\w{2})(\w{2})/.exec(hex)!
+    .map(v => parseInt(v, 16))
+    .slice(1)
+    .map(v => v / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   return max + min / 2;
+};
+
+const formatColumn = (cell: CellData): string => {
+  if (cell.value === 0) return '-';
+  else if (cell.name === 'count') return cell.value.toString();
+  else return format('$.2s')(cell.value).replace(/G/, 'B');
 };
 
 const DivisionRow = forwardRef((props: RowProps, ref) => (
@@ -97,17 +110,10 @@ const DivisionRow = forwardRef((props: RowProps, ref) => (
         key={c.name}
         column={c.name}
         light={props.header || rgb2hsl(c.fill) > 0.9}
-        style={{
-          backgroundColor: props.header ? 'white' : c.fill
-        }}
+        backgroundColor={props.header ? 'white' : c.fill}
       >
         <Typography>
-          {c.value === 0 
-            ? '-'
-            : c.name === 'count'
-              ? c.value
-              : format('$.2s')(c.value).replace(/G/, 'B')
-          }
+          {formatColumn(c)}
         </Typography>
       </NumberColumn>
     ))}

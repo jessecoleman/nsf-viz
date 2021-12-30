@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from 'app/store';
 import { getGrant } from 'app/selectors';
 import { Grant } from 'api/models/Grant';
 import { timeFormat, timeParse, format } from 'd3';
+import { useQuery } from 'app/hooks';
 
 type Column = {
   id: keyof Grant
@@ -21,7 +22,7 @@ export const cols: Column[] = [
 
 export const GrantListItem = styled('div')(({ theme }) => `
   display: grid;
-  grid-template-columns: [title] auto [date] 8rem [amount] 8rem [division] 15rem;
+  grid-template-columns: [title] auto [date] 8rem [amount] 8rem [cat1_raw] 20rem;
   cursor: pointer;
   padding-left: ${theme.spacing(3)};
   padding-right: ${theme.spacing(1)};
@@ -61,13 +62,17 @@ const GrantRow = (props: GrantRowProps) => {
 
   const { index, style } = props;
 
+  const [{ terms }] = useQuery();
   const dispatch = useAppDispatch();
   const grant = useAppSelector(state => getGrant(state, index));
 
   if (!grant) return null;
 
   const setSelectedGrant = () => {
-    dispatch(loadAbstract(grant.id));
+    dispatch(loadAbstract({
+      id: grant.id,
+      terms: terms ?? [],
+    }));
   };
 
   return (

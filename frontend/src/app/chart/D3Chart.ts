@@ -48,7 +48,7 @@ export default class BarChart {
   // DOM layout
   containerEl: HTMLDivElement;
   tooltip?: Selection<HTMLDivElement>;
-  padding = { top: 10, bottom: 20, left: 50, right: 10 };
+  padding = { top: 24, bottom: 36, left: 72, right: 24 };
   timelineLayout = { height: 80, padding: this.padding };
   svg: Selection<SVGSVGElement>;
   chart: Selection<SVGGElement>;
@@ -148,7 +148,23 @@ export default class BarChart {
   
   // TODO better formatting of decimals
   tickFormat = {
-    x: d3.format('d'),
+    // x: d3.format('d'),
+    x: (d: number) => {
+      const [ min, max ] = d3.extent(this.x.domain());
+      if (!(min && max)) return '';
+      const yearGap = Math.round((max! - min!) / this.chartWidth * 200);
+      const boundaryYearGap = Math.ceil(yearGap / 2);
+
+      const showTick = d === min 
+        || d === max
+        || (
+          d % yearGap === 0 
+          && d - boundaryYearGap >= min!
+          && d + boundaryYearGap <= max!
+        );
+
+      return showTick ? d.toString() : '';
+    },
     y: (d: number) => (this.agg === 'amount' ? '$' : '') + d3.format('.2s')(d)
       .replace(/G/, 'B')
       .replace(/\.0$/, '')
@@ -214,39 +230,40 @@ export default class BarChart {
     this.color.domain(this.divs);
     this.redraw();
   }
-  
+
   redraw = () => {
    
     this.updateAxes();
 
-    const prevDivIndices = Object.fromEntries(this.prev?.divs.map((d, i) => [d, i]) ?? []);
-    const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
+    // TODO it seems like this isn't needed?
+    // const prevDivIndices = Object.fromEntries(this.prev?.divs.map((d, i) => [d, i]) ?? []);
+    // const divIndices = Object.fromEntries(this.divs.map((d, i) => [d, i]));
 
-    const sameDomain = (
-      this.prev &&
-      this.prev.years[0] === this.years[0] &&
-      this.prev.years.length === this.years.length
-    );
+    // const sameDomain = (
+    //   this.prev &&
+    //   this.prev.years[0] === this.years[0] &&
+    //   this.prev.years.length === this.years.length
+    // );
  
-    const offsets = {};
-    if (this.prev && this.prev.divs.length !== this.divs.length) {
-      // determine whether groups were added or removed
-      const [ sub, sup ] = this.prev.divs.length < this.divs.length 
-        ? [ this.prev.divs, this.divs ]
-        : [ this.divs, this.prev.divs ];
-      
-      let offset = 0; // track offset between sub/sup
-      sub.forEach((key, i) => {
-        while (key !== sup[i + offset]) {
-          offsets[sup[i + offset]] = offset;
-          offset += 1;
-        }
-      });
-    } else {
-      this.divs.forEach(d => {
-        offsets[d] = -1;
-      });
-    }
+    // const offsets = {};
+    // if (this.prev && this.prev.divs.length !== this.divs.length) {
+    //   // determine whether groups were added or removed
+    //   const [ sub, sup ] = this.prev.divs.length < this.divs.length 
+    //     ? [ this.prev.divs, this.divs ]
+    //     : [ this.divs, this.prev.divs ];
+    //   
+    //   let offset = 0; // track offset between sub/sup
+    //   sub.forEach((key, i) => {
+    //     while (key !== sup[i + offset]) {
+    //       offsets[sup[i + offset]] = offset;
+    //       offset += 1;
+    //     }
+    //   });
+    // } else {
+    //   this.divs.forEach(d => {
+    //     offsets[d] = -1;
+    //   });
+    // }
  
     const stacks = this.chart.selectAll<SVGGElement, Series>('.bars')
       .data(this.stack, d => d.key)
@@ -303,6 +320,7 @@ export default class BarChart {
           enter => enter
             .append('rect')
             .classed('bar', true)
+            .attr('cursor', 'pointer')
             .attr('x', d => this.getXTransition(d.data.year, this.prev))
             .attr('width', this.prev ? this.prev.x.bandwidth : this.x.bandwidth())
             // TODO we need these transitions for entering years

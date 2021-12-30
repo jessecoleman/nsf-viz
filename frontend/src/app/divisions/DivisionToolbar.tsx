@@ -1,10 +1,11 @@
 import { ChangeEvent } from 'react';
-import { Box, FormControl, Input, InputAdornment, ListItemIcon, MenuItem, Select, SelectChangeEvent, styled } from '@material-ui/core';
+import { Box, Input, InputAdornment, ListItemIcon, MenuItem, Select, SelectChangeEvent, styled } from '@material-ui/core';
 import { Close, FilterList } from '@material-ui/icons';
 
 import DrawerToggle from 'app/nav/DrawerToggle';
 import nih from '../images/nih-logo.svg';
 import nsf from '../images/nsf-logo.svg';
+import { Organization } from 'app/hooks';
 
 const Toolbar = styled('div')(({ theme }) => `
   display: flex;
@@ -15,12 +16,14 @@ const Toolbar = styled('div')(({ theme }) => `
   }
 `);
 
-const StyledSelect = styled(Select)`
+const StyledSelect = styled(Select)(({ theme }) => `
   & .MuiSelect-select {
     display: flex;
     align-items: center;
+    font-size: 1.2em;
+    padding: ${theme.spacing(1.5)};
   }
-` as unknown as typeof Select;
+`) as unknown as typeof Select; // bleck!
   
 const Actions = styled('div')(({ theme }) => `
   color: ${theme.palette.text.secondary};
@@ -34,10 +37,10 @@ const Logo = styled('img')`
 `;
 
 type DivisionToolbarProps = {
-  org: string
+  org: Organization
   filter: string
   numSelected: number
-  onChangeOrg: (e: SelectChangeEvent<string>) => void
+  onChangeOrg: (e: SelectChangeEvent<Organization>) => void
   onChangeFilter: (e: ChangeEvent<HTMLInputElement>) => void
 }
 

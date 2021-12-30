@@ -1,10 +1,10 @@
-import { getSortedDivisionAggs, getDivisionOrder, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, getYearRange, isAgg, isLoadingData, getYearAgg, isYearsLoading } from 'app/selectors';
+import { getSortedDivisionAggs, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, isAgg, isLoadingData, isYearsLoading, getYearData } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
-import { setGrantDialogOpen, setGrantFilter, setYearRange } from 'app/filterReducer';
+import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
 import { clearGrants } from 'app/dataReducer';
 import { loadData, loadYears } from 'app/actions';
 import { useEffect, useRef, useState } from 'react';
@@ -65,23 +65,23 @@ const Chart = (props: ChartProps) => {
 
   const visRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
-  const query = useQuery();
+  const [ query, setQuery ] = useQuery();
+  // const [ queryDivisions ] = useQueryParam('divisions', DelimitedArrayParam);
 
   // TODO reimplement this?
   // const { counts, amounts } = useAppSelector(getLegendFilters);
-  const yearRange = useAppSelector(getYearRange);
-  const data = useAppSelector(getStackedData);
-  const divisions = Object.values(useAppSelector(getSortedDivisionAggs));
+  // const yearRange = useAppSelector(getYearRange);
+  const data = useAppSelector(state => getStackedData(state, query));
+  const yearData = useAppSelector(getYearData);
+  const divisions = Object.values(useAppSelector(state => getSortedDivisionAggs(state, query)));
   // TODO why are colors not persistent
   const divDomain = divisions.map(d => d.key)
-    .filter(key => query.divisions.includes(key));
+    .filter(key => query.divisions?.includes(key));
 
   const highlightedDivision = useAppSelector(getHighlightedDivision);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const loading = useAppSelector(isLoadingData);
   const yearLoading = useAppSelector(isYearsLoading);
-  const [ order, ] = useAppSelector(getDivisionOrder);
-  const { bool } = useAppSelector(getLegendFilters);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
 
   // update colors globally with new domain
@@ -98,7 +98,7 @@ const Chart = (props: ChartProps) => {
         onTooltipEnter: handleTooltipEnter,
         onTooltipLeave: handleTooltipLeave,
         onBarClick: handleBarClick,
-        onBrushEnded: handleBrush,
+        onBrushEnded: handleSetYearRange,
       });
     }
   }, [visRef.current]);
@@ -106,24 +106,27 @@ const Chart = (props: ChartProps) => {
   // update data on filter changes
   useEffect(() => {
     if (vis && !loading) {
-      if (isAgg(order)) {
-        vis.update(data, divDomain, order);
+      if (isAgg(query.sort)) {
+        vis.update(data, divDomain, query.sort);
       } else {
         vis.update(data, divDomain);
       }
+      if (query.start && query.end) {
+        vis.timeline.setYearRange(query.start, query.end);
+      }
     }
-  }, [vis, loading, order, JSON.stringify(query.divisions)]);
+  }, [vis, loading, query.sort, JSON.stringify(query.divisions)]);
   
   // update timeline on year change
   useEffect(() => {
     if (vis && !yearLoading) {
-      if (isAgg(order)) {
-        vis.timeline.update(yearData, order);
+      if (isAgg(query.sort)) {
+        vis.timeline.update(yearData, query.sort);
       } else {
         vis.timeline.update(yearData);
       }
     }
-  }, [vis, yearLoading, order]);
+  }, [vis, yearLoading, query.sort]);
   
   // update bar styles on highlight
   useEffect(() => {
@@ -137,12 +140,20 @@ const Chart = (props: ChartProps) => {
 
   // query backend on query change
   useEffect(() => {
-    dispatch(loadData(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool, yearRange ])]);
+    dispatch(loadData({
+      ...query,
+      terms: query.terms ?? [],
+      divisions: query.divisions ?? []
+    }));
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection, query.start, query.end ])]);
 
   useEffect(() => {
-    dispatch(loadYears(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
+    dispatch(loadYears({
+      ...query,
+      terms: query.terms ?? [],
+      divisions: query.divisions ?? []
+    }));
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection ])]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {
     setTooltipProps({ dataKey, year });
@@ -152,8 +163,8 @@ const Chart = (props: ChartProps) => {
     // setTooltipProps({});
   };
   
-  const handleBrush = (selection: [ number, number ]) => {
-    dispatch(setYearRange(selection));
+  const handleSetYearRange = ([ start, end ]: [ number, number ]) => {
+    setQuery({ start, end });
   };
 
   const handleBarClick = (key: string, year: number) => {

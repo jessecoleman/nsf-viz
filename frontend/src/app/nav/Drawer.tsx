@@ -1,7 +1,6 @@
 import { Drawer, useMediaQuery } from '@material-ui/core';
 import { styled } from '@material-ui/core';
 import Directory from 'app/divisions/Directory';
-import DivisionTable from 'app/divisions/DivisionTable';
 import { useDrawer } from 'app/hooks';
     
 const Container = styled('nav')(({ theme }) => `

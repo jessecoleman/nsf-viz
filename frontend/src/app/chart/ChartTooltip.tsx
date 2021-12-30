@@ -1,4 +1,4 @@
-import FlipMove from 'react-flip-move';
+// import FlipMove from 'react-flip-move';
 import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
@@ -22,16 +22,17 @@ const ChartTooltip = (props: TooltipProps) => {
 
   const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
   const { dataKey, year } = props;
-  const { divisions } = useQuery();
+  const [ query ] = useQuery();
   const legendFilter = useAppSelector(getLegendFilters);
-  const divisionAggs = useAppSelector(state => getDivisionYear(state, year));
-  const divMap = useAppSelector(getDivisionsMap);
+  const divisionAggs = useAppSelector(state => getDivisionYear(state, { ...query, year: year ?? 0 }));
+  // console.log(divisionAggs);
+  const divMap = useAppSelector(state => getDivisionsMap(state, query));
   const totals: CellData[] = [
     { name: 'count', value: 0 },
     { name: 'amount', value: 0 },
   ];
 
-  const rows = divisionAggs?.filter(d => divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
+  const rows = divisionAggs?.filter(d => (query.divisions ?? []).includes(d.key) && d.count > 0).map((d): RowTuple => [
     d.key,
     ['count', 'amount'].map((field, i) => {
       totals[i].value += d[field];

@@ -7,10 +7,12 @@ from typing import Dict
 
 DESCRIPTION = """categories / abbreviations"""
 
-FILENAME_ABBREVIATIONS = "abbreviations.json"
-FILENAME_NSF_MAPPED = 'mapped.json'
+FILENAME_ABBREVIATIONS = "division_abbreviations.json"
+FILENAME_NSF_NORMS = 'normalized_division_names.json'
+
 
 def normalize(div: str) -> str:
+    'for divisions without official abbreviations'
     normed = []
     for w in div.split():
         if (w[0].isalpha() and w.lower() not in ('of', 'and', 'for', '&')
@@ -22,21 +24,23 @@ def normalize(div: str) -> str:
 
     return ' '.join(normed)
 
+
 script_dirpath = Path(os.path.dirname(os.path.realpath(__file__)))
 
 fp = script_dirpath.joinpath(FILENAME_ABBREVIATIONS)
 abbrevs: Dict[str, Dict[str, str]]  # type hint for abbrevs variable 
 abbrevs = json.loads(fp.read_text())
 
-fp = script_dirpath.joinpath(FILENAME_NSF_MAPPED)
-nsf_mapped = json.loads(fp.read_text())
+fp = script_dirpath.joinpath(FILENAME_NSF_NORMS)
+nsf_norms = json.loads(fp.read_text())
 
 
 nsf_mapped_reversed = {}
-for k, v in nsf_mapped.items():
+for k, v in nsf_norms.items():
     for item in v:
         assert item not in nsf_mapped_reversed.keys()
         nsf_mapped_reversed[item] = k
+
 
 abbrevs_flat = {}
 for agency, v in abbrevs.items():

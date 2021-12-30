@@ -57,23 +57,24 @@ export default class D3Timeline {
     this.y.rangeRound([this.chartHeight, 0]);
 
     // TODO set this dynamically
-    this.yearRange = [2000, 2020];
+    this.yearRange = [1960, 2021];
     this.tickFormat = props.tickFormat;
    
     // setup brush
-    this.gb = this.chart.append('g').raise();
-
     this.brush = d3.brushX()
       .on('end', ({ target, sourceEvent, selection }) => {
         if (!sourceEvent || !selection) return;
         // inversed map is interval [s, e)
         this.yearRange = selection.map(this.xInverse);
         props.onBrushEnded(this.yearRange);
+        //this.updateBrush();
         this.gb
           .transition()
           .duration(this.animationDur / 2)
           .call(target.move, this.yearRange.map(this.getBrushBounds));
       });
+
+    this.gb = this.chart.append('g').raise();
 
     this.xAxis = this.chart.append('g')
       .attr('class', 'axis axis-x');
@@ -84,13 +85,42 @@ export default class D3Timeline {
     this.measure(this.padding, this.chartWidth, this.chartHeight);
   }
 
-  getXAxis = () => d3.axisBottom<number>(this.x)
-    .tickFormat(this.tickFormat.x)
-    .tickValues(this.x.domain().filter(d => !(d % 5)));
+  /* ticks should show for min/max and every 5 years between
+   * with boundary gap of 3 to prevent overlapping text
+   */
+  getXAxis = () => {
+    const [ min, max ] = d3.extent(this.x.domain());
+    const yearGap = 5;
+    const boundaryYearGap = 3;
+    return d3.axisBottom<number>(this.x)
+      //.tickFormat(this.tickFormat.x);
+      .tickValues(this.x.domain().filter(d => (
+        d === min 
+        || d === max
+        || (
+          d % yearGap === 0 
+          && d - boundaryYearGap >= min! 
+          && d + boundaryYearGap <= max!
+        )
+      )));
+  }
 
+  /* only draw tick for maximum value */
   getYAxis = () => d3.axisLeft<number>(this.y)
     .tickFormat(this.tickFormat.y)
-    .tickValues([this.max]);
+    .tickValues(this.max !== Infinity ? [this.max] : []);
+
+  setYearRange = (start: number, end: number) => {
+    this.yearRange = [start, end];
+    this.updateBrush();
+  }
+
+  updateBrush = () => {
+    this.gb
+      .raise()
+      .call(this.brush)
+      .call(this.brush.move, this.yearRange.map(this.getBrushBounds));
+  };
 
   measure = (padding: Padding, width: number, height: number) => {
     this.padding = padding;
@@ -109,12 +139,6 @@ export default class D3Timeline {
       [0, 0],
       [this.chartWidth, this.chartHeight]
     ]);
-
-    this.gb
-      .call(this.brush)
-      .transition()
-      .duration(this.animationDur)
-      .call(this.brush.move, this.yearRange.map(this.x));
 
     this.redraw();
   }
@@ -156,6 +180,7 @@ export default class D3Timeline {
   redraw = () => {
 
     this.updateAxes();
+    this.updateBrush();
 
     this.chart.selectAll<SVGRectElement, TimelineData>('.bar')
       .data(this.data, d => d.key)
@@ -182,12 +207,6 @@ export default class D3Timeline {
       .attr('fill', this.agg === 'count' ? '#673AB7' : '#4CAF50')
       .attr('y', d => this.y(d[this.agg]))
       .attr('height', d => this.chartHeight - this.y(d[this.agg]));
-      
-    this.gb
-      .raise()
-      .transition()
-      .duration(this.animationDur)
-      .call(this.brush.move, this.yearRange.map(this.getBrushBounds));
   }
   
   getBrushBounds = (x: number | undefined, idx: number) => {

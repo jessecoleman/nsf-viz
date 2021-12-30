@@ -68,19 +68,19 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
 
   const handleKeyDown = (e: KeyboardEvent) => {
     switch(e.key) {
-    case 'Enter':
-      onAddChip(props.value);
-      break;
-    case 'Backspace':
-      if (props.value.length === 0) {
-        onDeleteLastChip();
-      } else if (props.value.length === 1) {
-        onClearInput();
-      }
-      break;
-    case 'Escape':
-      handleClickAway();
-      break;
+      case 'Enter':
+        onAddChip(props.value);
+        break;
+      case 'Backspace':
+        if (props.value.length === 0) {
+          onDeleteLastChip();
+        } else if (props.value.length === 1) {
+          onClearInput();
+        }
+        break;
+      case 'Escape':
+        handleClickAway();
+        break;
     }
   };
 

@@ -53,11 +53,12 @@ class YearDivisionAggregate(BaseModel):
    
 
 class SearchRequest(BaseModel):
-    bool_query = Field(..., alias='boolQuery')
+    intersection: Optional[bool] = False
     terms: List[str]
     divisions: List[str]
-    fields: List[str]
-    year_range: Optional[List[int]]
+    match: Optional[List[str]]
+    start: Optional[int]
+    end: Optional[int]
 
 
 class SearchResponse(BaseModel):

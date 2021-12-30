@@ -1,7 +1,6 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 import { DivisionAggregate } from 'api/models/DivisionAggregate';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead, loadYears } from './actions';
-import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
 import { Grant } from '../api/models/Grant';
 import { YearDivisionAggregate } from 'api/models/YearDivisionAggregate';
 import { YearAggregate } from 'api/models/YearAggregate';
@@ -92,12 +91,10 @@ const dataSlice = createSlice({
       state.noMoreGrants = true;
     })
     .addCase(loadAbstract.pending, (state, action) => {
-      state.selectedGrantId = action.meta.arg;
+      state.selectedGrantId = action.meta.arg.id;
     })
     .addCase(loadAbstract.fulfilled, (state, action) => {
       state.selectedAbstract = action.payload;
-    }).addMatcher(isAnyOf(setGrantOrder, setTerms, addChips, deleteChip), (state) => {
-      state.grants = [];
     })
 });
 

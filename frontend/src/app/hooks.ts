@@ -1,11 +1,13 @@
 import queryString from 'query-string';
+import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParams, withDefault } from 'use-query-params';
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router';
 import { useAsync } from 'react-async-hook';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
 import { useAppDispatch, useAppSelector } from './store';
-import { isDrawerOpen } from './selectors';
+import { isDrawerOpen, SortableKeys } from './selectors';
 import { toggleDrawerOpen } from './filterReducer';
+import { SortDirection } from '@material-ui/core';
 
 export const useDrawer = (): [ boolean, () => void ] => {
   const dispatch = useAppDispatch();
@@ -46,7 +48,7 @@ export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, Dims ]
   const ref = useRef<T>(null);
   const [ dims, setBox ] = useState({ width: 0, height: 0 });
   const [ windowWidth, windowHeight ] = useWindowDimensions();
-  const { terms } = useQuery();
+  const [{ terms }] = useQuery();
 
   useEffect(() => {
     if (ref.current) {
@@ -94,7 +96,7 @@ export const useWindowDimensions = () => {
   return windowDimensions;
 };
 
-export const useDebouncedCallback = <T extends (...args: any[]) => void>(
+export const useDebouncedCallback = <T extends (...args: unknown[]) => void>(
   callback: T,
   timeout: number
 ) => {
@@ -131,83 +133,55 @@ export const useDebouncedSearch = (
   };
 };
 
-type Filters = 'terms' | 'divisions'
+export type Organization = 'nsf' | 'nih';
 
-type QueryParams = Record<Filters, string[]>
+export const OrgParam = withDefault(
+  StringParam,
+  'nsf',
+) as QueryParamConfig<Organization>;
 
-type PushParams = {
-  component: Filters,
-  action: 'add' | 'remove' | 'set',
-  payload: string[] ,
-}
+export const ArrayParam = withDefault(
+  DelimitedArrayParam,
+  [],
+) as QueryParamConfig<string[]>;
 
-const qsOptions: queryString.ParseOptions = { arrayFormat: 'bracket-separator', arrayFormatSeparator: '|' };
+export const DefaultNumberParam = withDefault(
+  NumberParam,
+  undefined
+) as QueryParamConfig<number | undefined>;
 
-export const useQuery = (): QueryParams => {
+export const DefaultBooleanParam = withDefault(
+  BooleanParam,
+  undefined
+) as QueryParamConfig<boolean | undefined>;
 
-  const location = useLocation();
-  const query = queryString.parse(location.search, qsOptions);
-  // let redirect = true;
-  if (!query.terms && !query.divisions) {
-    query.terms = [];
-    query.divisions = [];
-  } else if (!query.terms) {
-    query.terms = [];
-  } else if (!query.divisions) {
-    query.divisions = [];
-  }
-  return query as QueryParams;
-};
+const SortParam = withDefault(
+  StringParam,
+  'name',
+) as QueryParamConfig<SortableKeys>;
 
-export const useNavigate = (
-  callback: ({ params, query }: {
-    params?: ReturnType<typeof useParams>
-    query: QueryParams,
-    firstLoad?: boolean,
-  }) => void,
-  path: string,
-) => {
+const SortDirectionParam = withDefault(
+  StringParam,
+  'desc',
+) as QueryParamConfig<'asc' | 'desc'>;
 
-  
-  const firstLoad = useRef(true);
-  const history = useHistory();
-  const match = useRouteMatch(path);
-  const query = useQuery();
-   
-  const key = JSON.stringify(query[path.replace('?', '')]);
+const MatchParam = withDefault(
+  ArrayParam,
+  ['title', 'abstract']
+) as QueryParamConfig<Array<'title' | 'abstract'>>;
 
-  useEffect(() => {
-    callback({
-      firstLoad: firstLoad.current,
-      params: match?.params,
-      query: query as QueryParams,
-    });
-    firstLoad.current = false;
-  }, [key]);
-  
-  const push = ({ payload, action, component }: PushParams) => {
-    let target = (query as QueryParams)[component];
-    switch(action) {
-    case 'add': {
-      target = target.concat(payload);
-      break;
-    }
-    case 'remove': {
-      const toRemove = new Set(payload);
-      target = target.filter(t => !toRemove.has(t));
-      break;
-    }
-    case 'set': {
-      target = payload;
-      break;
-    }
-    }
-    query[component] = target;
-    history.push('?' + queryString.stringify(query, qsOptions));
-  };
+export const useQuery = () => (
+  useQueryParams({
+    'org': OrgParam,
+    'terms': ArrayParam,
+    'divisions': ArrayParam,
+    'start': DefaultNumberParam,
+    'end': DefaultNumberParam,
+    'intersection': DefaultBooleanParam,
+    'match': MatchParam,
+    'sort': SortParam,
+    'direction': SortDirectionParam,
+  })
+);
 
-  return {
-    query,
-    push,
-  };
-};
+export type QueryParams = ReturnType<typeof useQuery>[0];

@@ -1,6 +1,7 @@
 import { Checkbox, Paper, FormGroup, FormControlLabel, styled, Radio, RadioGroup } from '@material-ui/core';
 import { AttachFile, AttachMoney, InsertDriveFile } from '@material-ui/icons';
 import { setLegendFilters } from 'app/filterReducer';
+import { useQuery } from 'app/hooks';
 import { getLegendFilters } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { ChangeEvent } from 'react';
@@ -22,7 +23,8 @@ const Label = styled('div')`
 const ChartLegend = () => {
   
   const dispatch = useAppDispatch();
-  const { counts, amounts, bool } = useAppSelector(getLegendFilters);
+  const { counts, amounts } = useAppSelector(getLegendFilters);
+  const [ query, setQuery ] = useQuery();
 
   const handleChangeFilters = (e: ChangeEvent, checked: boolean) => {
     const { name } = e.currentTarget as HTMLInputElement;
@@ -33,9 +35,9 @@ const ChartLegend = () => {
   
   const handleChangeBool = (e: ChangeEvent) => {
     const { value } = e.currentTarget as HTMLInputElement;
-    dispatch(setLegendFilters({
-      bool: value
-    }));
+    setQuery({
+      intersection: value === 'all'
+    });
   };
 
   const units = [
@@ -82,9 +84,9 @@ const ChartLegend = () => {
         ))}
         </FormGroup> */}
       <RadioGroup
-        aria-label='bool toggle'
-        name='boolToggle'
-        value={bool}
+        aria-label='intersection toggle'
+        name='intersection'
+        value={query.intersection ? 'all' : 'any'}
       >
         {radio.map(r => (
           <FormControlLabel 

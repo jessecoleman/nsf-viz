@@ -109,27 +109,24 @@ async def divisions(org: str):
 @app.post('/search', operation_id='search', response_model=SearchResponse)
 async def search(request: SearchRequest):
 
-    toggle = (request.bool_query == 'all')
-
     return await Q.division_aggregates(
         aioes,
-        toggle=toggle,
+        intersection=request.intersection,
         terms=request.terms,
-        year_range=request.year_range,
-        fields=request.fields
+        start=request.start,
+        end=request.end,
+        match=request.match
     )
 
 
 @app.post('/years', operation_id='years', response_model=YearsResponse)
 async def years(request: SearchRequest):
 
-    toggle = (request.bool_query == 'all')
-
     return await Q.year_aggregates(
         aioes,
-        toggle=toggle,
+        intersection=request.intersection,
         terms=request.terms,
-        fields=request.fields
+        match=request.match
     )
 
 
@@ -166,18 +163,18 @@ async def count_term(terms: str):
 @app.post('/grants', operation_id='loadGrants', response_model=List[Grant])
 async def grant_data(request: GrantsRequest):
 
-    toggle = (request.bool_query == 'all')
     try:
         return await Q.grants(
             aioes,
             idx=request.idx,
-            toggle=toggle,
+            intersection=request.intersection,
             order_by=request.order_by,
             order=request.order,
             divisions=request.divisions,
-            fields=request.fields,
+            match=request.match,
             terms=request.terms,
-            year_range=request.year_range,
+            start=request.start,
+            end=request.end,
         )
 
     except IndexError:
