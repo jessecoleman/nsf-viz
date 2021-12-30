@@ -146,7 +146,7 @@ export const getSortedDivisionAggs = createSelector(
   ]))
 );
 
-const getYear = (state: RootState, params: QueryParams & { year: number }) => params.year;
+const getYear = (state: RootState, params: QueryParams & { year?: number }) => params.year;
 
 // for use in D3Tooltip
 export const getDivisionYear = createCachedSelector(

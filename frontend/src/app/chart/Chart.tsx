@@ -140,19 +140,11 @@ const Chart = (props: ChartProps) => {
 
   // query backend on query change
   useEffect(() => {
-    dispatch(loadData({
-      ...query,
-      terms: query.terms ?? [],
-      divisions: query.divisions ?? []
-    }));
+    dispatch(loadData(query));
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection, query.start, query.end ])]);
 
   useEffect(() => {
-    dispatch(loadYears({
-      ...query,
-      terms: query.terms ?? [],
-      divisions: query.divisions ?? []
-    }));
+    dispatch(loadYears(query));
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection ])]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {
