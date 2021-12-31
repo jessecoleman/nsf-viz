@@ -50,7 +50,11 @@ async def startup():
     ASSETS_DIR = os.environ.get('ASSETS_DIR', 'assets')
     ASSETS_DIR = Path(ASSETS_DIR)
     path_to_model = ASSETS_DIR.joinpath('nsf_w2v_model')
-    word_vecs = Word2Vec.load(str(path_to_model)).wv
+    try:
+        word_vecs = Word2Vec.load(str(path_to_model)).wv
+    except FileNotFoundError:
+        logger.warning(f"No such file or directory: '{path_to_model}'. Skipping loading Word2Vec model")
+        word_vecs = Word2Vec()
     logger.error(f"logLevel: {logger.level}")
     logger.error(f"root logLevel: {root_logger.level}")
     logger.error('error logger')
