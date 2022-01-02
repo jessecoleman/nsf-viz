@@ -74,7 +74,6 @@ const Directory = () => {
   };
 
   const handleSelectAll = (e: ChangeEvent, checked: boolean) => {
-    console.log(checked, e.target);
     if (checked) {
       setQuery({ divisions: directory.flatMap(d => 
         [d.abbr].concat(expanded.includes(d.abbr)
@@ -115,7 +114,6 @@ const Directory = () => {
   // };
 
   const handleChangeOrg = (e: SelectChangeEvent<Organization>) => {
-    console.log(e.target.value);
     setQuery({
       org: e.target.value as Organization,
       divisions: [],
@@ -131,12 +129,9 @@ const Directory = () => {
     .filter(d => d)
     .filter(d => !divisionFilter || match(d, divisionFilter).length);
     
-  console.log(filtered, Object.values(divisions));
-  
   let checked: CheckboxState = 'unchecked';
   if (selectedDivisions.size === filtered.length) checked = 'checked';
   else if (selectedDivisions.size > 0) checked = 'indeterminate';
-  console.log(selectedDivisions.size, filtered.length, checked);
 
   return (
     <div>

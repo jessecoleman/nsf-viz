@@ -63,8 +63,6 @@ const DirectoryEntry = (props: DirectoryProps) => {
     ...other
   } = props;
   
-  // console.log(props);
-
   return (
     <Tooltip title={desc ?? ''}>
       <DirectoryRoot

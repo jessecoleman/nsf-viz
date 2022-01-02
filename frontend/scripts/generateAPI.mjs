@@ -22,7 +22,6 @@ function wait(delay) {
 
 function fetchRetry(url, delay, tries, fetchOptions = {}) {
     function onError(err) {
-        console.log(err);
         triesLeft = tries - 1;
         if (!triesLeft) {
             throw err;
