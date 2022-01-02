@@ -4,19 +4,20 @@ import { format } from 'd3';
 import { forwardRef, ReactNode } from 'react';
 
 type RowStyles = {
+  tooltip?: boolean;
   selected?: boolean;
   checkable?: boolean;
   nohover?: boolean;
   scrollOffset?: number;
 }
 
-export const Row = styled(Box)<RowStyles>(({ theme, checkable, selected, nohover, scrollOffset }) => `
+export const Row = styled(Box)<RowStyles>(({ theme, tooltip, checkable, selected, nohover, scrollOffset }) => `
   cursor: pointer;
   display: grid;
   padding-right: ${scrollOffset ?? 0}px;
   grid-template-columns: ${(checkable ? '[checkbox] auto ' : '')
     + '[name] minmax(0, 1fr) [count] 4em [amount] 4em'};
-  // border-bottom: 1px solid ${theme.palette.grey[200]};
+  border-top: ${tooltip ? `1px solid ${theme.palette.grey[200]}` : 'none'};
   background-color: ${selected
     ? theme.palette.action.selected
     : 'default'};
@@ -91,6 +92,7 @@ const DivisionRow = forwardRef((props: RowProps, ref) => (
     checkable={props.checkable}
     scrollOffset={props.scrollOffset}
     selected={props.selected}
+    tooltip={props.tooltip}
     onClick={(e) => props.onCheck?.(e, props.dataKey, !props.checked)}
     onMouseOver={() => props.onMouseOver?.(props.dataKey)}
     onMouseOut={() => props.onMouseOut?.(props.dataKey)}

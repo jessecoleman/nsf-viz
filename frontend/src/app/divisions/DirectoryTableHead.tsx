@@ -4,6 +4,7 @@ import {
   Tooltip,
 } from '@material-ui/core';
 import { SortableKeys } from 'app/selectors';
+import { ChangeEvent } from 'react';
 import { Column, NumberColumn, Row } from './DivisionRow';
 
 type Columns = {
@@ -20,14 +21,15 @@ const columns: Columns[] = [
   { Component: NumberColumn, id: 'amount', numeric: false, label: 'Amt', desc: 'total award amount' },
 ];
 
+export type CheckboxState = 'checked' | 'unchecked' | 'indeterminate'
+
 type EnhancedTableHeadProps = {
   scrollOffset?: number
   orderBy: string,
   direction: 'desc' | 'asc',
-  numSelected: number,
-  rowCount: number,
+  checked: CheckboxState,
   onRequestSort: (key: SortableKeys) => void,
-  onSelectAllClick: (checked: boolean) => void,
+  onSelectAllClick: (e: ChangeEvent, checked: boolean) => void,
 }
 
 const DirectoryTableHead = (props: EnhancedTableHeadProps) => {
@@ -36,8 +38,7 @@ const DirectoryTableHead = (props: EnhancedTableHeadProps) => {
     scrollOffset,
     orderBy,
     direction,
-    numSelected,
-    rowCount,
+    checked,
     onRequestSort,
     onSelectAllClick,
   } = props;
@@ -46,15 +47,13 @@ const DirectoryTableHead = (props: EnhancedTableHeadProps) => {
     onRequestSort(property);
   };
 
-  const allSelected = numSelected === rowCount;
-
   return (
     <Row checkable nohover scrollOffset={scrollOffset}>
       <Column column='checkbox'>
         <Checkbox
-          indeterminate={numSelected > 0 && numSelected < rowCount}
-          checked={allSelected}
-          onChange={() => onSelectAllClick(!allSelected)}
+          checked={checked === 'checked'}
+          indeterminate={checked === 'indeterminate'}
+          onChange={onSelectAllClick}
         />
       </Column>
       {columns.map(c => (

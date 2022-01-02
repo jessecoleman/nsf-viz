@@ -1,13 +1,10 @@
-import queryString from 'query-string';
 import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParams, withDefault } from 'use-query-params';
 import { useState, useEffect, useRef, RefObject } from 'react';
-import { useHistory, useLocation, useParams, useRouteMatch } from 'react-router';
 import { useAsync } from 'react-async-hook';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
 import { useAppDispatch, useAppSelector } from './store';
 import { isDrawerOpen, SortableKeys } from './selectors';
 import { toggleDrawerOpen } from './filterReducer';
-import { SortDirection } from '@material-ui/core';
 
 export const useDrawer = (): [ boolean, () => void ] => {
   const dispatch = useAppDispatch();

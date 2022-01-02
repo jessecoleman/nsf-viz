@@ -15,7 +15,7 @@ import Highlight from 'app/Highlight';
 import DivisionToolbar from './DivisionToolbar';
 import { ArrowDropDown, ArrowRight } from '@mui/icons-material';
 import DirectoryEntry from './Entry';
-import DirectoryTableHead from './DirectoryTableHead';
+import DirectoryTableHead, { CheckboxState } from './DirectoryTableHead';
 
 const Directory = () => {
 
@@ -73,16 +73,19 @@ const Directory = () => {
     });
   };
 
-  const handleSelectAll = (selected: boolean) => {
-    setQuery({ divisions: selected 
-      ? directory.flatMap(d => 
+  const handleSelectAll = (e: ChangeEvent, checked: boolean) => {
+    console.log(checked, e.target);
+    if (checked) {
+      setQuery({ divisions: directory.flatMap(d => 
         [d.abbr].concat(expanded.includes(d.abbr)
           ? depMap[d.abbr]
           : []
         )
       )
-      : []
-    });
+      });
+    } else {
+      setQuery({ divisions: [] });
+    }
   };
   
   const handleToggle = (e: React.SyntheticEvent, keys: string[]) => {
@@ -112,6 +115,7 @@ const Directory = () => {
   // };
 
   const handleChangeOrg = (e: SelectChangeEvent<Organization>) => {
+    console.log(e.target.value);
     setQuery({
       org: e.target.value as Organization,
       divisions: [],
@@ -124,8 +128,16 @@ const Directory = () => {
 
   const filtered = Object.values(divisions)
     .map(d => divMap[d.key])
-    .filter(division => !divisionFilter || match(division, divisionFilter).length);
+    .filter(d => d)
+    .filter(d => !divisionFilter || match(d, divisionFilter).length);
+    
+  console.log(filtered, Object.values(divisions));
   
+  let checked: CheckboxState = 'unchecked';
+  if (selectedDivisions.size === filtered.length) checked = 'checked';
+  else if (selectedDivisions.size > 0) checked = 'indeterminate';
+  console.log(selectedDivisions.size, filtered.length, checked);
+
   return (
     <div>
       <DivisionToolbar
@@ -137,12 +149,11 @@ const Directory = () => {
       />
       <DirectoryTableHead
         scrollOffset={scrollOffset}
-        numSelected={selectedDivisions.size}
+        checked={checked}
         orderBy={query.sort ?? 'name'}
         direction={query.direction}
         onSelectAllClick={handleSelectAll}
         onRequestSort={handleRequestSort}
-        rowCount={filtered.length}
       />
       <TreeView
         key={query.org}

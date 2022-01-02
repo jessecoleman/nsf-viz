@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import { loadDirectory, loadDivisions } from './actions';
 import { Division } from '../api/models/Division';
 import { Directory, Grant } from 'api';

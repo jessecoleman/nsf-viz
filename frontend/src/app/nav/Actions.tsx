@@ -1,5 +1,5 @@
 import { Link, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@material-ui/core';
-import { GitHub, GridOn, InsertDriveFile } from '@material-ui/icons';
+import { GitHub, GridOn, InsertDriveFile } from '@mui/icons-material';
 
 const actions = [
   {

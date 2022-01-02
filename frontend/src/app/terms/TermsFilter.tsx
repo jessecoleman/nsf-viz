@@ -12,7 +12,7 @@ import {
   Search,
   ClearAll,
   HighlightOff,
-} from '@material-ui/icons';
+} from '@mui/icons-material';
 
 import {
   loadRelated,
@@ -160,14 +160,14 @@ const TermsFilter = () => {
             onClearInput={handleClearInput}
           />
         </ChipContainer>
-        <Tooltip title={selected ? 'clear all terms' : 'clear selection'}>
+        <Tooltip title={selected ? 'clear selection' : 'clear all terms'}>
           <IconButton
             color='inherit'
             onClick={handleClearTerms}
           >
             {selected
-              ? <ClearAll />
-              : <HighlightOff />
+              ? <HighlightOff />
+              : <ClearAll />
             }
           </IconButton>
         </Tooltip>

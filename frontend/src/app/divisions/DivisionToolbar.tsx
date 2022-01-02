@@ -1,6 +1,6 @@
 import { ChangeEvent } from 'react';
 import { Box, Input, InputAdornment, ListItemIcon, MenuItem, Select, SelectChangeEvent, styled } from '@material-ui/core';
-import { Close, FilterList } from '@material-ui/icons';
+import { Close, FilterList } from '@mui/icons-material';
 
 import DrawerToggle from 'app/nav/DrawerToggle';
 import nih from '../images/nih-logo.svg';

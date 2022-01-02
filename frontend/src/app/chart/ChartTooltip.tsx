@@ -24,7 +24,7 @@ const ChartTooltip = (props: TooltipProps) => {
   const { dataKey, year } = props;
   const [ query ] = useQuery();
   const legendFilter = useAppSelector(getLegendFilters);
-  const divisionAggs = useAppSelector(state => getDivisionYear(state, query));
+  const divisionAggs = useAppSelector(state => getDivisionYear(state, { ...query, year }));
   const divMap = useAppSelector(state => getDivisionsMap(state, query));
   const totals: CellData[] = [
     { name: 'count', value: 0 },
@@ -58,6 +58,7 @@ const ChartTooltip = (props: TooltipProps) => {
         <div ref={widthRef} />
         {rows.map(([ key, cells ]) => (
           <DivisionRow
+            tooltip
             key={key}
             id={`${key}-tooltip`}
             selected={dataKey?.split('-')[0] === key}
