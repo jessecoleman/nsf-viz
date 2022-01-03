@@ -22,7 +22,7 @@ function wait(delay) {
 
 function fetchRetry(url, delay, tries, fetchOptions = {}) {
     function onError(err) {
-        triesLeft = tries - 1;
+        const triesLeft = tries - 1;
         if (!triesLeft) {
             throw err;
         }
