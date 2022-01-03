@@ -7,7 +7,6 @@ import { styled } from '@material-ui/core/styles';
 import { 
   Dialog,
   Button,
-  Tooltip,
   TableSortLabel,
   DialogActions,
   Collapse,
@@ -21,7 +20,7 @@ import { getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGr
 import { clearGrants } from 'app/dataReducer';
 import { clearGrantFilter, setGrantDialogOpen, setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
-import { useNavigate, useQuery, useWindowDimensions } from 'app/hooks';
+import { useQuery, useWindowDimensions } from 'app/hooks';
 import AbstractDialog from './AbstractDialog';
 import GrantRow, { cols, GrantColumn, GrantListHeader } from './GrantRow';
 
@@ -32,7 +31,7 @@ const ProgressBar = styled(LinearProgress)`
 const GrantsTable = () => {
 
   const dispatch = useAppDispatch();
-  const query = useQuery();
+  const [ query ] = useQuery();
   const [ , height ] = useWindowDimensions();
   const hasMountedRef = useRef(false);
   const grantsRef = useRef<InfiniteLoader>(null);
@@ -50,7 +49,14 @@ const GrantsTable = () => {
 
   const handleLoadGrants = async (idx: number) => {
     if (!loading) {
-      await dispatch(loadGrants({ ...query, idx }));
+      await dispatch(loadGrants({
+        ...query,
+        terms: query.terms ?? [],
+        divisions: query.divisions ?? [],
+        start: query.start ?? 0,
+        end: query.end ?? 0,
+        idx
+      }));
     }
   };
 
@@ -82,10 +88,12 @@ const GrantsTable = () => {
 
 const GrantsDialog = () => {
 
-  const { query } = useNavigate(() => {
-    // TODO put this in reducer
+  const [ query ] = useQuery();
+
+  useEffect(() => {
     dispatch(clearGrants());
-  }, '?divisions');
+  }, [JSON.stringify(query)]);
+
   const dispatch = useAppDispatch();
   const loading = useAppSelector(loadingGrants);
   const numGrants = useAppSelector(getNumGrants);
@@ -105,16 +113,18 @@ const GrantsDialog = () => {
     const newOrder = orderBy === property && order === 'desc' ? 'asc' : 'desc';
 
     dispatch(setGrantOrder([ property, newOrder ]));
-    dispatch(loadGrants({ ...query, idx: 0 }));
+    dispatch(loadGrants({
+      ...query,
+      terms: query.terms ?? [],
+      divisions: query.divisions ?? [],
+      start: query.start ?? 0,
+      end: query.end ?? 0,
+      idx: 0
+    }));
   };
 
   const handleDownload = () => {
     window.alert('coming soon');
-  };
-
-  const handleOpen = () => {
-    dispatch(clearGrants());
-    dispatch(setGrantDialogOpen(true));
   };
 
   const handleClose = () => {
@@ -124,15 +134,6 @@ const GrantsDialog = () => {
 
   return (
     <>
-      <Tooltip title='view grant details'>
-        <Button 
-          variant='text' 
-          aria-label='grants' 
-          onClick={handleOpen}
-        >
-          GRANTS
-        </Button>
-      </Tooltip>
       <Dialog
         fullWidth={true}
         maxWidth='xl'

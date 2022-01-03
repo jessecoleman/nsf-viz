@@ -1,5 +1,6 @@
 import { memo, MouseEvent } from 'react';
 import { Flipped } from 'react-flip-toolkit';
+import { animate } from 'motion';
 import { Chip, CircularProgress } from '@material-ui/core';
 import { alpha, styled } from '@material-ui/core/styles';
 import { format } from 'd3';
@@ -47,6 +48,20 @@ const ChipContent = styled('span')(({ theme }) => `
   }
 `);
 
+const animateIn = (e: HTMLElement) => (
+  animate(e, {
+    opacity: 100,
+    // transform: 'scale(100%)'
+  })
+);
+
+const animateOut = (e: HTMLElement) => (
+  animate(e, {
+    opacity: 0,
+    // transform: 'scale(0%)'
+  })
+);
+
 export type TermChipProps = {
   term: string
   count?: number
@@ -56,7 +71,11 @@ export type TermChipProps = {
 };
 
 const TermChip = (props: TermChipProps) => (
-  <Flipped flipId={props.term}>
+  <Flipped
+    // onAppear={animateIn}
+    // onExit={animateOut}
+    flipId={props.term}
+  >
     <StyledChip
       variant='filled'
       color={props.selected ? 'secondary' : undefined}

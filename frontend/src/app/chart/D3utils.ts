@@ -14,6 +14,11 @@ export type Padding = {
   right: number,
 }
 
+export type TickFormat = {
+  x: (t: number) => string
+  y: (t: number) => string
+}
+
 export const debounce = () => {
   let timer: NodeJS.Timeout;
   return (fn: () => void, delay: number) => {

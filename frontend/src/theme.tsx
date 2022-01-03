@@ -6,7 +6,14 @@ import {
   ThemeProvider as MuiThemeProvider,
 } from '@material-ui/core/styles';
 import { CssBaseline } from '@material-ui/core';
-import { deepPurple, green } from '@material-ui/core/colors';
+import {
+  deepPurple,
+  green,
+  blue,
+  red,
+  amber,
+  pink,
+} from '@material-ui/core/colors';
 
 export const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
   a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
@@ -16,6 +23,12 @@ export const colorScales = {
   count: d3.scaleOrdinal(Object.values(deepPurple).slice(0, -4).map(interleave)),
   amount: d3.scaleOrdinal(Object.values(green).slice(0, -4).map(interleave)),
 };
+
+export const hierColorScale = d3.scaleOrdinal(
+  [deepPurple, green, blue, red, amber, pink].map(color =>
+    d3.scaleOrdinal(Object.values(color).slice(0, -4).map(interleave))
+  )
+);
 
 declare module '@material-ui/core/styles/createPalette' {
   export interface PaletteOptions {

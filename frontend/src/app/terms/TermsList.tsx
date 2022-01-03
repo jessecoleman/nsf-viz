@@ -1,5 +1,5 @@
 import { List, ListItem, ListItemIcon, ListItemText, ListSubheader, styled } from '@material-ui/core';
-import { AddCircle } from '@material-ui/icons';
+import { AddCircle } from '@mui/icons-material';
 import Highlight from 'app/Highlight';
 import { Flipped } from 'react-flip-toolkit';
 

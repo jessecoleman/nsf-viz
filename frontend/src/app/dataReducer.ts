@@ -1,7 +1,6 @@
-import { createSlice, isAnyOf } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import { DivisionAggregate } from 'api/models/DivisionAggregate';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead, loadYears } from './actions';
-import { addChips, deleteChip, setGrantOrder, setTerms } from './filterReducer';
 import { Grant } from '../api/models/Grant';
 import { YearDivisionAggregate } from 'api/models/YearDivisionAggregate';
 import { YearAggregate } from 'api/models/YearAggregate';
@@ -17,6 +16,7 @@ type GrantState = {
   selectedGrantId?: string,
   loadingData: boolean,
   loadingGrants: boolean,
+  loadingYears: boolean,
   selectedAbstract?: string,
 }
 
@@ -30,6 +30,7 @@ const initialState: GrantState = {
   noMoreGrants: false,
   loadingData: false,
   loadingGrants: false,
+  loadingYears: false,
 };
 
 const dataSlice = createSlice({
@@ -66,8 +67,15 @@ const dataSlice = createSlice({
     .addCase(loadData.rejected, (state) => {
       state.loadingData = false;
     })
+    .addCase(loadYears.pending, (state) => {
+      state.loadingYears = true;
+    })
     .addCase(loadYears.fulfilled, (state, action) => {
+      state.loadingYears = false;
       state.yearAgg = action.payload.per_year;
+    })
+    .addCase(loadYears.rejected, (state) => {
+      state.loadingYears = false;
     })
     .addCase(loadGrants.pending, (state) => {
       state.loadingGrants = true;
@@ -83,12 +91,10 @@ const dataSlice = createSlice({
       state.noMoreGrants = true;
     })
     .addCase(loadAbstract.pending, (state, action) => {
-      state.selectedGrantId = action.meta.arg;
+      state.selectedGrantId = action.meta.arg.id;
     })
     .addCase(loadAbstract.fulfilled, (state, action) => {
       state.selectedAbstract = action.payload;
-    }).addMatcher(isAnyOf(setGrantOrder, setTerms, addChips, deleteChip), (state) => {
-      state.grants = [];
     })
 });
 
