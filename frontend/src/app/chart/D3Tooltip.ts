@@ -46,7 +46,7 @@ export const transitionTooltip = (key: string, { chart, bar, bandwidth, padding 
       .style('opacity', 1)
       .style('left', `${tipLeft}px`)
       .style('top', `${tipTop}px`);
-  }, 350);
+  }, 50);
 };
   
 export const removeTooltip = () => {
@@ -60,5 +60,5 @@ export const removeTooltip = () => {
         d3.select('#tooltip')
           .classed('visible', false);
       });
-  }, 200);
+  }, 50);
 };

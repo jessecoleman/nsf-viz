@@ -84,34 +84,10 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
     # csv schema is: 'idx,grant_id,title,abstract,amount,date,cat1_raw,agency'
     fpath = Path(fpath)
     with fpath.open() as f:
-        reader = csv.reader(f)
-        for i, row in enumerate(reader):
-            if i == 0:
-                # header row
-                continue
-
-            # yield [
-            #     row[1],  # title
-            #     row[2],  # abstract
-            #     row[3],  # amount
-            #     row[4],  # date
-            #     row[6],  # division name
-            # ]
-
-            yield {
-                "grant_id": row[1],
-                "title": row[2],
-                "abstract": row[3],
-                "amount": row[4],
-                "date": row[5],
-                "cat1_raw": row[6],
-                "agency": row[7],
-            }
+        yield from csv.DictReader(f)
 
 
 def get_data(data_source: Iterable) -> Generator:
-
-    Grant.init()
 
     for i, r in enumerate(tqdm(data_source)):
         cat1_raw = r["cat1_raw"]
@@ -157,9 +133,12 @@ def get_data(data_source: Iterable) -> Generator:
 
 
 def build_index(data_source: Iterable):
+
     if es_index.exists():
         es_index.delete()
+
     es_index.create()
+    Grant.init()
 
     bulk(es, get_data(data_source=data_source))
 

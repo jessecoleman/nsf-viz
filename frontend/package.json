@@ -6,7 +6,6 @@
         "@emotion/react": "^11.4.1",
         "@emotion/styled": "^11.3.0",
         "@material-ui/core": "^5.0.0-beta.4",
-        "@material-ui/icons": "^4.9.1",
         "@material-ui/lab": "^5.0.0-alpha.44",
         "@material-ui/styles": "^5.0.0-beta.4",
         "@mui/icons-material": "^5.0.0",
@@ -42,12 +41,13 @@
         "react-window": "^1.8.6",
         "react-window-infinite-loader": "^1.0.7",
         "redux-logger": "^3.0.6",
-        "typescript": "^4.2.4"
+        "typescript": "^4.2.4",
+        "use-query-params": "^1.2.3"
     },
     "scripts": {
         "start": "react-scripts start",
         "build": "react-scripts build",
-        "generateAndStart": "node ./scripts/generateAPI.js && yarn start",
+        "generateAndStart": "node ./scripts/generateAPI.mjs && yarn start",
         "test": "react-scripts test",
         "eject": "react-scripts eject",
         "lint": "eslint . --ext .ts,.tsx"
@@ -75,6 +75,6 @@
         "eslint": "^7.32.0",
         "eslint-plugin-react": "^7.24.0",
         "node-fetch": "^2.6.1",
-        "openapi-typescript-codegen": "^0.9.3"
+        "openapi-typescript-codegen": "^0.12.5"
     }
 }

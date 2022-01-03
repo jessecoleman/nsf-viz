@@ -1,8 +1,8 @@
-import FlipMove from 'react-flip-move';
+// import FlipMove from 'react-flip-move';
 import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
-import { getSortedDivisionAggs, getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
+import { getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
 import { useMeasure, useQuery } from 'app/hooks';
 import { colorScales } from '../../theme';
 
@@ -22,16 +22,16 @@ const ChartTooltip = (props: TooltipProps) => {
 
   const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
   const { dataKey, year } = props;
-  const { divisions } = useQuery();
+  const [ query ] = useQuery();
   const legendFilter = useAppSelector(getLegendFilters);
-  const divisionAggs = useAppSelector(state => getDivisionYear(state, year));
-  const divMap = useAppSelector(getDivisionsMap);
+  const divisionAggs = useAppSelector(state => getDivisionYear(state, { ...query, year }));
+  const divMap = useAppSelector(state => getDivisionsMap(state, query));
   const totals: CellData[] = [
     { name: 'count', value: 0 },
     { name: 'amount', value: 0 },
   ];
 
-  const rows = divisionAggs?.filter(d => divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
+  const rows = divisionAggs?.filter(d => query.divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
     d.key,
     ['count', 'amount'].map((field, i) => {
       totals[i].value += d[field];
@@ -50,28 +50,23 @@ const ChartTooltip = (props: TooltipProps) => {
       <DivisionRow
         scrollOffset={scrollOffset}
         dataKey='header'
-        title={year?.toString() ?? ''}
+        name={year?.toString() ?? ''}
         cells={cells}
         header
       />
       <ScrollableDiv>
         <div ref={widthRef} />
-        <FlipMove
-          delay={100}
-          enterAnimation='fade'
-          leaveAnimation='fade'
-        >
-          {rows.map(([ key, cells ]) => (
-            <DivisionRow
-              key={key}
-              id={`${key}-tooltip`}
-              selected={dataKey?.split('-')[0] === key}
-              dataKey={key}
-              title={divMap[key]}
-              cells={cells}
-            />
-          ))}
-        </FlipMove>
+        {rows.map(([ key, cells ]) => (
+          <DivisionRow
+            tooltip
+            key={key}
+            id={`${key}-tooltip`}
+            selected={dataKey?.split('-')[0] === key}
+            dataKey={key}
+            name={divMap[key]}
+            cells={cells}
+          />
+        ))}
       </ScrollableDiv>
     </Paper>
   );

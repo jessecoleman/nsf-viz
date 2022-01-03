@@ -1,19 +1,18 @@
-import { getSortedDivisionAggs, getDivisionOrder, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, getYearRange, isAgg, isLoadingData } from 'app/selectors';
+import { getSortedDivisionAggs, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, isAgg, isLoadingData, isYearsLoading, getYearData } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useQuery } from 'app/hooks';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
-import { setGrantDialogOpen, setGrantFilter, setYearRange } from 'app/filterReducer';
+import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
 import { clearGrants } from 'app/dataReducer';
 import { loadData, loadYears } from 'app/actions';
 import { useEffect, useRef, useState } from 'react';
-import D3Component from './D3Chart';
+import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { colorScales } from 'theme';
-import { isFulfilled } from '@reduxjs/toolkit';
 
-let vis: D3Component;
+let vis: BarChart;
 
 const ChartContainer = styled.div(({ theme }) => `
   flex-grow: 1;
@@ -66,39 +65,40 @@ const Chart = (props: ChartProps) => {
 
   const visRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
-  const query = useQuery();
+  const [ query, setQuery ] = useQuery();
+  // const [ queryDivisions ] = useQueryParam('divisions', DelimitedArrayParam);
 
   // TODO reimplement this?
   // const { counts, amounts } = useAppSelector(getLegendFilters);
-  const yearRange = useAppSelector(getYearRange);
-  const data = useAppSelector(getStackedData);
-  const divisions = useAppSelector(getSortedDivisionAggs);
+  // const yearRange = useAppSelector(getYearRange);
+  const data = useAppSelector(state => getStackedData(state, query));
+  const yearData = useAppSelector(getYearData);
+  const divisions = Object.values(useAppSelector(state => getSortedDivisionAggs(state, query)));
   // TODO why are colors not persistent
   const divDomain = divisions.map(d => d.key)
-    .filter(key => query.divisions.includes(key));
+    .filter(key => query.divisions?.includes(key));
 
   const highlightedDivision = useAppSelector(getHighlightedDivision);
   const selectedTerms = useAppSelector(getSelectedTerms);
   const loading = useAppSelector(isLoadingData);
-  const [ order, ] = useAppSelector(getDivisionOrder);
-  const { bool } = useAppSelector(getLegendFilters);
+  const yearLoading = useAppSelector(isYearsLoading);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
 
   // update colors globally with new domain
   useEffect(() => {
     Object.values(colorScales).forEach(s => s.domain(divisions.map(d => d.key)));
-  }, []);
+  }, [vis]);
 
   // mount chart on first load
   useEffect(() => {
     if (visRef.current && !vis) {
-      vis = new D3Component({
+      vis = new BarChart({
         dimensions: props,
         containerEl: visRef.current,
         onTooltipEnter: handleTooltipEnter,
         onTooltipLeave: handleTooltipLeave,
         onBarClick: handleBarClick,
-        onBrushEnded: handleBrush,
+        onBrushEnded: handleSetYearRange,
       });
     }
   }, [visRef.current]);
@@ -106,39 +106,46 @@ const Chart = (props: ChartProps) => {
   // update data on filter changes
   useEffect(() => {
     if (vis && !loading) {
-      if (isAgg(order)) {
-        vis.updateData(data, divDomain, order);
+      if (isAgg(query.sort)) {
+        vis.update(data, divDomain, query.sort);
       } else {
-        vis.updateData(data, divDomain);
+        vis.update(data, divDomain);
+      }
+      if (query.start && query.end) {
+        vis.timeline.setYearRange(query.start, query.end);
       }
     }
-  }, [vis, loading, order, JSON.stringify(query.divisions)]);
+  }, [vis, loading, query.sort, JSON.stringify(query.divisions)]);
   
+  // update timeline on year change
+  useEffect(() => {
+    if (vis && !yearLoading) {
+      if (isAgg(query.sort)) {
+        vis.timeline.update(yearData, query.sort);
+      } else {
+        vis.timeline.update(yearData);
+      }
+    }
+  }, [vis, yearLoading, query.sort]);
+  
+  // update bar styles on highlight
   useEffect(() => {
     vis?.highlightGroup(highlightedDivision);
   }, [highlightedDivision]);
 
+  // update chart on window resize
   useEffect(() => {
     if (props.height) vis.measure(props.width, props.height);
   }, [props.width, props.height]);
 
+  // query backend on query change
   useEffect(() => {
     dispatch(loadData(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, yearRange, bool ])]);
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection, query.start, query.end ])]);
 
-  // TODO split this like the others
   useEffect(() => {
-    if (vis) {
-      dispatch(loadYears(query)).then((action) => {
-        if (isFulfilled(action)) {
-          vis.updateYears(action.payload.per_year.map(d => ({
-            year: d.key,
-            ...d
-          })));
-        }
-      });
-    }
-  }, [vis, JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, bool ])]);
+    dispatch(loadYears(query));
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection ])]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {
     setTooltipProps({ dataKey, year });
@@ -148,8 +155,8 @@ const Chart = (props: ChartProps) => {
     // setTooltipProps({});
   };
   
-  const handleBrush = (selection: [ number, number ]) => {
-    dispatch(setYearRange(selection));
+  const handleSetYearRange = ([ start, end ]: [ number, number ]) => {
+    setQuery({ start, end });
   };
 
   const handleBarClick = (key: string, year: number) => {

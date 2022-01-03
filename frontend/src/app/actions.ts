@@ -1,74 +1,33 @@
 import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { Grant, SearchResponse, Service } from 'api';
+import { Grant, ServiceService as Service } from 'api';
 import type { FilterState } from './filterReducer';
-import { YearsResponse } from 'api/models/YearsResponse';
-
-type FilterParams = {
-  divisions: string[],
-  terms: string[],
-}
+import { QueryParams } from './hooks';
 
 type ThunkAPI = { state: { filter: FilterState }}
 
-export const loadData = createAsyncThunk<
-  SearchResponse,
-  FilterParams,
-  ThunkAPI
->(
+export const loadData = createAsyncThunk(
   'loadData',
-  async (query, thunkAPI) => {
-    const { filter } = thunkAPI.getState();
-    const { terms, yearRange, legendFilters, ...rest } = filter;
-    const selected = terms.filter(t => t.selected).map(t => t.term);
-    if (selected.length) {
-      query.terms = selected;
-    }
+  async (query: QueryParams) => await Service.search(query)
+);
 
-    return await Service.search({
-      ...rest,
-      ...query,
-      boolQuery: legendFilters.bool,
-      year_range: yearRange,
-    });
-  });
-
-type LoadGrantsParams = FilterParams & {
-  idx: number,
-}
-
-export const loadYears = createAsyncThunk<
-  YearsResponse,
-  FilterParams,
-  ThunkAPI
->(
+export const loadYears = createAsyncThunk(
   'loadYears',
-  async (query, thunkAPI) => {
+  async (query: QueryParams) => await Service.years(query)
+);
 
-    const { filter } = thunkAPI.getState();
-    const { terms, divisions, yearRange, legendFilters, ...rest } = filter;
-    const selected = terms.filter(t => t.selected).map(t => t.term);
-    if (selected.length) {
-      query.terms = selected;
-    }
-
-    return await Service.years({
-      ...rest,
-      ...query,
-      boolQuery: legendFilters.bool,
-    });
-  });
+type LoadGrantsParams = QueryParams & { idx: number }
 
 export const loadGrants = createAsyncThunk<
   Array<Grant>,
-  FilterParams & { idx: number },
+  LoadGrantsParams,
   ThunkAPI
 >(
   'loadGrants',
   async (query: LoadGrantsParams, thunkAPI) => {
 
     const { filter } = thunkAPI.getState();
-    const { terms, grantOrder, legendFilters, grantFilter, ...rest } = filter;
+    const { terms, grantOrder, grantFilter: { yearRange } } = filter;
     const selected = terms.filter(t => t.selected).map(t => t.term);
     if (selected.length) {
       query.terms = selected;
@@ -76,40 +35,37 @@ export const loadGrants = createAsyncThunk<
     const [ orderBy, order ] = grantOrder;
 
     return await Service.loadGrants({
-      ...rest,
       ...query,
       order,
       order_by: orderBy === 'title' ? 'title.raw' : orderBy,
-      toggle: legendFilters.bool === 'all',
-      year_range: grantFilter.yearRange,
     });
   });
-  
-export const loadAbstract = createAsyncThunk<
-  string,
-  string,
-  ThunkAPI
->(
+
+type AbstractPayload = {
+  id: string,
+  terms: string[]
+};
+
+export const loadAbstract = createAsyncThunk(
   'loadAbstract',
-  async (payload: string, thunkAPI) => {
-    const { filter } = thunkAPI.getState();
-    let terms = filter.terms.map(t => t.term);
-    const selected = filter.terms.filter(t => t.selected).map(t => t.term);
-    if (selected.length) {
-      terms = selected;
-    }
-    return await Service.loadAbstract(payload, terms.join(','));
-  }
+  async (payload: AbstractPayload) => (
+    await Service.loadAbstract(payload.id, payload.terms.join(','))
+  )
 );
 
 export const loadDivisions = createAsyncThunk(
   'loadDivisions',
-  async () => await Service.loadDivisions()
+  async () => Promise.all(['nsf', 'nih'].map(Service.loadDivisions))
+);
+
+export const loadDirectory = createAsyncThunk(
+  'loadDirectory',
+  async () => Promise.all(['nsf', 'nih'].map(Service.loadDirectory))
 );
 
 export const loadTermCounts = createAsyncThunk(
   'loadTermCount',
-  async (payload: string) => await Service.countTerm(payload)
+  async (terms: string[]) => await Service.countTerm(terms.join(','))
 );
 
 export const loadTypeahead = createAsyncThunk(
@@ -119,8 +75,7 @@ export const loadTypeahead = createAsyncThunk(
 
 export const loadRelated = createAsyncThunk(
   'loadRelated',
-  async (_, thunkAPI) => {
-    const { filter } = thunkAPI.getState() as { filter: FilterState };
-    return await Service.loadRelated(filter.terms.map(t => t.term).join(','));
+  async (terms: string[]) => {
+    return await Service.loadRelated(terms.join(','));
   }
 );
