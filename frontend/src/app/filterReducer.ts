@@ -11,8 +11,6 @@ export type Term = {
   selected?: boolean,
 }
 
-type YearRange = [ number, number ];
-
 export type SortDirection = 'asc' | 'desc';
 
 export type GrantOrder = [ keyof Grant, SortDirection ];
@@ -31,10 +29,6 @@ export type FilterState = {
   fields: Field[],
   divisionOrder: DivisionOrder,
   grantOrder: GrantOrder,
-  grantDialogOpen: boolean,
-  grantFilter: {
-    yearRange?: YearRange,
-  },
   legendFilters: {
     bool: 'any' | 'all'
     counts: boolean,
@@ -51,8 +45,6 @@ const initialState: FilterState = {
   fields: ['title', 'abstract'],
   divisionOrder: ['name', 'desc'],
   grantOrder: ['date', 'desc'],
-  grantDialogOpen: false,
-  grantFilter: {},
   legendFilters: {
     bool: 'any',
     counts: true,
@@ -69,18 +61,6 @@ const filterSlice = createSlice({
     },
     highlightDivision: (state, action) => {
       state.highlightedDivision = action.payload;
-    },
-    setGrantDialogOpen: (state, action) => {
-      state.grantDialogOpen = action.payload;
-    },
-    setGrantFilter: (state, action) => {
-      const { year } = action.payload;
-      if (year) {
-        state.grantFilter.yearRange = [year, year];
-      }
-    },
-    clearGrantFilter: (state) => {
-      state.grantFilter = {};
     },
     setGrantOrder: (state, action) => {
       state.grantOrder = action.payload;
@@ -108,9 +88,6 @@ const filterSlice = createSlice({
 export const {
   toggleDrawerOpen,
   highlightDivision,
-  setGrantDialogOpen,
-  setGrantFilter,
-  clearGrantFilter,
   setGrantOrder,
   setLegendFilters,
 } = filterSlice.actions;

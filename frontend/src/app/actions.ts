@@ -1,6 +1,6 @@
 import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { Grant, ServiceService as Service } from 'api';
+import { Grant, GrantsRequest, ServiceService as Service } from 'api';
 import type { FilterState } from './filterReducer';
 import { QueryParams } from './hooks';
 
@@ -16,7 +16,7 @@ export const loadYears = createAsyncThunk(
   async (query: QueryParams) => await Service.years(query)
 );
 
-type LoadGrantsParams = QueryParams & { idx: number }
+type LoadGrantsParams = QueryParams & GrantsRequest; //{ idx: number }
 
 export const loadGrants = createAsyncThunk<
   Array<Grant>,
@@ -24,22 +24,8 @@ export const loadGrants = createAsyncThunk<
   ThunkAPI
 >(
   'loadGrants',
-  async (query: LoadGrantsParams, thunkAPI) => {
-
-    const { filter } = thunkAPI.getState();
-    const { terms, grantOrder, grantFilter: { yearRange } } = filter;
-    const selected = terms.filter(t => t.selected).map(t => t.term);
-    if (selected.length) {
-      query.terms = selected;
-    }
-    const [ orderBy, order ] = grantOrder;
-
-    return await Service.loadGrants({
-      ...query,
-      order,
-      order_by: orderBy === 'title' ? 'title.raw' : orderBy,
-    });
-  });
+  Service.loadGrants
+);
 
 type AbstractPayload = {
   id: string,

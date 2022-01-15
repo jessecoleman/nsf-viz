@@ -52,10 +52,6 @@ export const getLegendFilters = (state: RootState) => state.filter.legendFilters
 
 export const isDrawerOpen = (state: RootState) => state.filter.drawerOpen;
 
-export const isGrantDialogOpen = (state: RootState) => state.filter.grantDialogOpen;
-
-export const getGrantFilter = (state: RootState) => state.filter.grantFilter;
-
 export const getGrantOrder = (state: RootState) => state.filter.grantOrder;
 
 export const isLoadingData = (state: RootState) => state.data.loadingData;

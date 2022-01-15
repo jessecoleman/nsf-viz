@@ -379,6 +379,7 @@ export default class BarChart {
         })
         .on('click', (e, d) => {
           d3.select(e.target).classed('selected', false);
+          // TODO d.key is undefined
           this.onBarClick(d.key, d.data.year);
         });
     });
