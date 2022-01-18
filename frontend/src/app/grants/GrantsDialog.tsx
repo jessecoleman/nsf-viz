@@ -16,13 +16,14 @@ import {
 import { loadGrants } from 'app/actions';
 import { Grant } from '../../api/models/Grant';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrantOrder, getNumGrants, isGrantDialogOpen, loadingGrants, noMoreGrants } from 'app/selectors';
+import { getGrantOrder, getNumGrants, loadingGrants, noMoreGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
-import { clearGrantFilter, setGrantDialogOpen, setGrantOrder } from 'app/filterReducer';
+import { setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
 import { useQuery, useWindowDimensions } from 'app/hooks';
 import AbstractDialog from './AbstractDialog';
 import GrantRow, { cols, GrantColumn, GrantListHeader } from './GrantRow';
+import { BooleanParam, NumberParam, StringParam, useQueryParam } from 'use-query-params';
 
 const ProgressBar = styled(LinearProgress)`
   margin-bottom: -4px;
@@ -51,10 +52,11 @@ const GrantsTable = () => {
     if (!loading) {
       await dispatch(loadGrants({
         ...query,
-        terms: query.terms ?? [],
-        divisions: query.divisions ?? [],
-        start: query.start ?? 0,
-        end: query.end ?? 0,
+        order,
+        order_by: orderBy === 'title' ? 'title.raw' : orderBy,
+        start: query.grantDialogYear ?? query.start,
+        end: query.grantDialogYear ?? query.end,
+        divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
         idx
       }));
     }
@@ -97,7 +99,10 @@ const GrantsDialog = () => {
   const dispatch = useAppDispatch();
   const loading = useAppSelector(loadingGrants);
   const numGrants = useAppSelector(getNumGrants);
-  const open = useAppSelector(isGrantDialogOpen);
+  const [ open, setOpen ] = useQueryParam('grantDialog', BooleanParam);
+  const [ year, setYear ] = useQueryParam('grantDialogYear', NumberParam);
+  const [ division, setDivision ] = useQueryParam('grantDialogDivision', StringParam);
+
   const [ firstOpen, setFirstOpen ] = useState(0);
   const [ orderBy, order ] = useAppSelector(getGrantOrder);
   
@@ -115,11 +120,12 @@ const GrantsDialog = () => {
     dispatch(setGrantOrder([ property, newOrder ]));
     dispatch(loadGrants({
       ...query,
-      terms: query.terms ?? [],
-      divisions: query.divisions ?? [],
-      start: query.start ?? 0,
-      end: query.end ?? 0,
-      idx: 0
+      order,
+      order_by: orderBy === 'title' ? 'title.raw' : orderBy,
+      start: query.grantDialogYear ?? query.start,
+      end: query.grantDialogYear ?? query.end,
+      divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
+      idx: 0,
     }));
   };
 
@@ -128,8 +134,7 @@ const GrantsDialog = () => {
   };
 
   const handleClose = () => {
-    dispatch(setGrantDialogOpen(false));
-    dispatch(clearGrantFilter());
+    setOpen(false);
   };
 
   return (
@@ -137,7 +142,7 @@ const GrantsDialog = () => {
       <Dialog
         fullWidth={true}
         maxWidth='xl'
-        open={open}
+        open={!!open}
         onClose={handleClose}
       >
         <GrantListHeader>

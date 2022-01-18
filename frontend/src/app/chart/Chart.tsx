@@ -4,7 +4,6 @@ import { useQuery } from 'app/hooks';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
-import { setGrantDialogOpen, setGrantFilter } from 'app/filterReducer';
 import { clearGrants } from 'app/dataReducer';
 import { loadData, loadYears } from 'app/actions';
 import { useEffect, useRef, useState } from 'react';
@@ -161,8 +160,11 @@ const Chart = (props: ChartProps) => {
 
   const handleBarClick = (key: string, year: number) => {
     dispatch(clearGrants());
-    dispatch(setGrantFilter({ year }));
-    dispatch(setGrantDialogOpen(true));
+    setQuery({
+      grantDialog: true,
+      grantDialogYear: year,
+      grantDialogDivision: key,
+    });
   };
 
   return (

@@ -178,6 +178,9 @@ export const useQuery = () => (
     'match': MatchParam,
     'sort': SortParam,
     'direction': SortDirectionParam,
+    'grantDialog': BooleanParam,
+    'grantDialogYear': NumberParam,
+    'grantDialogDivision': StringParam
   })
 );
 

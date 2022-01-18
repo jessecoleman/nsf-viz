@@ -199,8 +199,10 @@ async def grant_data(request: GrantsRequest):
         raise HTTPException(404, detail='index out of bounds')
         
 
+@app.get('/abstract/{_id}/')
 @app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract', response_model=str)
 async def get_abstract(_id, terms=""):
+    logger.debug(f"terms: {terms}")
     return await Q.abstract(aioes, _id, terms)
 
 
