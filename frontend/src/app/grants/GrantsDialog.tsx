@@ -1,9 +1,5 @@
-import { useRef, useState } from 'react';
-import { FixedSizeList } from 'react-window';
-import InfiniteLoader from 'react-window-infinite-loader';
-
+import { useState } from 'react';
 import { styled } from '@material-ui/core/styles';
-
 import { 
   Dialog,
   Button,
@@ -11,117 +7,71 @@ import {
   DialogActions,
   Collapse,
   LinearProgress,
+  Box,
 } from '@material-ui/core';
 
 import { loadGrants } from 'app/actions';
 import { Grant } from '../../api/models/Grant';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrantOrder, getNumGrants, loadingGrants, noMoreGrants } from 'app/selectors';
+import { getNumGrants, loadingGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
-import { setGrantOrder } from 'app/filterReducer';
 import { useEffect } from 'react';
-import { useQuery, useWindowDimensions } from 'app/hooks';
+import { useMeasure } from 'app/hooks';
+import { useQuery } from 'app/query';
 import AbstractDialog from './AbstractDialog';
-import GrantRow, { cols, GrantColumn, GrantListHeader } from './GrantRow';
-import { BooleanParam, NumberParam, StringParam, useQueryParam } from 'use-query-params';
+import { cols, GrantColumn, GrantListItem } from './GrantRow';
+import GrantsTable from './GrantsTable';
+import FilterChip from './FilterChip';
 
 const ProgressBar = styled(LinearProgress)`
   margin-bottom: -4px;
 `;
 
-const GrantsTable = () => {
+type GrantListHeaderStyles = {
+  scrollOffset?: number;
+}
 
-  const dispatch = useAppDispatch();
-  const [ query ] = useQuery();
-  const [ , height ] = useWindowDimensions();
-  const hasMountedRef = useRef(false);
-  const grantsRef = useRef<InfiniteLoader>(null);
-  const numGrants = useAppSelector(getNumGrants);
-  const [ orderBy, order ] = useAppSelector(getGrantOrder);
-  const loading = useAppSelector(loadingGrants);
-  const noMore = useAppSelector(noMoreGrants);
-  
-  useEffect(() => {
-    if (hasMountedRef.current && grantsRef.current) {
-      grantsRef.current.resetloadMoreItemsCache();
-    }
-    hasMountedRef.current = true;
-  }, [ orderBy, order ]);
-
-  const handleLoadGrants = async (idx: number) => {
-    if (!loading) {
-      await dispatch(loadGrants({
-        ...query,
-        order,
-        order_by: orderBy === 'title' ? 'title.raw' : orderBy,
-        start: query.grantDialogYear ?? query.start,
-        end: query.grantDialogYear ?? query.end,
-        divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
-        idx
-      }));
-    }
-  };
-
-  const count = noMore ? numGrants : numGrants + 1;
-  const isLoaded = (idx: number) => noMore || idx < numGrants;
-
-  return (
-    <InfiniteLoader
-      ref={grantsRef}
-      isItemLoaded={isLoaded}
-      itemCount={count}
-      loadMoreItems={handleLoadGrants}
-    >
-      {({ onItemsRendered, ref }) => (
-        <FixedSizeList
-          onItemsRendered={onItemsRendered}
-          height={height - 256}
-          width='100%'
-          itemSize={64}
-          itemCount={count}
-          ref={ref}
-        >
-          {GrantRow}
-        </FixedSizeList>
-      )}
-    </InfiniteLoader>
-  );
-};
+export const GrantListHeader = styled(GrantListItem)<GrantListHeaderStyles>(({ theme, scrollOffset }) => `
+  height: 96px;
+  font-size: ${theme.typography.h6.fontSize};
+  padding-right: ${scrollOffset ?? 0}px;
+`);
 
 const GrantsDialog = () => {
 
-  const [ query ] = useQuery();
+  const [ query, setQuery ] = useQuery();
 
   useEffect(() => {
     dispatch(clearGrants());
   }, [JSON.stringify(query)]);
 
   const dispatch = useAppDispatch();
+  const [ widthRef, ] = useMeasure<HTMLDivElement>();
   const loading = useAppSelector(loadingGrants);
   const numGrants = useAppSelector(getNumGrants);
-  const [ open, setOpen ] = useQueryParam('grantDialog', BooleanParam);
-  const [ year, setYear ] = useQueryParam('grantDialogYear', NumberParam);
-  const [ division, setDivision ] = useQueryParam('grantDialogDivision', StringParam);
-
   const [ firstOpen, setFirstOpen ] = useState(0);
-  const [ orderBy, order ] = useAppSelector(getGrantOrder);
   
   useEffect(() => {
-    if (open) {
+    if (query.grantDialogOpen) {
       setFirstOpen(c => c + 1);
     } else {
       setFirstOpen(0);
     }
-  }, [open, numGrants]);
+  }, [query.grantDialogOpen, numGrants]);
 
   const handleSort = (property: keyof Grant) => () => {
-    const newOrder = orderBy === property && order === 'desc' ? 'asc' : 'desc';
+    const direction = query.grantOrder === property
+      && query.grantDirection === 'asc' ? 'desc' : 'asc';
 
-    dispatch(setGrantOrder([ property, newOrder ]));
+    setQuery({
+      grantOrder: property,
+      grantDirection: direction,
+    });
+    dispatch(clearGrants());
     dispatch(loadGrants({
       ...query,
-      order,
-      order_by: orderBy === 'title' ? 'title.raw' : orderBy,
+      order: direction,
+      order_by: property === 'title' ? 'title.raw' : property,
       start: query.grantDialogYear ?? query.start,
       end: query.grantDialogYear ?? query.end,
       divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
@@ -134,7 +84,29 @@ const GrantsDialog = () => {
   };
 
   const handleClose = () => {
-    setOpen(false);
+    setQuery({ grantDialogOpen: false });
+  };
+
+  const handleClearFilter = (key: keyof Grant) => () => {
+    switch (key) {
+      case 'date':
+        setQuery({ grantDialogYear: undefined });
+        break;
+      case'cat1_raw':
+        setQuery({ grantDialogDivision: undefined });
+        break;
+    }
+  };
+
+  const getFilterLabel = (field: keyof Grant) => {
+    switch (field) {
+      case 'cat1_raw':
+        return query.grantDialogDivision?.toUpperCase() ?? '';
+      case 'date':
+        return query.grantDialogYear?.toString() ?? '';
+      default:
+        return '';
+    }
   };
 
   return (
@@ -142,24 +114,32 @@ const GrantsDialog = () => {
       <Dialog
         fullWidth={true}
         maxWidth='xl'
-        open={!!open}
+        open={!!query.grantDialogOpen}
         onClose={handleClose}
       >
-        <GrantListHeader>
+        <GrantListHeader scrollOffset={24}>
           {cols.map(({ id, label }) => (
             <GrantColumn key={id} column={id}>
-              <TableSortLabel
-                active={orderBy === id}
-                direction={order}
-                onClick={handleSort(id)}
-              >
-                {label}
-              </TableSortLabel>
+              <Box position='relative' width='100%'>
+                <TableSortLabel
+                  active={query.grantOrder === id}
+                  direction={query.grantDirection}
+                  onClick={handleSort(id)}
+                >
+                  {label}
+                </TableSortLabel>
+                {getFilterLabel(id) &&
+                  <FilterChip
+                    label={getFilterLabel(id)}
+                    onClear={handleClearFilter(id)}
+                  />
+                }
+              </Box>
             </GrantColumn>
           ))}
         </GrantListHeader>
         <Collapse in={firstOpen !== 1 || numGrants > 0}>
-          <GrantsTable />
+          <GrantsTable widthRef={widthRef} />
         </Collapse>
         {loading && <ProgressBar />}
         <DialogActions>

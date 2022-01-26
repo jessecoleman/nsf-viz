@@ -1,6 +1,6 @@
-import { getSortedDivisionAggs, getHighlightedDivision, getLegendFilters, getSelectedTerms, getStackedData, isAgg, isLoadingData, isYearsLoading, getYearData } from 'app/selectors';
+import { getSortedDivisionAggs, getHighlightedDivision, getSelectedTerms, getStackedData, isAgg, isLoadingData, isYearsLoading, getYearData } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
-import { useQuery } from 'app/hooks';
+import { useQuery } from 'app/query';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
@@ -161,7 +161,7 @@ const Chart = (props: ChartProps) => {
   const handleBarClick = (key: string, year: number) => {
     dispatch(clearGrants());
     setQuery({
-      grantDialog: true,
+      grantDialogOpen: true,
       grantDialogYear: year,
       grantDialogDivision: key,
     });

@@ -2,7 +2,7 @@ import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { Grant, GrantsRequest, ServiceService as Service } from 'api';
 import type { FilterState } from './filterReducer';
-import { QueryParams } from './hooks';
+import { QueryParams } from './query';
 
 type ThunkAPI = { state: { filter: FilterState }}
 

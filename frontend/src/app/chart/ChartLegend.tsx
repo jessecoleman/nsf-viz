@@ -1,7 +1,7 @@
 import { Checkbox, Paper, FormGroup, FormControlLabel, styled, Radio, RadioGroup } from '@material-ui/core';
 import { AttachFile, AttachMoney, InsertDriveFile } from '@mui/icons-material';
 import { setLegendFilters } from 'app/filterReducer';
-import { useQuery } from 'app/hooks';
+import { useQuery } from 'app/query';
 import { getLegendFilters } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { ChangeEvent } from 'react';

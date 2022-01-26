@@ -151,16 +151,16 @@ export default class BarChart {
     // x: d3.format('d'),
     x: (d: number) => {
       const [ min, max ] = d3.extent(this.x.domain());
-      if (!(min && max)) return '';
-      const yearGap = Math.round((max! - min!) / this.chartWidth * 200);
+      if (!min || !max) return '';
+      const yearGap = Math.round((max - min) / this.chartWidth * 200);
       const boundaryYearGap = Math.ceil(yearGap / 2);
 
       const showTick = d === min 
         || d === max
         || (
           d % yearGap === 0 
-          && d - boundaryYearGap >= min!
-          && d + boundaryYearGap <= max!
+          && d - boundaryYearGap >= min
+          && d + boundaryYearGap <= max
         );
 
       return showTick ? d.toString() : '';
@@ -379,8 +379,7 @@ export default class BarChart {
         })
         .on('click', (e, d) => {
           d3.select(e.target).classed('selected', false);
-          // TODO d.key is undefined
-          this.onBarClick(d.key, d.data.year);
+          this.onBarClick(div.key, d.data.year);
         });
     });
 

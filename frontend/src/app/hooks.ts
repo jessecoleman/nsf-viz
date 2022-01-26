@@ -1,10 +1,10 @@
-import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParams, withDefault } from 'use-query-params';
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAsync } from 'react-async-hook';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
 import { useAppDispatch, useAppSelector } from './store';
-import { isDrawerOpen, SortableKeys } from './selectors';
+import { isDrawerOpen } from './selectors';
 import { toggleDrawerOpen } from './filterReducer';
+import { useQuery } from './query';
 
 export const useDrawer = (): [ boolean, () => void ] => {
   const dispatch = useAppDispatch();
@@ -129,59 +129,3 @@ export const useDebouncedSearch = (
     results,
   };
 };
-
-export type Organization = 'nsf' | 'nih' | 'dod';
-
-export const OrgParam = withDefault(
-  StringParam,
-  'nsf',
-) as QueryParamConfig<Organization>;
-
-export const ArrayParam = withDefault(
-  DelimitedArrayParam,
-  [],
-) as QueryParamConfig<string[]>;
-
-export const DefaultNumberParam = withDefault(
-  NumberParam,
-  undefined
-) as QueryParamConfig<number | undefined>;
-
-export const DefaultBooleanParam = withDefault(
-  BooleanParam,
-  undefined
-) as QueryParamConfig<boolean | undefined>;
-
-const SortParam = withDefault(
-  StringParam,
-  'name',
-) as QueryParamConfig<SortableKeys>;
-
-const SortDirectionParam = withDefault(
-  StringParam,
-  'desc',
-) as QueryParamConfig<'asc' | 'desc'>;
-
-const MatchParam = withDefault(
-  ArrayParam,
-  ['title', 'abstract']
-) as QueryParamConfig<Array<'title' | 'abstract'>>;
-
-export const useQuery = () => (
-  useQueryParams({
-    'org': OrgParam,
-    'terms': ArrayParam,
-    'divisions': ArrayParam,
-    'start': DefaultNumberParam,
-    'end': DefaultNumberParam,
-    'intersection': DefaultBooleanParam,
-    'match': MatchParam,
-    'sort': SortParam,
-    'direction': SortDirectionParam,
-    'grantDialog': BooleanParam,
-    'grantDialogYear': NumberParam,
-    'grantDialogDivision': StringParam
-  })
-);
-
-export type QueryParams = ReturnType<typeof useQuery>[0];
