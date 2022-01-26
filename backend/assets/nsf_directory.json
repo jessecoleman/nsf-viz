@@ -1,0 +1,301 @@
+[{
+        "name": "Office of the Director",
+        "abbr": "od",
+        "href": "https://www.nsf.gov/od/",
+        "departments": [{
+                "name": "Office of the General Counsel",
+                "abbr": "ogc",
+                "href": "https://www.nsf.gov/od/ogc/"
+            },
+            {
+                "name": "Office of Integrative Activities",
+                "abbr": "oia",
+                "href": "https://www.nsf.gov/dir/index.jsp?org=OIA"
+            },
+            {
+                "name": "Office of International Science and Engineering",
+                "abbr": "oise",
+                "href": "https://www.nsf.gov/dir/index.jsp?org=OISE"
+            },
+            {
+                "name": "Office of Legislative & Public Affairs",
+                "abbr": "olpa",
+                "href": "https://www.nsf.gov/od/lpa/"
+            },
+            {
+                "name": "Office of Equity and Civil Rights",
+                "abbr": "oecr",
+                "href": "https://www.nsf.gov/od/oecr"
+            }
+        ]
+    },
+    {
+        "name": "National Science Board",
+        "abbr": "nsb",
+        "href": "https://www.nsf.gov/nsb/"
+    },
+    {
+        "name": "Office of Inspector General",
+        "abbr": "oig",
+        "href": "https://www.nsf.gov/oig/"
+    },
+    {
+        "name": "Directorate for Biological Sciences",
+        "abbr": "bio",
+        "href": "https://www.nsf.gov/dir/index.jsp?org=BIO",
+        "departments": [{
+                "name": "Division of Molecular & Cellular Biosciences",
+                "abbr": "mcb",
+                "href": "https://www.nsf.gov/div/index.jsp?div=MCB"
+            },
+            {
+                "name": "Division of Biological Infrastructure",
+                "abbr": "dbi",
+                "href": "https://www.nsf.gov/div/index.jsp?div=DBI"
+            },
+            {
+                "name": "Division of Integrative Organismal Systems",
+                "abbr": "ios",
+                "href": "https://www.nsf.gov/div/index.jsp?div=IOS"
+            },
+            {
+                "name": "Division of Environmental Biology",
+                "abbr": "deb",
+                "href": "https://www.nsf.gov/div/index.jsp?div=DEB"
+            },
+            {
+                "name": "Emerging Frontiers Office",
+                "abbr": "ef",
+                "href": "https://www.nsf.gov/div/index.jsp?div=ef"
+            }
+        ]
+    },
+    {
+        "name": "Directorate for Computer & Information Science & Engineering",
+        "abbr": "cise",
+        "href": "https://www.nsf.gov/dir/index.jsp?org=CISE",
+        "departments": [{
+                "name": "Office of Advanced Cyberinfrastructure",
+                "abbr": "oac",
+                "href": "https://www.nsf.gov/div/index.jsp?div=OAC"
+            },
+            {
+                "name": "Division of Computing and Communication Foundations",
+                "abbr": "ccf",
+                "href": "https://www.nsf.gov/div/index.jsp?div=CCF"
+            },
+            {
+                "name": "Division of Computer and Network Systems",
+                "abbr": "cns",
+                "href": "https://www.nsf.gov/div/index.jsp?div=CNS"
+            },
+            {
+                "name": "Division of Information and Intelligent Systems",
+                "abbr": "iis",
+                "href": "https://www.nsf.gov/div/index.jsp?div=IIS"
+            }
+        ]
+    },
+    {
+        "name": "Directorate for Education & Human Resources",
+        "abbr": "ehr",
+        "href": "https://www.nsf.gov/dir/index.jsp?org=EHR",
+        "departments": [{
+                "name": "Division of Research on Learning in Formal and Informal Settings",
+                "abbr": "drl",
+                "href": "https://www.nsf.gov/div/index.jsp?div=DRL"
+            },
+            {
+                "name": "Division of Graduate Education",
+                "abbr": "dge",
+                "href": "https://www.nsf.gov/div/index.jsp?div=DGE"
+            },
+            {
+                "name": "Division of Human Resource Development",
+                "abbr": "hrd",
+                "href": "https://www.nsf.gov/div/index.jsp?div=HRD"
+            },
+            {
+                "name": "Division of Undergraduate Education",
+                "abbr": "due",
+                "href": "https://www.nsf.gov/div/index.jsp?div=DUE"
+            }
+        ]
+    },
+    {
+        "name": "Directorate for Engineering",
+        "abbr": "eng",
+        "href": "https://www.nsf.gov/dir/index.jsp?org=ENG",
+        "departments": [{
+                "name": "Division of Chemical, Bioengineering, Environmental, and Transport Systems",
+                "abbr": "cbet",
+                "href": "https://www.nsf.gov/div/index.jsp?div=CBET"
+            },
+            {
+                "name": "Division of Civil, Mechanical & Manufacturing Innovation",
+                "abbr": "cmmi",
+                "href": "https://www.nsf.gov/div/index.jsp?div=CMMI"
+            },
+            {
+                "name": "Division of Electrical, Communications & Cyber Systems",
+                "abbr": "eccs",
+                "href": "https://www.nsf.gov/div/index.jsp?div=eccs"
+            },
+            {
+                "name": "Division of Engineering Education & Centers",
+                "abbr": "eec",
+                "href": "https://www.nsf.gov/div/index.jsp?div=eec"
+            },
+            {
+                "name": "Division of Industrial Innovation & Partnerships",
+                "abbr": "iip",
+                "href": "https://www.nsf.gov/div/index.jsp?div=iip"
+            },
+            {
+                "name": "Office of Emerging Frontiers and Multidisciplinary Activities",
+                "abbr": "efma",
+                "href": "https://www.nsf.gov/div/index.jsp?div=EFMA"
+            }
+        ]
+    },
+    {
+        "name": "Directorate for Geosciences",
+        "abbr": "geo",
+        "href": "https://www.nsf.gov/dir/index.jsp?org=GEO",
+        "departments": [{
+                "name": "Division of Atmospheric and Geospace Sciences",
+                "abbr": "ags",
+                "href": "https://www.nsf.gov/div/index.jsp?div=ags"
+            },
+            {
+                "name": "Division of Earth Sciences",
+                "abbr": "ear",
+                "href": "https://www.nsf.gov/div/index.jsp?div=ear"
+            },
+            {
+                "name": "Division of Ocean Sciences",
+                "abbr": "oce",
+                "href": "https://www.nsf.gov/div/index.jsp?div=oce"
+            },
+            {
+                "name": "Office of Polar Programs",
+                "abbr": "opp",
+                "href": "https://www.nsf.gov/div/index.jsp?div=opp"
+            }
+        ]
+    },
+    {
+        "name": "Directorate for Mathematical & Physical Sciences",
+        "abbr": "mps",
+        "href": "https://www.nsf.gov/dir/index.jsp?org=MPS",
+        "departments": [{
+                "name": "Division of Astronomical Sciences",
+                "abbr": "ast",
+                "href": "https://www.nsf.gov/div/index.jsp?div=ast"
+            },
+            {
+                "name": "Division of Chemistry",
+                "abbr": "che",
+                "href": "https://www.nsf.gov/div/index.jsp?div=che"
+            },
+            {
+                "name": "Division of Materials Research",
+                "abbr": "dmr",
+                "href": "https://www.nsf.gov/div/index.jsp?div=dmr"
+            },
+            {
+                "name": "Division of Mathematical Sciences",
+                "abbr": "dms",
+                "href": "https://www.nsf.gov/div/index.jsp?div=dms"
+            },
+            {
+                "name": "Division of Physics",
+                "abbr": "phy",
+                "href": "https://www.nsf.gov/div/index.jsp?div=phy"
+            }
+        ]
+    },
+    {
+        "name": "Directorate for Social, Behavioral & Economic Sciences",
+        "abbr": "sbe",
+        "href": "https://www.nsf.gov/dir/index.jsp?org=SBE",
+        "departments": [{
+                "name": "Division of Social and Economic Sciences",
+                "abbr": "ses",
+                "href": "https://www.nsf.gov/div/index.jsp?div=ses"
+            },
+            {
+                "name": "Division of Behavioral and Cognitive Sciences",
+                "abbr": "bcs",
+                "href": "https://www.nsf.gov/div/index.jsp?div=bcs"
+            },
+            {
+                "name": "National Center for Science and Engineering Statistics",
+                "abbr": "ncses",
+                "href": "https://www.nsf.gov/statistics/"
+            },
+            {
+                "name": "SBE Office of Multidisciplinary Activities",
+                "abbr": "sma",
+                "href": "https://www.nsf.gov/div/index.jsp?div=SMA"
+            }
+        ]
+    },
+    {
+        "name": "Office of Budget, Finance, and Award Management",
+        "abbr": "bfa",
+        "href": "https://www.nsf.gov/bfa/",
+        "departments": [{
+                "name": "Budget Division",
+                "abbr": "bd",
+                "href": "https://www.nsf.gov/bfa/bud/"
+            },
+            {
+                "name": "Division of Acquisition and Cooperative Support",
+                "abbr": "dacs",
+                "href": "https://www.nsf.gov/bfa/dcca/"
+            },
+            {
+                "name": "Division of Grants & Agreements",
+                "abbr": "dga",
+                "href": "https://www.nsf.gov/bfa/dga/"
+            },
+            {
+                "name": "Division of Financial Management",
+                "abbr": "dfm",
+                "href": "https://www.nsf.gov/bfa/dfm/"
+            },
+            {
+                "name": "Division of Institution and Award Support",
+                "abbr": "dias",
+                "href": "https://www.nsf.gov/bfa/dias/"
+            },
+            {
+                "name": "Large Facilities Office",
+                "abbr": "lfo",
+                "href": "https://www.nsf.gov/bfa/lfo/"
+            }
+        ]
+    },
+    {
+        "name": "Office of Information & Resource Management",
+        "abbr": "oirm",
+        "href": "https://www.nsf.gov/oirm/",
+        "departments": [{
+                "name": "Division of Human Resource Management",
+                "abbr": "hrm",
+                "href": "https://www.nsf.gov/oirm/hrm/"
+            },
+            {
+                "name": "Division of Information Systems",
+                "abbr": "dis",
+                "href": "https://www.nsf.gov/oirm/dis/"
+            },
+            {
+                "name": "Division of Administrative Services",
+                "abbr": "das",
+                "href": "https://www.nsf.gov/oirm/das/"
+            }
+        ]
+    }
+]

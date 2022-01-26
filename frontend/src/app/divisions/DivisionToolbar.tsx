@@ -5,6 +5,7 @@ import { Close, FilterList } from '@mui/icons-material';
 import DrawerToggle from 'app/nav/DrawerToggle';
 import nih from '../images/nih-logo.svg';
 import nsf from '../images/nsf-logo.svg';
+import dod from '../images/dod-logo.svg';
 import { Organization } from 'app/hooks';
 
 const Toolbar = styled('div')(({ theme }) => `
@@ -46,7 +47,8 @@ type DivisionToolbarProps = {
 
 const orgs = [
   { title: 'National Science Foundation', abbr: 'nsf', src: nsf },
-  { title: 'National Institute of Health', abbr: 'nih', src: nih } 
+  { title: 'National Institute of Health', abbr: 'nih', src: nih },
+  { title: 'Department of Defense', abbr: 'dod', src: dod}
 ];
 
 const DivisionToolbar = (props: DivisionToolbarProps) => (

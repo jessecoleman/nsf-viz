@@ -33,34 +33,39 @@ from build_model import (
 from index_suggester import build_index as build_index_suggester
 
 
-def pipeline(csvfname, outdir):
-    outdir = Path(outdir)
-    assert outdir.exists()
-    intermediate_file = outdir.joinpath("intermediate.txt")
-    data_file = outdir.joinpath("data.txt")
-    model_file = outdir.joinpath("nsf_w2v_model")
-    terms_file = outdir.joinpath("terms.txt")
+def pipeline(csvfname, outdir='.', no_model=False):
+    if no_model is False:
+        outdir = Path(outdir)
+        assert outdir.exists()
 
     logger.info(f"Building elasticsearch index from csv file: {csvfname}")
     data_source = data_source_csv(csvfname)
     build_index(data_source=data_source)
 
-    logger.info(f"getting data for model and saving to {intermediate_file}")
-    data_source = data_source_elasticsearch()
-    get_data(intermediate_file, data_source=data_source)
-    logger.info(f"building gram model and saving to {data_file}")
-    build_gram_model(intermediate_file, data_file)
-    logger.info(f"training model (saving to {model_file})")
-    train_model(data_file, model_file=model_file)
-    logger.info(f"getting counts and saving to: {terms_file}")
-    count_phrases(data_file, model_file=model_file, terms_file=terms_file)
+    if no_model is True:
+        logger.info("skipping model training")
+    else:
+        intermediate_file = outdir.joinpath("intermediate.txt")
+        data_file = outdir.joinpath("data.txt")
+        model_file = outdir.joinpath("nsf_w2v_model")
+        terms_file = outdir.joinpath("terms.txt")
 
-    logger.info(f"Building elasticsearch suggest index from terms file ({terms_file})")
-    build_index_suggester(terms_file=terms_file)
+        logger.info(f"getting data for model and saving to {intermediate_file}")
+        data_source = data_source_elasticsearch()
+        get_data(intermediate_file, data_source=data_source)
+        logger.info(f"building gram model and saving to {data_file}")
+        build_gram_model(intermediate_file, data_file)
+        logger.info(f"training model (saving to {model_file})")
+        train_model(data_file, model_file=model_file)
+        logger.info(f"getting counts and saving to: {terms_file}")
+        count_phrases(data_file, model_file=model_file, terms_file=terms_file)
+
+        logger.info(f"Building elasticsearch suggest index from terms file ({terms_file})")
+        build_index_suggester(terms_file=terms_file)
 
 
 def main(args):
-    pipeline(args.input, args.assets_dir)
+    pipeline(args.input, args.assets_dir, args.no_model)
 
 
 if __name__ == "__main__":
@@ -82,6 +87,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=DESCRIPTION)
     parser.add_argument("input", help="input CSV file")
     parser.add_argument("assets_dir", help="output directory for assets")
+    parser.add_argument("--no-model", action="store_true", help="only ingest data, do not train model")
     parser.add_argument("--debug", action="store_true", help="output debugging info")
     global args
     args = parser.parse_args()
