@@ -83,7 +83,7 @@ def data_source_elasticsearch() -> Generator:
         ]
 
 
-def get_data(intermediate_file: str, data_source: Union[Iterable, str] = 'mysql'):
+def get_data(intermediate_file: str, data_source: Union[Iterable, str]):
     intermediate_file = Path(intermediate_file).resolve()
     assert intermediate_file.parent.exists()
 
@@ -249,9 +249,7 @@ def test_model(model):
 
 def dispatch(args):
     if args.cmd == 'data':
-        if args.data_source.lower() == 'mysql':
-            data_source = data_source_mysql()
-        elif args.data_source.endswith('.csv'):
+        if args.data_source.endswith('.csv'):
             data_source = data_source_csv(args.data_source)
         elif args.data_source.lower().startswith('elastic') or args.data_source.lower() == 'es':
             data_source = data_source_elasticsearch()
@@ -282,7 +280,7 @@ if __name__ == '__main__':
 
     parser_00_data = subparsers.add_parser('data')
     parser_00_data.add_argument('output', nargs='?', default=intermediate_file)
-    parser_00_data.add_argument("--data-source", default='mysql', help="Source for data (default: mysql database)")
+    parser_00_data.add_argument("--data-source", help="Source for data")
 
     parser_01_build = subparsers.add_parser('build')
     parser_01_build.add_argument('intermediate_file', nargs='?', default=intermediate_file)

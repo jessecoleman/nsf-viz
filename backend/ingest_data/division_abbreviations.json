@@ -72,5 +72,20 @@
     "FIC": "Fogarty International Center",
     "NCATS": "National Center for Advancing Translational Sciences",
     "NCCIH": "National Center for Complementary and Integrative Health"
+  },
+  "dod": {
+    "NAVY": "United States Navy",
+    "ARMY": "United States Army",
+    "USAF": "United States Air Force",
+    "SECDEF": "Office of the Secretary of Defense",
+    "ODOD": "Other Department of Defense",
+    "DTRA": "Defense Threat Reduction Agency",
+    "DARPA": "Defense Advanced Research Projects Agency",
+    "USUHS": "Uniformed Services University of Health Sciences",
+    "NSA": "National Security Agency",
+    "OFA": "Other Federal Agency",
+    "NGIA": "National Geospatial-Intelligence Agency",
+    "OCE": "Office of the Chief of Engineers",
+    "USMC": "United States Marine Corps"
   }
 }

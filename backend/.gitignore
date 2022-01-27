@@ -3,6 +3,7 @@ __pycache__/
 venv
 assets/*
 !assets/README*
+!assets/*_directory.json
 api.json
 api*.json
 *.log

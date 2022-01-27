@@ -75,12 +75,12 @@ const filterSlice = createSlice({
   extraReducers: builder => builder
     .addCase(loadDivisions.fulfilled, (state, action) => {
       state.divisions = Object.fromEntries(action.payload.map((divs, i) => [
-        ['nsf', 'nih'][i], divs
+        ['nsf', 'nih', 'dod'][i], divs
       ]));
     })
     .addCase(loadDirectory.fulfilled, (state, action) => {
       state.directory = Object.fromEntries(action.payload.map((divs, i) => [
-        ['nsf', 'nih'][i], divs
+        ['nsf', 'nih', 'dod'][i], divs
       ]));
     })
 });

@@ -1,0 +1,197 @@
+[{
+        "name": "NIH Office of the Director",
+        "abbr": "od",
+        "href": "/institutes-nih/nih-office-director",
+        "est": null,
+        "desc": null
+    },
+    {
+        "name": "National Cancer Institute",
+        "abbr": "nci",
+        "href": "https://www.cancer.gov",
+        "est": 1937,
+        "desc": "NCI leads a national effort to eliminate the suffering and death due to cancer. Through basic and clinical biomedical research and training, NCI conducts and supports research that will lead to a future in which we can prevent cancer before it starts, identify cancers that do develop at the earliest stage, eliminate cancers through innovative treatment interventions, and biologically control those cancers that we cannot eliminate so they become manageable, chronic diseases."
+    },
+    {
+        "name": "National Eye Institute",
+        "abbr": "nei",
+        "href": "https://nei.nih.gov",
+        "est": 1968,
+        "desc": "The National Eye Institute\u2019s mission is to conduct and support research, training, health information dissemination, and other programs with respect to blinding eye diseases, visual disorders, mechanisms of visual function, preservation of sight, and the special health problems and requirements of the blind."
+    },
+    {
+        "name": "National Heart, Lung, and Blood Institute",
+        "abbr": "nhlbi",
+        "href": "https://www.nhlbi.nih.gov",
+        "est": 1948,
+        "desc": "The National Heart, Lung, and Blood Institute (NHLBI) provides global leadership for a research, training, and education program to promote the prevention and treatment of heart, lung, and blood diseases and enhance the health of all individuals so that they can live longer and more fulfilling lives. The NHLBI stimulates basic discoveries about the causes of disease, enables the translation of basic discoveries into clinical practice, fosters training and mentoring of emerging scientists and physicians, and communicates research advances to the public."
+    },
+    {
+        "name": "National Human Genome Research Institute",
+        "abbr": "nhgri",
+        "href": "https://www.genome.gov",
+        "est": 1989,
+        "desc": "NHGRI is devoted to advancing health through genome research. The Institute led NIH\u2019s contribution to the Human Genome Project, which was successfully completed in 2003 ahead of schedule and under budget. Building on the foundation laid by the sequencing of the human genome, NHGRI\u2019s work now encompasses a broad range of research aimed at expanding understanding of human biology and improving human health. In addition, a critical part of NHGRI\u2019s mission continues to be the study of the ethical, legal and social implications of genome research."
+    },
+    {
+        "name": "National Institute on Aging",
+        "abbr": "nia",
+        "href": "https://www.nia.nih.gov",
+        "est": 1974,
+        "desc": "NIA leads a national program of research on the biomedical, social, and behavioral aspects of the aging process; the prevention of age-related diseases and disabilities; and the promotion of a better quality of life for all older Americans."
+    },
+    {
+        "name": "National Institute on Alcohol Abuse and Alcoholism",
+        "abbr": "niaaa",
+        "href": "https://www.niaaa.nih.gov",
+        "est": 1970,
+        "desc": "NIAAA conducts research focused on improving the treatment and prevention of alcoholism and alcohol-related problems to reduce the enormous health, social, and economic consequences of this disease."
+    },
+    {
+        "name": "National Institute of Allergy and Infectious Diseases",
+        "abbr": "niaid",
+        "href": "https://www.niaid.nih.gov",
+        "est": 1948,
+        "desc": "NIAID research strives to understand, treat, and ultimately prevent the myriad infectious, immunologic, and allergic diseases that threaten millions of human lives."
+    },
+    {
+        "name": "National Institute of Arthritis and Musculoskeletal and Skin Diseases",
+        "abbr": "niams",
+        "href": "https://www.niams.nih.gov",
+        "est": 1986,
+        "desc": "NIAMS supports research into the causes, treatment, and prevention of arthritis and musculoskeletal and skin diseases, the training of basic and clinical scientists to carry out this research, and the dissemination of information on research progress in these diseases."
+    },
+    {
+        "name": "National Institute of Biomedical Imaging and Bioengineering",
+        "abbr": "nibib",
+        "href": "https://www.nibib.nih.gov",
+        "est": 2000,
+        "desc": "The mission of the National Institute of Biomedical Imaging and Bioengineering (NIBIB) is to improve health by leading the development and accelerating the application of biomedical technologies. The Institute is committed to integrating the physical and engineering sciences with the life sciences to advance basic research and medical care."
+    },
+    {
+        "name": "Eunice Kennedy Shriver National Institute of Child Health and Human Development",
+        "abbr": "nichd",
+        "href": "https://www.nichd.nih.gov",
+        "est": 1962,
+        "desc": "NICHD leads research and training to understand human development, improve reproductive health, enhance the lives of children and adolescents, and optimize abilities for all."
+    },
+    {
+        "name": "National Institute on Deafness and Other Communication Disorders",
+        "abbr": "nidcd",
+        "href": "https://www.nidcd.nih.gov",
+        "est": 1988,
+        "desc": "NIDCD conducts and supports biomedical research and research training on normal mechanisms as well as diseases and disorders of hearing, balance, smell, taste, voice, speech, and language that affect 46 million Americans."
+    },
+    {
+        "name": "National Institute of Dental and Craniofacial Research",
+        "abbr": "nidcr",
+        "href": "https://www.nidcr.nih.gov",
+        "est": 1948,
+        "desc": "NIDCR provides leadership for a national research program designed to understand, treat, and ultimately prevent the infectious and inherited craniofacial-oral-dental diseases and disorders that compromise millions of human lives."
+    },
+    {
+        "name": "National Institute of Diabetes and Digestive and Kidney Diseases",
+        "abbr": "niddk",
+        "href": "https://www.niddk.nih.gov",
+        "est": 1950,
+        "desc": "The mission of the National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK) is to conduct and support medical research and research training and to disseminate science-based information on diabetes and other endocrine and metabolic diseases; digestive diseases, nutritional disorders, and obesity; and kidney, urologic, and hematologic diseases, to improve people\u2019s health and quality of life."
+    },
+    {
+        "name": "National Institute on Drug Abuse",
+        "abbr": "nida",
+        "href": "https://www.drugabuse.gov",
+        "est": 1974,
+        "desc": "The mission of the National Institute on Drug Abuse (NIDA) is to advance science on the causes and consequences of drug use and addiction and to apply that knowledge to improve individual and public health."
+    },
+    {
+        "name": "National Institute of Environmental Health Sciences",
+        "abbr": "niehs",
+        "href": "https://www.niehs.nih.gov",
+        "est": 1969,
+        "desc": "The mission of the National Institute of Environmental Health Sciences is to discover how the environment affects people in order to promote healthier lives."
+    },
+    {
+        "name": "National Institute of General Medical Sciences",
+        "abbr": "nigms",
+        "href": "https://www.nigms.nih.gov",
+        "est": 1962,
+        "desc": "The National Institute of General Medical Sciences (NIGMS) supports basic research that increases understanding of biological processes and lays the foundation for advances in disease diagnosis, treatment and prevention. NIGMS-funded scientists investigate how living systems work at a range of levels, from molecules and cells to tissues, whole organisms and populations. The Institute also supports research in certain clinical areas, primarily those that affect multiple organ systems. To assure the vitality and continued productivity of the research enterprise, NIGMS provides leadership in training the next generation of scientists, in enhancing the diversity of the scientific workforce, and in developing research capacities throughout the country."
+    },
+    {
+        "name": "National Institute of Mental Health",
+        "abbr": "nimh",
+        "href": "https://www.nimh.nih.gov",
+        "est": 1949,
+        "desc": "NIMH provides national leadership dedicated to understanding, treating, and preventing mental illnesses through basic research on the brain and behavior, and through clinical, epidemiological, and services research."
+    },
+    {
+        "name": "National Institute on Minority Health and Health Disparities",
+        "abbr": "nimhd",
+        "href": "https://www.nimhd.nih.gov",
+        "est": 2010,
+        "desc": "NIMHD has a long history, beginning in 1990 as an Office and later designated a Center in 2000. The mission of NIMHD is to lead scientific research to improve minority health and eliminate health disparities. To accomplish its mission, NIMHD plans, reviews, coordinates, and evaluates all minority health and health disparities research and activities of the National Institutes of Health; conducts and supports research in minority health and health disparities; promotes and supports the training of a diverse research workforce; translates and disseminates research information; and fosters innovative collaborations and partnerships."
+    },
+    {
+        "name": "National Institute of Neurological Disorders and Stroke",
+        "abbr": "ninds",
+        "href": "https://www.ninds.nih.gov",
+        "est": 1950,
+        "desc": "The mission of NINDS is to seek fundamental knowledge about the brain and nervous system and to use that knowledge to reduce the burden of neurological disease.\u00a0To accomplish this goal the NINDS supports and conducts basic, translational, and clinical research on the normal and diseased nervous system. The Institute also fosters the training of investigators in the basic and clinical neurosciences, and seeks better understanding, diagnosis, treatment, and prevention of neurological disorders."
+    },
+    {
+        "name": "National Institute of Nursing Research",
+        "abbr": "ninr",
+        "href": "https://www.ninr.nih.gov",
+        "est": 1986,
+        "desc": "The mission of the National Institute of Nursing Research (NINR) is to promote and improve the health of individuals, families, communities, and populations. NINR supports and conducts clinical and basic research and research training on health and illness across the lifespan to build the scientific foundation for clinical practice, prevent disease and disability, manage and eliminate symptoms caused by illness, and improve palliative and end-of-life care."
+    },
+    {
+        "name": "National Library of Medicine",
+        "abbr": "nlm",
+        "href": "https://www.nlm.nih.gov",
+        "est": 1956,
+        "desc": "NLM collects, organizes, and makes available biomedical science information to scientists, health professionals, and the public. The Library\u2019s Web-based databases, including PubMed/Medline and MedlinePlus, are used extensively around the world. NLM conducts and supports research in biomedical communications; creates information resources for molecular biology, biotechnology, toxicology, and environmental health; and provides grant and contract support for training, medical library resources, and biomedical informatics and communications research."
+    },
+    {
+        "name": "NIH Clinical Center",
+        "abbr": "cc",
+        "href": "https://clinicalcenter.nih.gov",
+        "est": 1953,
+        "desc": "The NIH Clinical Center, America\u2019s research hospital, provides a versatile clinical research environment enabling the NIH mission to improve human health by investigating the pathogenesis of disease; conducting first-in-human clinical trials with an emphasis on rare diseases and diseases of high public health impact; developing state-of-the-art diagnostic, preventive, and therapeutic interventions; training the current and next generations of clinical researchers; and, ensuring that clinical research is ethical, efficient, and of high scientific quality."
+    },
+    {
+        "name": "Center for Information Technology",
+        "abbr": "cit",
+        "href": "https://www.cit.nih.gov",
+        "est": 1964,
+        "desc": "CIT incorporates the power of modern computers into the biomedical programs and administrative procedures of the NIH by focusing on three primary activities: conducting computational biosciences research, developing computer systems, and providing computer facilities."
+    },
+    {
+        "name": "Center for Scientific Review",
+        "abbr": "csr",
+        "href": "https://www.csr.nih.gov",
+        "est": 1946,
+        "desc": "The Center for Scientific Review (CSR) is the portal for NIH grant applications and their review for scientific merit. CSR organizes the peer review groups or study sections that evaluate the majority (70%) of the research grant applications sent to NIH. CSR also receives all grant applications for NIH, as well as for some other components of the U.S. Department of Health and Human Services (DHHS). Since 1946, the CSR mission has remained clear and timely: to see that NIH grant applications receive fair, independent, expert, and timely reviews"
+    },
+    {
+        "name": "Fogarty International Center",
+        "abbr": "fic",
+        "href": "https://www.fic.nih.gov",
+        "est": 1968,
+        "desc": "FIC promotes and supports scientific research and training internationally to reduce disparities in global health."
+    },
+    {
+        "name": "National Center for Advancing Translational Sciences",
+        "abbr": "ncats",
+        "href": "https://ncats.nih.gov",
+        "est": 2011,
+        "desc": "The mission of NCATS is to catalyze the generation of innovative methods and technologies that will enhance the development, testing, and implementation of diagnostics and therapeutics across a wide range of human diseases and conditions."
+    },
+    {
+        "name": "National Center for Complementary and Integrative Health",
+        "abbr": "nccih",
+        "href": "https://nccih.nih.gov",
+        "est": 1999,
+        "desc": "The mission of NCCIH is to define, through rigorous scientific investigation, the usefulness and safety of complementary and integrative health interventions and their roles in improving health and health care."
+    }
+]

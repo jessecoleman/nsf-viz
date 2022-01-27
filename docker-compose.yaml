@@ -11,6 +11,7 @@ services:
             - LOG_LEVEL=DEBUG
             - DEV_MODE=1
             - ELASTICSEARCH_HOST=elasticsearch
+            - WORD_VECTORS_FILENAME=${WORD_VECTORS_FILENAME}
         # command: ["main:app", "--host", "0.0.0.0", "--reload"]
         # ports:
         #     - 8888:8888

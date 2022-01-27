@@ -41,12 +41,12 @@ export const loadAbstract = createAsyncThunk(
 
 export const loadDivisions = createAsyncThunk(
   'loadDivisions',
-  async () => Promise.all(['nsf', 'nih'].map(Service.loadDivisions))
+  async () => Promise.all(['nsf', 'nih', 'dod'].map(Service.loadDivisions))
 );
 
 export const loadDirectory = createAsyncThunk(
   'loadDirectory',
-  async () => Promise.all(['nsf', 'nih'].map(Service.loadDirectory))
+  async () => Promise.all(['nsf', 'nih', 'dod'].map(Service.loadDirectory))
 );
 
 export const loadTermCounts = createAsyncThunk(

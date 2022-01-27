@@ -130,7 +130,7 @@ export const useDebouncedSearch = (
   };
 };
 
-export type Organization = 'nsf' | 'nih';
+export type Organization = 'nsf' | 'nih' | 'dod';
 
 export const OrgParam = withDefault(
   StringParam,
