@@ -9,6 +9,7 @@ type GrantState = {
   yearAgg: YearAggregate[],
   yearDivisionAgg: YearDivisionAggregate[],
   divisionAgg: DivisionAggregate[],
+  directoryAgg: DivisionAggregate[],
   grants: Grant[],
   typeahead: string[],
   related: string[],
@@ -24,6 +25,7 @@ const initialState: GrantState = {
   yearAgg: [],
   yearDivisionAgg: [],
   divisionAgg: [],
+  directoryAgg: [],
   grants: [],
   typeahead: [],
   related: [],
@@ -61,8 +63,10 @@ const dataSlice = createSlice({
     .addCase(loadData.fulfilled, (state, action) => {
       state.loadingData = false;
       // TODO clean this up so that we don't have clunky selectors
-      state.yearDivisionAgg = action.payload.per_year;
-      state.divisionAgg = action.payload.overall;
+      const { per_year, per_directory, overall } = action.payload;
+      state.yearDivisionAgg = per_year;
+      state.divisionAgg = overall;
+      state.directoryAgg = per_directory;
     })
     .addCase(loadData.rejected, (state) => {
       state.loadingData = false;

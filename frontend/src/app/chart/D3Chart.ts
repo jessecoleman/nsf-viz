@@ -29,10 +29,10 @@ type ChartCallback = (key: string, year: number) => void
 type ChartProps = {
   dimensions: Dimensions
   containerEl: HTMLDivElement
-  onTooltipEnter: ChartCallback
-  onTooltipLeave: ChartCallback
-  onBarClick: ChartCallback
-  onBrushEnded: BrushCallback
+  onTooltipEnter?: ChartCallback
+  onTooltipLeave?: ChartCallback
+  onBarClick?: ChartCallback
+  onBrushEnded?: BrushCallback
 };
 
 export type Layout = {
@@ -71,9 +71,9 @@ export default class BarChart {
   xAxis: Selection<SVGGElement>;
   yAxis: Selection<SVGGElement>;
   gridLines: Selection<SVGGElement>;
-  onTooltipEnter: ChartCallback
-  onTooltipLeave: ChartCallback
-  onBarClick: ChartCallback
+  onTooltipEnter?: ChartCallback
+  onTooltipLeave?: ChartCallback
+  onBarClick?: ChartCallback
   animationDur = 1000;
   
   constructor(props: ChartProps) {
@@ -358,7 +358,7 @@ export default class BarChart {
           const rect: SVGRectElement = e.target;
           d3.select(rect).classed('selected', true);
 
-          this.onTooltipEnter(div.key, d.data.year);
+          this.onTooltipEnter?.(div.key, d.data.year);
 
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const chart = this.svg.node()!.getBoundingClientRect();
@@ -374,12 +374,12 @@ export default class BarChart {
         })
         .on('mouseleave', (e, d) => {
           d3.select(e.target).classed('selected', false);
-          this.onTooltipLeave(d.key, d.data.year);
+          this.onTooltipLeave?.(d.key, d.data.year);
           removeTooltip();
         })
         .on('click', (e, d) => {
           d3.select(e.target).classed('selected', false);
-          this.onBarClick(div.key, d.data.year);
+          this.onBarClick?.(div.key, d.data.year);
         });
     });
 

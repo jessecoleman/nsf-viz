@@ -34,8 +34,18 @@ export const getYearDivisionAgg = (state: RootState) => state.data.yearDivisionA
 
 export const getDivisionAgg = (state: RootState) => state.data.divisionAgg;
 
+export const getDirectoryAgg = (state: RootState) => state.data.directoryAgg;
+
 const getDivisionMap = createSelector(
   getDivisionAgg,
+  (agg) => Object.fromEntries(agg.map(d => [
+    d.key,
+    d
+  ]))
+);
+
+const getDirectoryMap = createSelector(
+  getDirectoryAgg,
   (agg) => Object.fromEntries(agg.map(d => [
     d.key,
     d
@@ -51,8 +61,6 @@ export const getNumGrants = (state: RootState) => state.data.grants.length;
 export const getLegendFilters = (state: RootState) => state.filter.legendFilters;
 
 export const isDrawerOpen = (state: RootState) => state.filter.drawerOpen;
-
-export const getGrantOrder = (state: RootState) => state.filter.grantOrder;
 
 export const isLoadingData = (state: RootState) => state.data.loadingData;
 
@@ -113,14 +121,15 @@ const getDivisionDirection = (state: RootState, params: QueryParams) => params.d
 export const getDirectoryAggs = createSelector(
   getOrgDirectory,
   getDivisionMap,
+  getDirectoryMap,
   getDivisionSort,
   getDivisionDirection,
-  (directory, divisions, sort, direction) => (
+  (directory, divisions, directoryMap, sort, direction) => (
     stableSort(directory.map(dir => ({
       ...dir,
       key: dir.abbr,
-      count: divisions[dir.abbr]?.count ?? 0,
-      amount: divisions[dir.abbr]?.amount ?? 0,
+      count: directoryMap[dir.abbr]?.count ?? 0,
+      amount: directoryMap[dir.abbr]?.amount ?? 0,
       departments: stableSort(dir.departments?.map(dep => ({
         ...dep,
         key: dep.abbr,

@@ -55,6 +55,7 @@ class YearDivisionAggregate(BaseModel):
 class SearchRequest(BaseModel):
     intersection: Optional[bool] = False
     terms: List[str]
+    org: str
     divisions: List[str]
     match: Optional[List[str]]
     start: Optional[int]
@@ -64,6 +65,7 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     per_year: List[YearDivisionAggregate]
     overall: List[DivisionAggregate]
+    per_directory: List[DivisionAggregate]
 
 
 class YearsResponse(BaseModel):

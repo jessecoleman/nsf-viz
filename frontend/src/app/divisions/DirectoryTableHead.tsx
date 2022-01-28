@@ -2,10 +2,22 @@ import {
   TableSortLabel,
   Checkbox,
   Tooltip,
+  IconButton,
+  Box,
+  styled,
 } from '@material-ui/core';
+import { UnfoldLess, UnfoldMore } from '@mui/icons-material';
 import { SortableKeys } from 'app/selectors';
-import { ChangeEvent } from 'react';
+import { getNextCheckboxState } from './checkFSM';
 import { Column, NumberColumn, Row } from './DivisionRow';
+
+const ExpandButton = styled(IconButton)`
+  width: 24px;
+  height: 24px;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: 4px;
+`;
 
 type Columns = {
   Component: typeof Column | typeof NumberColumn,
@@ -28,32 +40,26 @@ type EnhancedTableHeadProps = {
   orderBy: string,
   direction: 'desc' | 'asc',
   checked: CheckboxState,
+  allExpanded: boolean,
   onRequestSort: (key: SortableKeys) => void,
-  onSelectAllClick: (e: ChangeEvent, checked: boolean) => void,
+  onSelectAllClick: (checked: CheckboxState) => void,
+  onExpandAll: () => void,
 }
 
-const DirectoryTableHead = (props: EnhancedTableHeadProps) => {
-
-  const {
-    scrollOffset,
-    orderBy,
-    direction,
-    checked,
-    onRequestSort,
-    onSelectAllClick,
-  } = props;
-
-  const handleSort = (property: SortableKeys) => () => {
-    onRequestSort(property);
-  };
-
-  return (
-    <Row checkable nohover scrollOffset={scrollOffset}>
+const DirectoryTableHead = (props: EnhancedTableHeadProps) => (
+  <Box display='flex' flexDirection='row'>
+    <ExpandButton onClick={props.onExpandAll}>
+      {props.allExpanded
+        ? <UnfoldLess />
+        : <UnfoldMore />
+      }
+    </ExpandButton>
+    <Row checkable nohover scrollOffset={props.scrollOffset}>
       <Column column='checkbox'>
         <Checkbox
-          checked={checked === 'checked'}
-          indeterminate={checked === 'indeterminate'}
-          onChange={onSelectAllClick}
+          checked={props.checked === 'checked'}
+          indeterminate={props.checked === 'indeterminate'}
+          onChange={() => props.onSelectAllClick(getNextCheckboxState(props.checked))}
         />
       </Column>
       {columns.map(c => (
@@ -68,9 +74,9 @@ const DirectoryTableHead = (props: EnhancedTableHeadProps) => {
             enterDelay={300}
           >
             <TableSortLabel
-              active={orderBy === c.id}
-              direction={direction}
-              onClick={handleSort(c.id)}
+              active={props.orderBy === c.id}
+              direction={props.direction}
+              onClick={() => props.onRequestSort(c.id)}
             >
               {c.label}
             </TableSortLabel>
@@ -78,7 +84,7 @@ const DirectoryTableHead = (props: EnhancedTableHeadProps) => {
         </c.Component>
       ))}
     </Row>
-  );
-};
+  </Box>
+);
 
 export default DirectoryTableHead;

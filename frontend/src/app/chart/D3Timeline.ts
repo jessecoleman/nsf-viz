@@ -17,7 +17,7 @@ type TimelineProps = {
   svg: Selection<SVGSVGElement>,
   chartWidth: number,
   chartHeight: number
-  onBrushEnded: BrushCallback
+  onBrushEnded?: BrushCallback
   padding: Padding
   tickFormat: TickFormat 
 }
@@ -66,7 +66,7 @@ export default class D3Timeline {
         if (!sourceEvent || !selection) return;
         // inversed map is interval [s, e)
         this.yearRange = selection.map(this.xInverse);
-        props.onBrushEnded(this.yearRange);
+        props.onBrushEnded?.(this.yearRange);
         //this.updateBrush();
         this.gb
           .transition()

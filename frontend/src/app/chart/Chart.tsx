@@ -95,7 +95,7 @@ const Chart = (props: ChartProps) => {
         dimensions: props,
         containerEl: visRef.current,
         onTooltipEnter: handleTooltipEnter,
-        onTooltipLeave: handleTooltipLeave,
+        // onTooltipLeave: handleTooltipLeave,
         onBarClick: handleBarClick,
         onBrushEnded: handleSetYearRange,
       });
@@ -140,19 +140,20 @@ const Chart = (props: ChartProps) => {
   // query backend on query change
   useEffect(() => {
     dispatch(loadData(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection, query.start, query.end ])]);
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.org, query.intersection, query.start, query.end ])]);
 
   useEffect(() => {
     dispatch(loadYears(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.intersection ])]);
+  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.org, query.intersection ])]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {
     setTooltipProps({ dataKey, year });
   };
 
-  const handleTooltipLeave = (key: string, year: number) => {
-    // setTooltipProps({});
-  };
+  // TODO maybe add callback
+  // const handleTooltipLeave = (key: string, year: number) => {
+  //   // setTooltipProps({});
+  // };
   
   const handleSetYearRange = ([ start, end ]: [ number, number ]) => {
     setQuery({ start, end });

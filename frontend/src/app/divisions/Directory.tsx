@@ -1,4 +1,4 @@
-import { MouseEvent, SyntheticEvent, useEffect } from 'react';
+import { MouseEvent, useEffect } from 'react';
 import { Flipper, Flipped } from 'react-flip-toolkit';
 import match from 'autosuggest-highlight/match';
 import { SelectChangeEvent } from '@material-ui/core';
@@ -9,7 +9,7 @@ import{ loadDirectory, loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useDebouncedCallback, useMeasure } from 'app/hooks';
 import { Organization, useQuery } from 'app/query';
-import { highlightDivision } from 'app/filterReducer';
+import { highlightDivision, SortDirection } from 'app/filterReducer';
 import { colorScales } from 'theme';
 import { ChangeEvent, useState } from 'react';
 import Highlight from 'app/Highlight';
@@ -26,8 +26,12 @@ const Directory = () => {
   const [ query, setQuery ] = useQuery();
   const divisions = useAppSelector(state => getSortedDivisionAggs(state, query));
   const directory = useAppSelector(state => getDirectoryAggs(state, query));
+  console.log(directory);
   const depMap = useAppSelector(state => getDepartmentMap(state, query));
   const divMap = useAppSelector(state => getDivisionsMap(state, query));
+  const allDivisions = directory.flatMap(directory =>
+    [directory.abbr].concat((directory.departments ?? []).map(div => div.abbr))
+  );
 
   const debouncedHighlight = useDebouncedCallback(key => {
     dispatch(highlightDivision(key));
@@ -44,75 +48,75 @@ const Directory = () => {
   if (query.divisions === undefined) return null;
   
   function handleRequestSort(sort: SortableKeys) {
-    const desc = query.sort === sort && query.direction === 'asc';
-    setQuery({ sort, direction: desc ? 'desc' : 'asc' });
+    let direction: SortDirection | undefined;
+    if (sort === 'name') {
+      direction = query.sort === sort && query.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      direction = query.sort === sort && query.direction === 'desc' ? 'asc' : 'desc';
+    }
+    setQuery({ sort, direction });
   }
   
-  const handleSelect = (e: SyntheticEvent, nodeIds: string[]) => {
-    e.stopPropagation();
-  };
-
-  const handleCheck = (e: MouseEvent, key: string, checked: boolean) => {
+  const handleCheck = (e: MouseEvent, key: string, checked: CheckboxState) => {
     // don't trigger expand section
     e.stopPropagation();
-    // setSelected(nodeIds);
-    let keys = [key];
-    if (expanded.includes(key)) {
-      keys = keys.concat(depMap[key]);
-    }
-    setQuery({ divisions: query.divisions.includes(key)
-      ? query.divisions.filter(d => d !== key)
-      : query.divisions.concat(key)
+    setQuery({ divisions: checked === 'checked'
+      ? query.divisions.concat([key])
+      : query.divisions.filter(d => d !== key)
     });
   };
 
-  const handleSelectGroup = (key: string) => () => {
+  const handleSelectGroup = (e: MouseEvent, key: string, checked: CheckboxState) => {
+    e.stopPropagation();
     const group = [key].concat(depMap[key] ?? []);
-    setQuery({ divisions: query.divisions.includes(key)
-      ? query.divisions.filter(d => !group.includes(d))
-      : query.divisions.concat(group)
-    });
+    const divisions = checked === 'checked'
+      ? [...new Set(query.divisions.concat(group))]
+      : query.divisions.filter(d => !group.includes(d));
+
+    setQuery({ divisions });
   };
 
-  const handleSelectAll = (e: ChangeEvent, checked: boolean) => {
-    if (checked) {
-      setQuery({ divisions: directory.flatMap(d => 
-        [d.abbr].concat(expanded.includes(d.abbr)
-          ? depMap[d.abbr]
-          : []
-        )
-      )
-      });
+  const handleSelectAll = (checked: CheckboxState) => {
+    switch (checked) {
+      case 'checked':
+        setQuery({ divisions: allDivisions });
+        break;
+      case 'indeterminate':
+      case 'unchecked':
+        setQuery({ divisions: [] });
+        break;
+    }
+  };
+  
+  const handleExpandAll = () => {
+    const directorates = directory.map(dir => dir.abbr);
+    if (expanded.length < directorates.length) {
+      setExpanded(directorates);
     } else {
-      setQuery({ divisions: [] });
+      setExpanded([]);
     }
   };
   
   const handleToggle = (e: React.SyntheticEvent, keys: string[]) => {
-    let toggled: string;
-    let add: boolean;
-    if (keys.length < expanded.length) {
-      [ toggled ] = expanded.filter(e => !keys.includes(e));
-      add = false;
-    } else {
-      [ toggled ] = keys.filter(e => !expanded.includes(e));
-      add = true;
-    }
+    // TODO maybe adjust query based on toggle state?
+    // let toggled: string;
+    // let add: boolean;
+    // if (keys.length < expanded.length) {
+    //   [ toggled ] = expanded.filter(e => !keys.includes(e));
+    //   add = false;
+    // } else {
+    //   [ toggled ] = keys.filter(e => !expanded.includes(e));
+    //   add = true;
+    // }
     // only selected nested elements if parent is selected
-    const nested = query.divisions.includes(toggled) ? depMap[toggled] : [];
-    const selected = add
-      ? query.divisions.concat(nested)
-      : query.divisions.filter(key => !nested.includes(key));
+    // const nested = query.divisions.includes(toggled) ? depMap[toggled] : [];
+    // const selected = add
+    //   ? query.divisions.concat(nested)
+    //   : query.divisions.filter(key => !nested.includes(key));
 
-    setQuery({ divisions: [...new Set(selected)] });
+    // setQuery({ divisions: [...new Set(selected)] });
     setExpanded(keys);
   };
-
-  // const handleExpandClick = () => {
-  //   setExpanded((oldExpanded) =>
-  //     oldExpanded.length === 0 ? ['1', '5', '6', '7'] : [],
-  //   );
-  // };
 
   const handleChangeOrg = (e: SelectChangeEvent<Organization>) => {
     setQuery({
@@ -124,6 +128,18 @@ const Directory = () => {
   const handleFilterDivisions = (e: ChangeEvent<HTMLInputElement>) => {
     setDivisionFilter(e.target.value);
   };
+  
+  const getDirectoryCheckState = (abbr: string) => {
+    const checked = selectedDivisions.has(abbr);
+    const children = directory.find(dir => dir.abbr === abbr)?.departments ?? [];
+    if (!checked) {
+      return 'unchecked';
+    } else if (children.every(div => selectedDivisions.has(div.abbr))) {
+      return 'checked';
+    } else {
+      return 'indeterminate';
+    }
+  };
 
   const filtered = Object.values(divisions)
     .map(d => divMap[d.key])
@@ -131,7 +147,7 @@ const Directory = () => {
     .filter(d => !divisionFilter || match(d, divisionFilter).length);
     
   let checked: CheckboxState = 'unchecked';
-  if (selectedDivisions.size === filtered.length) checked = 'checked';
+  if (selectedDivisions.size == allDivisions.length) checked = 'checked';
   else if (selectedDivisions.size > 0) checked = 'indeterminate';
 
   return (
@@ -146,8 +162,10 @@ const Directory = () => {
       <DirectoryTableHead
         scrollOffset={scrollOffset}
         checked={checked}
+        allExpanded={directory.every(dir => expanded.includes(dir.abbr))}
         orderBy={query.sort ?? 'name'}
         direction={query.direction}
+        onExpandAll={handleExpandAll}
         onSelectAllClick={handleSelectAll}
         onRequestSort={handleRequestSort}
       />
@@ -161,7 +179,7 @@ const Directory = () => {
         multiSelect
         selected={query.divisions}
         onNodeToggle={handleToggle}
-        onNodeSelect={handleSelect}
+        // onNodeSelect={handleSelect}
       >
         {directory.map(dir => (
           <DirectoryEntry
@@ -169,10 +187,10 @@ const Directory = () => {
             nodeId={dir.abbr}
             desc={dir.desc}
             name={<Highlight value={dir.name} query={divisionFilter} />}
-            count={divisions[dir.abbr]?.count ?? 0}
-            amount={divisions[dir.abbr]?.amount ?? 0}
-            checked={selectedDivisions.has(dir.abbr)}
-            onCheck={handleCheck}
+            count={dir.count ?? 0}
+            amount={dir.amount ?? 0}
+            checked={getDirectoryCheckState(dir.abbr)}
+            onCheck={handleSelectGroup}
           >
             {dir.departments
               ?.filter(d => filtered.includes(d.name))
@@ -184,7 +202,7 @@ const Directory = () => {
                   name={<Highlight value={dep.name} query={divisionFilter} />}
                   count={divisions[dep.abbr]?.count ?? 0}
                   amount={divisions[dep.abbr]?.amount ?? 0}
-                  checked={selectedDivisions.has(dep.abbr)}
+                  checked={selectedDivisions.has(dep.abbr) ? 'checked' : 'unchecked'}
                   onCheck={handleCheck}
                 />
               ))
@@ -192,38 +210,6 @@ const Directory = () => {
           </DirectoryEntry>
         ))}
       </TreeView>
-      {/*<TableWrapper>
-        <div ref={widthRef} />
-        <Flipper flipKey={`${filtered.length}-${orderBy}`}>
-          {filtered.map(div => (
-            <Flipped key={div.key} flipId={div.key}>
-              <div>
-                <DivisionRow
-                  checkable
-                  key={div.key}
-                  dataKey={div.key}
-                  title={<Highlight value={divMap[div.key]} query={divisionFilter} />}
-                  onCheck={handleSelect(div.key, selectedDivisions.has(div.key))}
-                  onMouseOver={debouncedHighlight}
-                  onMouseOut={debouncedHighlight}
-                  checked={selectedDivisions.has(div.key)}
-                  aria-checked={selectedDivisions.has(div.key)}
-                  cells={['count', 'amount'].map(field => ({
-                    name: field,
-                    value: div[field],
-                    fill: selectedDivisions.has(div.key)
-                      ? colorScales[field](div.key)
-                      : 'white' 
-                  }))}
-                  // tabIndex={-1}
-                />
-              </div>
-            </Flipped>
-          ))
-          }
-        </Flipper>
-      </TableWrapper>
-      */ }
     </div>
   );
 };

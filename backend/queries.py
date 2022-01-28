@@ -79,6 +79,14 @@ def terms_multi_match(terms: List[str], match: List[str], must_or_should: Option
         
     return query
     
+
+def org_match(org: str):
+    return {
+        'match': {
+            'agency': org
+        }
+    }
+
     
 def year_range_filter(start: int, end: int):
     subquery = {
@@ -136,6 +144,7 @@ def term_agg(agg_field: str):
 
 async def year_aggregates(
     aioes: Elasticsearch,
+    org: str,
     intersection: bool,
     terms: List[str] = None,
     match = ('title', 'abstract'),
@@ -148,13 +157,16 @@ async def year_aggregates(
 
     query = {
         'query': {
-            'bool': {}
+            'bool': {
+                'must': [
+                    terms_multi_match(terms, match, must_or_should),
+                    org_match(org)
+                ],
+            }
         },
         'aggs': year_histogram(grant_amount_agg)
     }
 
-    query['query'] = terms_multi_match(terms, match, must_or_should)
-        
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
     return YearsResponse(
@@ -164,6 +176,7 @@ async def year_aggregates(
 
 async def division_aggregates(
         aioes: Elasticsearch,
+        org: str,
         intersection: bool,
         start: Optional[int],
         end: Optional[int],
@@ -178,23 +191,23 @@ async def division_aggregates(
         match = ('title', 'abstract')
 
     query = {
-        'query': terms_multi_match(terms, match, must_or_should),
-        # 'aggs': {
-        #     **term_agg('key1'),
-        #     **term_agg('key2'),
-        #     **year_histogram({
-        #         **term_agg('key1'),
-        #         **term_agg('key2')
-        #     })
-        # }
+        'query': {
+            'bool': {
+                'must': [
+                    terms_multi_match(terms, match, must_or_should),
+                    org_match(org),
+                ]
+            }
+        },
         'aggs': {
             **term_agg('cat1'),
+            **term_agg('cat2'),
             **year_histogram({
                 **term_agg('cat1'),
-            })
+            }),
         }
     }
-
+    
     if start is not None or end is not None:
 
         # if terms is None
@@ -211,6 +224,7 @@ async def division_aggregates(
         
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
+    per_directory_buckets = hits['aggregations']['cat2']['buckets']
     # TODO better way to merge these
     # overall_buckets = hits['aggregations']['key1']['buckets']
     # overall_buckets2 = hits['aggregations']['key2']['buckets']
@@ -218,6 +232,7 @@ async def division_aggregates(
 
     return SearchResponse(
         per_year=[convert(bucket) for bucket in per_year_buckets],
+        per_directory=[convert(bucket) for bucket in per_directory_buckets],
         #overall=[convert(bucket) for bucket in overall_buckets2 + overall_buckets],
         overall=[convert(bucket) for bucket in overall_buckets],
     )
@@ -243,6 +258,7 @@ async def term_freqs(aioes: Elasticsearch, terms: List[str], match: List[str]):
     
 async def grants(aioes,
         idx: int,
+        org: str,
         intersection: bool,
         order_by: str,
         order: str,
@@ -269,15 +285,18 @@ async def grants(aioes,
         },
         'query': {
             'bool': {
-                'filter': [{
-                    'bool': {
-                        'should': [{
-                            'term': {
-                                'cat1': div,
-                            }
-                        } for div in divisions]
-                    }
-                }],
+                'filter': [
+                    {
+                        'bool': {
+                            'should': [{
+                                'term': {
+                                    'cat1': div,
+                                }
+                            } for div in divisions]
+                        },
+                    },
+                    org_match(org)
+                ],
                 'must': must_query
             }
         },

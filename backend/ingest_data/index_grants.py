@@ -23,7 +23,7 @@ import logging
 root_logger = logging.getLogger()
 logger = root_logger.getChild(__name__)
 
-from parse_abbrevs import abbrevs_flat, normalize, nsf_mapped_reversed
+from parse_abbrevs import abbrevs_flat, normalize, nsf_mapped_reversed, nsf_directory_inv
 
 host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
 es = connections.create_connection(hosts=[host], timeout=20)
@@ -124,6 +124,7 @@ def get_data(data_source: Iterable) -> Generator:
                 date=format_date(r["date"]),
                 cat1_raw=cat1_raw,
                 cat1=mapped_abbrev,
+                cat2=nsf_directory_inv.get(mapped_abbrev, mapped_abbrev),
                 agency=r["agency"],
             )
             yield g.to_dict(True)
