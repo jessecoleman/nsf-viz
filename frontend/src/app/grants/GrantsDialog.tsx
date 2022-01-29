@@ -22,6 +22,7 @@ import AbstractDialog from './AbstractDialog';
 import { cols, GrantColumn, GrantListItem } from './GrantRow';
 import GrantsTable from './GrantsTable';
 import FilterChip from './FilterChip';
+import useGrantsDownload from './grantsDownload';
 
 const ProgressBar = styled(LinearProgress)`
   margin-bottom: -4px;
@@ -40,6 +41,7 @@ export const GrantListHeader = styled(GrantListItem)<GrantListHeaderStyles>(({ t
 const GrantsDialog = () => {
 
   const [ query, setQuery ] = useQuery();
+  const handleDownloadGrants = useGrantsDownload();
 
   useEffect(() => {
     dispatch(clearGrants());
@@ -60,11 +62,11 @@ const GrantsDialog = () => {
   }, [query.grantDialogOpen, numGrants]);
 
   const handleSort = (property: keyof Grant) => () => {
-    const direction = query.grantOrder === property
+    const direction = query.grantSort === property
       && query.grantDirection === 'asc' ? 'desc' : 'asc';
 
     setQuery({
-      grantOrder: property,
+      grantSort: property,
       grantDirection: direction,
     });
     dispatch(clearGrants());
@@ -77,10 +79,6 @@ const GrantsDialog = () => {
       divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
       idx: 0,
     }));
-  };
-
-  const handleDownload = () => {
-    window.alert('coming soon');
   };
 
   const handleClose = () => {
@@ -122,7 +120,7 @@ const GrantsDialog = () => {
             <GrantColumn key={id} column={id}>
               <Box position='relative' width='100%'>
                 <TableSortLabel
-                  active={query.grantOrder === id}
+                  active={query.grantSort === id}
                   direction={query.grantDirection}
                   onClick={handleSort(id)}
                 >
@@ -143,7 +141,7 @@ const GrantsDialog = () => {
         </Collapse>
         {loading && <ProgressBar />}
         <DialogActions>
-          <Button onClick={handleDownload}>
+          <Button onClick={handleDownloadGrants}>
             Download
           </Button>
           <Button onClick={handleClose}>

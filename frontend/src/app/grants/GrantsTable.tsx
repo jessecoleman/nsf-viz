@@ -31,14 +31,14 @@ const GrantsTable = (props: GrantsTableProps) => {
       grantsRef.current.resetloadMoreItemsCache();
     }
     hasMountedRef.current = true;
-  }, [ query.grantOrder, query.grantDirection, hasMountedRef.current ]);
+  }, [ query.grantSort, query.grantDirection, hasMountedRef.current ]);
 
   const handleLoadGrants = async (idx: number) => {
     if (!loading) {
       await dispatch(loadGrants({
         ...query,
         order: query.direction,
-        order_by: (query.grantOrder === 'title' || !query.grantOrder) ? 'title.raw' : query.grantOrder,
+        order_by: (query.grantSort === 'title' || !query.grantSort) ? 'title.raw' : query.grantSort,
         start: query.grantDialogYear ?? query.start,
         end: query.grantDialogYear ?? query.end,
         divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,

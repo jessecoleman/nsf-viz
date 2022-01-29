@@ -139,6 +139,7 @@ const Chart = (props: ChartProps) => {
 
   // query backend on query change
   useEffect(() => {
+    console.log('loading');
     dispatch(loadData(query));
   }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.org, query.intersection, query.start, query.end ])]);
 

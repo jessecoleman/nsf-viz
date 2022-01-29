@@ -38,23 +38,25 @@ const MatchParam = withDefault(
   ['title', 'abstract']
 ) as QueryParamConfig<Array<'title' | 'abstract'>>;
 
+export const paramConfigMap = {
+  'org': OrgParam,
+  'terms': ArrayParam,
+  'divisions': ArrayParam,
+  'start': DefaultNumberParam,
+  'end': DefaultNumberParam,
+  'intersection': DefaultBooleanParam,
+  'match': MatchParam,
+  'sort': SortParam,
+  'direction': SortDirectionParam,
+  'grantDialogOpen': BooleanParam,
+  'grantDialogYear': NumberParam,
+  'grantDialogDivision': StringParam,
+  'grantSort': StringParam,
+  'grantDirection': SortDirectionParam,
+};
+
 export const useQuery = () => (
-  useQueryParams({
-    'org': OrgParam,
-    'terms': ArrayParam,
-    'divisions': ArrayParam,
-    'start': DefaultNumberParam,
-    'end': DefaultNumberParam,
-    'intersection': DefaultBooleanParam,
-    'match': MatchParam,
-    'sort': SortParam,
-    'direction': SortDirectionParam,
-    'grantDialogOpen': BooleanParam,
-    'grantDialogYear': NumberParam,
-    'grantDialogDivision': StringParam,
-    'grantOrder': StringParam,
-    'grantDirection': SortDirectionParam,
-  })
+  useQueryParams(paramConfigMap)
 );
 
 export type QueryParams = ReturnType<typeof useQuery>[0];

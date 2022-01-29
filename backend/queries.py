@@ -268,6 +268,7 @@ async def grants(aioes,
         start: Optional[int],
         end: Optional[int],
         limit: int = 50,
+        include_abstract: bool = False,
     ):
 
     must_or_should = 'must' if intersection else 'should'
@@ -280,9 +281,6 @@ async def grants(aioes,
     query = {
         'size': limit,
         'from': idx,
-        '_source': {
-            'exclude': ['abstract']
-        },
         'query': {
             'bool': {
                 'filter': [
@@ -310,6 +308,11 @@ async def grants(aioes,
         'track_scores': True
     }
     
+    if not include_abstract:
+        query['_source'] = {
+            'exclude': ['abstract']
+        }
+
     try:
         response = await aioes.search(index=INDEX, body=query)
 
@@ -319,11 +322,12 @@ async def grants(aioes,
     if response['hits']['total'] == 0:
         raise IndexError(404, detail='index out of bounds')
 
-    return [Grant(
-        id=hit['_id'],
-        score=hit['_score'],
-        **hit['_source'],
-    ) for hit in response['hits']['hits']]
+    for hit in response['hits']['hits']:
+        yield Grant(
+            id=hit['_id'],
+            score=hit['_score'],
+            **hit['_source'],
+        )
  
     
 async def abstract(aioes, _id: str, terms: str):

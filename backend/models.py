@@ -81,6 +81,7 @@ class Grant(BaseModel):
     title: str
     date: str
     amount: int
+    abstract: Optional[str] = None
     cat1: str
     cat1_raw: str
     cat2: Optional[str]

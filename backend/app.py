@@ -1,10 +1,12 @@
+import csv
+import io
 import os
 from pathlib import Path
 from typing import List, Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from gensim.models.word2vec import Word2Vec
 from gensim.models import KeyedVectors
 import logging
@@ -184,7 +186,7 @@ async def count_term(terms: str):
 async def grant_data(request: GrantsRequest):
 
     try:
-        return await Q.grants(
+        grants = Q.grants(
             aioes,
             idx=request.idx,
             org=request.org,
@@ -197,6 +199,57 @@ async def grant_data(request: GrantsRequest):
             start=request.start,
             end=request.end,
         )
+
+        return [grant async for grant in grants]
+
+    except IndexError:
+        raise HTTPException(404, detail='index out of bounds')
+
+
+@app.post('/grants/download', operation_id='downloadGrants')
+async def grant_data(request: GrantsRequest):
+
+    try:
+        grants = Q.grants(
+            aioes,
+            idx=0,
+            limit=10000,
+            org=request.org,
+            intersection=request.intersection,
+            order_by=request.order_by,
+            order=request.order,
+            divisions=request.divisions,
+            match=request.match,
+            terms=request.terms,
+            start=request.start,
+            end=request.end,
+            include_abstract=True,
+        )
+
+        class DummyWriter:
+            def write(self, line):
+                return line
+
+        async def stream_grants_csv():
+            writer = csv.DictWriter(DummyWriter(), fieldnames=[
+                'agency',
+                'division',
+                'grant_id',
+                'title',
+                'date',
+                'amount',
+                'abstract'
+            ], extrasaction='ignore')
+            yield writer.writeheader()
+            async for grant in grants:
+                yield writer.writerow({
+                    **grant.dict(),
+                    'division': grant.cat1_raw,
+                })
+
+        response = StreamingResponse(content=stream_grants_csv(), media_type='text/csv')
+        response.headers['Content-Disposition'] = 'attachment; filename=grants.csv'
+        return response
 
     except IndexError:
         raise HTTPException(404, detail='index out of bounds')
