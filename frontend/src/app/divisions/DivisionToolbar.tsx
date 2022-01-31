@@ -6,7 +6,7 @@ import DrawerToggle from 'app/nav/DrawerToggle';
 import nih from '../images/nih-logo.svg';
 import nsf from '../images/nsf-logo.svg';
 import dod from '../images/dod-logo.svg';
-import { Organization } from 'app/hooks';
+import { Organization } from 'app/query';
 
 const Toolbar = styled('div')(({ theme }) => `
   display: flex;

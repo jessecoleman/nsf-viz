@@ -2,7 +2,7 @@ import { createSelector } from '@reduxjs/toolkit';
 import createCachedSelector from 're-reselect';
 import { AggFields } from './chart/D3Chart';
 import { SortDirection } from './filterReducer';
-import { QueryParams } from './hooks';
+import { QueryParams } from './query';
 import type { RootState } from './store';
 
 export type SortableKeys = 'name' | 'count' | 'amount';

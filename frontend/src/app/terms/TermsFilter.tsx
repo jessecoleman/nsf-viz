@@ -20,7 +20,8 @@ import {
   loadTypeahead,
 } from 'app/actions';
 import { useAppDispatch } from 'app/store';
-import { ArrayParam, useDebouncedSearch } from 'app/hooks';
+import { useDebouncedSearch } from 'app/hooks';
+import { ArrayParam } from 'app/query';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
 import { clearTypeahead } from 'app/dataReducer';

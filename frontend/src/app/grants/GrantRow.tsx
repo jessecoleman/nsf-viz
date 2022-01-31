@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from 'app/store';
 import { getGrant } from 'app/selectors';
 import { Grant } from 'api/models/Grant';
 import { timeFormat, timeParse, format } from 'd3';
-import { useQuery } from 'app/hooks';
+import { useQuery } from 'app/query';
 
 type Column = {
   id: keyof Grant
@@ -35,16 +35,12 @@ export const GrantListItem = styled('div')(({ theme }) => `
   }
 `);
 
-export const GrantListHeader = styled(GrantListItem)(({ theme }) => `
-  height: 64px;
-  font-size: ${theme.typography.h6.fontSize};
-`);
-
 type ColumnStyles = {
   column: string
 };
 
 export const GrantColumn = styled('div')<ColumnStyles>(({ theme, column }) => `
+  position: relative;
   grid-column: ${column};
   display: flex;
   align-items: center;
@@ -78,8 +74,6 @@ const GrantRow = (props: GrantRowProps) => {
   return (
     <GrantListItem 
       key={index}
-      // direction='row' 
-      // alignItems='center' 
       style={style}
       onClick={setSelectedGrant}
     >

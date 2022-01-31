@@ -3,7 +3,8 @@ import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
 import { getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
-import { useMeasure, useQuery } from 'app/hooks';
+import { useMeasure } from 'app/hooks';
+import { useQuery } from 'app/query';
 import { colorScales } from '../../theme';
 
 export type TooltipProps = {

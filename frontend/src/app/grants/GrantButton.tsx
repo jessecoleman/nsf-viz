@@ -1,6 +1,6 @@
 import { Tooltip, Button } from '@material-ui/core';
 import { clearGrants } from 'app/dataReducer';
-import { useQuery } from 'app/hooks';
+import { useQuery } from 'app/query';
 import { useDispatch } from 'react-redux';
 
 const GrantButton = () => {
@@ -10,7 +10,7 @@ const GrantButton = () => {
 
   const handleOpen = () => {
     dispatch(clearGrants());
-    dispatch(setQuery({ grantDialog: true }));
+    dispatch(setQuery({ grantDialogOpen: true }));
   };
 
   return (
