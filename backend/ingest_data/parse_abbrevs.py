@@ -9,6 +9,7 @@ DESCRIPTION = """categories / abbreviations"""
 
 FILENAME_ABBREVIATIONS = "division_abbreviations.json"
 FILENAME_NSF_NORMS = 'normalized_division_names.json'
+FILENAME_NSF_DIR = '../assets/nsf_directory.json'
 
 
 def normalize(div: str) -> str:
@@ -28,11 +29,13 @@ def normalize(div: str) -> str:
 script_dirpath = Path(os.path.dirname(os.path.realpath(__file__)))
 
 fp = script_dirpath.joinpath(FILENAME_ABBREVIATIONS)
-abbrevs: Dict[str, Dict[str, str]]  # type hint for abbrevs variable 
-abbrevs = json.loads(fp.read_text())
+abbrevs: Dict[str, Dict[str, str]] = json.loads(fp.read_text())
 
 fp = script_dirpath.joinpath(FILENAME_NSF_NORMS)
 nsf_norms = json.loads(fp.read_text())
+
+fp = script_dirpath.joinpath(FILENAME_NSF_DIR)
+nsf_dir = json.loads(fp.read_text())
 
 
 nsf_mapped_reversed = {}
@@ -47,3 +50,10 @@ for agency, v in abbrevs.items():
     for abbrev, longname in v.items():
         assert longname not in abbrevs_flat.keys()
         abbrevs_flat[normalize(longname)] = abbrev.lower()
+
+
+nsf_directory_inv = {}
+for directory in nsf_dir:
+    for dep in directory.get('departments', []):
+        nsf_directory_inv[dep['abbr']] = directory['abbr']
+        

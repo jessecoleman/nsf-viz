@@ -133,7 +133,8 @@ async def search(request: SearchRequest):
         terms=request.terms,
         start=request.start,
         end=request.end,
-        match=request.match
+        match=request.match,
+        org=request.org,
     )
 
 
@@ -144,7 +145,8 @@ async def years(request: SearchRequest):
         aioes,
         intersection=request.intersection,
         terms=request.terms,
-        match=request.match
+        match=request.match,
+        org=request.org,
     )
 
 
@@ -185,6 +187,7 @@ async def grant_data(request: GrantsRequest):
         return await Q.grants(
             aioes,
             idx=request.idx,
+            org=request.org,
             intersection=request.intersection,
             order_by=request.order_by,
             order=request.order,

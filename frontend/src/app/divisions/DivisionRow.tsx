@@ -2,6 +2,8 @@ import { MouseEvent } from 'react';
 import { Box, Checkbox, styled, Typography } from '@material-ui/core';
 import { format } from 'd3';
 import { forwardRef, ReactNode } from 'react';
+import { CheckboxState } from './DirectoryTableHead';
+import { getNextCheckboxState } from './checkFSM';
 
 type RowStyles = {
   tooltip?: boolean;
@@ -12,6 +14,7 @@ type RowStyles = {
 }
 
 export const Row = styled(Box)<RowStyles>(({ theme, tooltip, checkable, selected, nohover, scrollOffset }) => `
+  flex-grow: 1;
   cursor: pointer;
   display: grid;
   padding-right: ${scrollOffset ?? 0}px;
@@ -60,10 +63,10 @@ type RowProps = RowStyles & {
   name: string | ReactNode
   cells: CellData[]
   header?: boolean
-  onCheck?: (e: MouseEvent, key: string, checked: boolean) => void
+  onCheck?: (e: MouseEvent, key: string, checked: CheckboxState) => void
   onMouseOver?: (key: string) => void
   onMouseOut?: (key: string) => void
-  checked?: boolean
+  checked?: CheckboxState
 }
 
 // return brightness of hex value to determine if text should be black or white to meet
@@ -93,13 +96,16 @@ const DivisionRow = forwardRef((props: RowProps, ref) => (
     scrollOffset={props.scrollOffset}
     selected={props.selected}
     tooltip={props.tooltip}
-    onClick={(e) => props.onCheck?.(e, props.dataKey, !props.checked)}
+    onClick={(e) => props.onCheck?.(e, props.dataKey, getNextCheckboxState(props.checked))}
     onMouseOver={() => props.onMouseOver?.(props.dataKey)}
     onMouseOut={() => props.onMouseOut?.(props.dataKey)}
   >
     {props.onCheck && 
       <Column column='checkbox'>
-        <Checkbox checked={props.checked} />
+        <Checkbox
+          checked={props.checked === 'checked'}
+          indeterminate={props.checked === 'indeterminate'}
+        />
       </Column>
     }
     <Column column='name'>

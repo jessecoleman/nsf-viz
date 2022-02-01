@@ -5,6 +5,7 @@ import { TreeItem, treeItemClasses, TreeItemProps } from '@material-ui/lab';
 import { colorScales } from 'theme';
 import DivisionRow from './DivisionRow';
 import { KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
+import { CheckboxState } from './DirectoryTableHead';
 
 const DirectoryRoot = styled(TreeItem)(({ theme }) => `
   color: ${theme.palette.text.secondary};
@@ -45,10 +46,10 @@ const DirectoryRoot = styled(TreeItem)(({ theme }) => `
 type DirectoryProps = TreeItemProps & {
   name: React.ReactNode;
   desc?: string;
-  checked: boolean;
+  checked: CheckboxState;
   count?: number;
   amount?: number;
-  onCheck?: (e: MouseEvent, key: string, checked: boolean) => void
+  onCheck?: (e: MouseEvent, key: string, checked: CheckboxState) => void
 };
 
 
