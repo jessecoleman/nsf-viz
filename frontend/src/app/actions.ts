@@ -1,6 +1,6 @@
 import 'whatwg-fetch';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { Grant, GrantsRequest, DefaultService as Service } from 'api';
+import { Grant, GrantsRequest, DefaultService as Service } from 'api/index';
 import type { FilterState } from './filterReducer';
 import { QueryParams } from './query';
 

@@ -212,6 +212,7 @@ export default class BarChart {
  
   update = (data: Data[], divDomain: string[], agg?: keyof AggFields) => {
 
+    console.log('updating!', data, divDomain);
     this.years = data.map(d => d.year);
     this.divs = divDomain;
     this.invDivs = Object.fromEntries(this.divs.map((d, i) => [d, i]));
@@ -224,6 +225,7 @@ export default class BarChart {
     if (agg) this.agg = agg;
 
     this.stack = this.getStack(data, divDomain, this.agg);
+    console.log(this.stack);
     this.x.domain(this.years);
     this.y.domain([0, Math.max(...this.stack.flat().flat())]);
     this.color = colorScales[this.agg];

@@ -2,8 +2,8 @@ import csv
 import io
 import os
 from pathlib import Path
-from typing import List, Union
-from fastapi import FastAPI
+from typing import List, Optional, Union
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
@@ -126,21 +126,28 @@ async def divisions(org: str):
     return FileResponse(f'assets/{org}_directory.json')
 
 
-@app.post('/search', operation_id='search', response_model=SearchResponse)
-async def search(request: SearchRequest):
+@app.get('/search', operation_id='search', response_model=SearchResponse)
+async def search(
+    org: str,
+    start: Optional[int] = None,
+    end: Optional[int] = None,
+    terms: List[str] = Query(None),
+    match: Optional[List[str]] = Query(None),
+    intersection: Optional[bool] = False,
+):
 
     return await Q.division_aggregates(
         aioes,
-        intersection=request.intersection,
-        terms=request.terms,
-        start=request.start,
-        end=request.end,
-        match=request.match,
-        org=request.org,
+        intersection=intersection,
+        terms=terms,
+        start=start,
+        end=end,
+        match=match,
+        org=org,
     )
 
 
-@app.post('/years', operation_id='years', response_model=YearsResponse)
+@app.get('/years', operation_id='years', response_model=YearsResponse)
 async def years(request: SearchRequest):
 
     return await Q.year_aggregates(
@@ -152,7 +159,7 @@ async def years(request: SearchRequest):
     )
 
 
-@app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead')
+@app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead', response_model=List[str])
 async def typeahead(prefix: str):
 
     return await Q.typeahead(aioes, prefix)
@@ -207,7 +214,7 @@ async def grant_data(request: GrantsRequest):
 
 
 @app.post('/grants/download', operation_id='downloadGrants')
-async def grant_data(request: GrantsRequest):
+async def grant_download(request: GrantsRequest):
 
     try:
         grants = Q.grants(

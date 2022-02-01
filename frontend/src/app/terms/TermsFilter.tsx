@@ -76,7 +76,8 @@ const TermsFilter = () => {
 
   const dispatch = useAppDispatch();
   const { input, setInput, results } = useDebouncedSearch(input => (
-    dispatch(loadTypeahead(input))
+    console.log(input)
+    // dispatch(loadTypeahead(input))
   ), 300);
 
   const [ terms, setTerms ] = useQueryParam('terms', ArrayParam);

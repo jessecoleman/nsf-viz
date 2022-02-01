@@ -128,8 +128,7 @@ grant_amount_agg = {
     }
 }
 
-
-def term_agg(agg_field: str):
+def term_agg(agg_field: str, aggs: Dict[str, Any]):
     return {
         agg_field: {
             'terms': {
@@ -137,7 +136,7 @@ def term_agg(agg_field: str):
                 'min_doc_count': 0,
                 'size': 100, # TODO: number of divisions
             },
-            'aggs': grant_amount_agg
+            'aggs': aggs
         }
     }
 
@@ -180,14 +179,14 @@ async def division_aggregates(
         intersection: bool,
         start: Optional[int],
         end: Optional[int],
-        match: List[str],
+        match: Optional[List[str]],
         terms: List[str] = None,
         sort = False
     ):
     
     must_or_should = 'must' if intersection else 'should'
 
-    if len(match) == 0:
+    if not match or len(match) == 0:
         match = ('title', 'abstract')
 
     query = {
@@ -200,10 +199,10 @@ async def division_aggregates(
             }
         },
         'aggs': {
-            **term_agg('cat1'),
-            **term_agg('cat2'),
+            **term_agg('cat1', grant_amount_agg),
+            **term_agg('cat2', term_agg('cat1', grant_amount_agg)),
             **year_histogram({
-                **term_agg('cat1'),
+                **term_agg('cat1', grant_amount_agg),
             }),
         }
     }
@@ -229,6 +228,8 @@ async def division_aggregates(
     # overall_buckets = hits['aggregations']['key1']['buckets']
     # overall_buckets2 = hits['aggregations']['key2']['buckets']
     overall_buckets = hits['aggregations']['cat1']['buckets']
+    print(json.dumps(query, indent=2))
+    # print(json.dumps(per_directory_buckets, indent=2))
 
     return SearchResponse(
         per_year=[convert(bucket) for bucket in per_year_buckets],

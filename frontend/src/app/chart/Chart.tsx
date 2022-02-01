@@ -6,10 +6,12 @@ import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
 import { clearGrants } from 'app/dataReducer';
 import { loadData, loadYears } from 'app/actions';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { colorScales } from 'theme';
+import { useSearch } from 'api';
+import { stableSort } from 'app/sort';
 
 let vis: BarChart;
 
@@ -65,12 +67,21 @@ const Chart = (props: ChartProps) => {
   const visRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const [ query, setQuery ] = useQuery();
-  // const [ queryDivisions ] = useQueryParam('divisions', DelimitedArrayParam);
 
   // TODO reimplement this?
   // const { counts, amounts } = useAppSelector(getLegendFilters);
-  // const yearRange = useAppSelector(getYearRange);
-  const data = useAppSelector(state => getStackedData(state, query));
+  const { data: chartData, isFetched } = useSearch(query);
+  const data = useMemo(() => (
+    isFetched ? (chartData?.data.per_year ?? []).map(({ key, divisions }) => ({
+      year: key,
+      aggs: Object.fromEntries(stableSort(divisions, query.sort, query.direction)
+        .map(({ key, ...aggs }) => [ key, aggs ])
+      )
+    })) : []
+  ), [isFetched, query.sort, query.direction]);
+
+  console.log(chartData, data);
+  // const data = useAppSelector(state => getStackedData(state, query));
   const yearData = useAppSelector(getYearData);
   const divisions = Object.values(useAppSelector(state => getSortedDivisionAggs(state, query)));
   // TODO why are colors not persistent
@@ -79,7 +90,6 @@ const Chart = (props: ChartProps) => {
 
   const highlightedDivision = useAppSelector(getHighlightedDivision);
   const selectedTerms = useAppSelector(getSelectedTerms);
-  const loading = useAppSelector(isLoadingData);
   const yearLoading = useAppSelector(isYearsLoading);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
 
@@ -104,7 +114,8 @@ const Chart = (props: ChartProps) => {
   
   // update data on filter changes
   useEffect(() => {
-    if (vis && !loading) {
+    if (vis && isFetched) {
+      console.log(data);
       if (isAgg(query.sort)) {
         vis.update(data, divDomain, query.sort);
       } else {
@@ -114,7 +125,21 @@ const Chart = (props: ChartProps) => {
         vis.timeline.setYearRange(query.start, query.end);
       }
     }
-  }, [vis, loading, query.sort, JSON.stringify(query.divisions)]);
+  }, [vis, isFetched, query.sort, data]);
+  
+  // update data on filter changes
+  // useEffect(() => {
+  //   if (vis && !loading) {
+  //     if (isAgg(query.sort)) {
+  //       vis.update(data, divDomain, query.sort);
+  //     } else {
+  //       vis.update(data, divDomain);
+  //     }
+  //     if (query.start && query.end) {
+  //       vis.timeline.setYearRange(query.start, query.end);
+  //     }
+  //   }
+  // }, [vis, loading, query.sort, JSON.stringify(query.divisions)]);
   
   // update timeline on year change
   useEffect(() => {

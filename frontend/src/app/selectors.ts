@@ -193,6 +193,4 @@ export const getSelectedTerms = createSelector(
   (terms) => terms.filter(t => t.selected).map(t => t.term)
 );
 
-export const getTypeahead = (state: RootState) => state.data.typeahead;
-
 export const getRelated = (state: RootState) => state.data.related;
