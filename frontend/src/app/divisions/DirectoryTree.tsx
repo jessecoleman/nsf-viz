@@ -1,11 +1,10 @@
-import { MouseEvent, useEffect, useMemo } from 'react';
+import { MouseEvent } from 'react';
 import { Flipper, Flipped } from 'react-flip-toolkit';
 import match from 'autosuggest-highlight/match';
-import { Box, SelectChangeEvent, styled } from '@material-ui/core';
+import { Box, LinearProgress, SelectChangeEvent, styled } from '@material-ui/core';
 import { TreeView } from '@material-ui/lab';
 
-import { getSortedDivisionAggs, getDivisionsMap, getDirectoryAggs, getDepartmentMap, SortableKeys } from 'app/selectors';
-import{ loadDirectory, loadDivisions } from '../actions';
+import { SortableKeys } from 'app/selectors';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useDebouncedCallback, useMeasure } from 'app/hooks';
 import { Organization, useQuery } from 'app/query';
@@ -17,7 +16,7 @@ import DivisionToolbar from './DivisionToolbar';
 import { ArrowDropDown, ArrowRight } from '@mui/icons-material';
 import DirectoryEntry from './Entry';
 import DirectoryTableHead, { CheckboxState } from './DirectoryTableHead';
-import { Directory, Division } from 'api';
+import { Directory, Division, useLoadDirectory } from 'api';
 import { useSearch } from 'api';
 import { stableSort } from 'app/sort';
 
@@ -33,32 +32,31 @@ const DirectoryTree = () => {
   const [ divisionFilter, setDivisionFilter ] = useState<string>('');
   const [ query, setQuery ] = useQuery();
   
-  const { data: searchData, isFetched } = useSearch(query);
-  const divisions = useMemo(() => (
-    Object.fromEntries(stableSort((searchData?.data.overall ?? []), query.sort, query.direction)
-      .map((div, idx) => [div.key, { ...div, idx }])
-    )
-  ), [isFetched, query.sort, query.direction]);
-  console.log(divisions);
-
+  const { data: divisions } = useSearch(query, {
+    query: {
+      keepPreviousData: true,
+      select: ({ data }) => (
+        Object.fromEntries(stableSort(data.overall, query.sort, query.direction)
+          .map(div => [div.key, div])
+        )
+      )
+    }});
+  const { data: directory } = useLoadDirectory(query.org, {
+    query: {
+      select: ({ data }) => data
+    }
+  });
+  
   // const divisions = useAppSelector(state => getSortedDivisionAggs(state, query));
-  const directory = useAppSelector(state => getDirectoryAggs(state, query));
-  console.log(directory);
-  const depMap = useAppSelector(state => getDepartmentMap(state, query));
-  const divMap = useAppSelector(state => getDivisionsMap(state, query));
-  const allDivisions = directory.flatMap(directory =>
-    [directory.abbr].concat((directory.departments ?? []).map(div => div.abbr))
-  );
+  const depMap = Object.fromEntries((directory ?? []).map(dir => [
+    dir.abbr,
+    dir.departments?.map(d => d.abbr) ?? []
+  ]));
 
   const debouncedHighlight = useDebouncedCallback(key => {
     dispatch(highlightDivision(key));
   }, 150);
 
-  useEffect(() => {
-    dispatch(loadDivisions());
-    dispatch(loadDirectory());
-  }, []);
- 
   const selectedDivisions = new Set(query.divisions);
   const [ expanded, setExpanded ] = useState<string[]>([]);
 
@@ -92,6 +90,12 @@ const DirectoryTree = () => {
 
     setQuery({ divisions });
   };
+  
+  if (!directory || !divisions) return <LinearProgress />;
+  
+  const allDivisions = directory.flatMap(directory =>
+    [directory.abbr].concat((directory.departments ?? []).map(div => div.abbr))
+  );
 
   const handleSelectAll = (checked: CheckboxState) => {
     switch (checked) {
@@ -157,18 +161,13 @@ const DirectoryTree = () => {
       return 'indeterminate';
     }
   };
-
-  const filtered = Object.values(divisions)
-    .map(d => divMap[d.key])
-    .filter(d => d)
-    .filter(d => !divisionFilter || match(d, divisionFilter).length);
-    
+  
   let allChecked: CheckboxState = 'unchecked';
   if (selectedDivisions.size == allDivisions.length) allChecked = 'checked';
   else if (selectedDivisions.size > 0) allChecked = 'indeterminate';
   
-  const isFiltered = (d: Pick<Division, 'name'>) => filtered.includes(d.name);
-  const isDirFiltered = (dir: Directory) => dir.departments.concat([dir]).filter(isFiltered).length;
+  const isFiltered = (d: Pick<Division, 'name'>) => !divisionFilter || match(d.name, divisionFilter).length > 0;
+  const isDirFiltered = (dir: Directory) => (dir.departments ?? []).concat([dir]).filter(isFiltered).length > 0;
   const isExpanded = (dir: Directory) => expanded.includes(dir.abbr);
   const isExpandedOrFiltered = (dir: Directory) => isExpanded(dir) || (divisionFilter && isDirFiltered(dir));
   
@@ -213,14 +212,14 @@ const DirectoryTree = () => {
                   nodeId={dir.abbr}
                   desc={dir.desc}
                   name={<Highlight value={dir.name} query={divisionFilter} />}
-                  count={dir.count ?? 0}
-                  amount={dir.amount ?? 0}
+                  count={divisions[dir.abbr]?.count ?? 0}
+                  amount={divisions[dir.abbr]?.amount ?? 0}
                   checked={getDirectoryCheckState(dir.abbr)}
                   onCheck={handleSelectGroup}
                 >
                   {dir.departments
                     ?.filter(isFiltered)
-                    .map(dep => (
+                    ?.map(dep => (
                       <DirectoryEntry
                         key={dep.abbr}
                         nodeId={dep.abbr}

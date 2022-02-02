@@ -1,8 +1,9 @@
+from __future__ import division
 import csv
 import io
 import os
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
@@ -21,7 +22,6 @@ from models import (
     Division,
     Grant,
     GrantsRequest,
-    SearchRequest,
     SearchResponse,
     YearsResponse
 )
@@ -129,15 +129,21 @@ async def divisions(org: str):
 @app.get('/search', operation_id='search', response_model=SearchResponse)
 async def search(
     org: str,
+    sort: str,
+    direction: str,
     start: Optional[int] = None,
     end: Optional[int] = None,
     terms: List[str] = Query(None),
+    divisions: List[str] = Query(None),
     match: Optional[List[str]] = Query(None),
     intersection: Optional[bool] = False,
 ):
 
     return await Q.division_aggregates(
         aioes,
+        sort=sort,
+        direction=direction,
+        divisions=divisions,
         intersection=intersection,
         terms=terms,
         start=start,
@@ -148,14 +154,21 @@ async def search(
 
 
 @app.get('/years', operation_id='years', response_model=YearsResponse)
-async def years(request: SearchRequest):
+async def years(
+    org: str,
+    terms: List[str] = Query(None),
+    divisions: List[str] = Query(None),
+    match: Optional[List[str]] = Query(None),
+    intersection: Optional[bool] = False,
+):
 
     return await Q.year_aggregates(
         aioes,
-        intersection=request.intersection,
-        terms=request.terms,
-        match=request.match,
-        org=request.org,
+        intersection=intersection,
+        terms=terms,
+        divisions=divisions,
+        match=match,
+        org=org,
     )
 
 
@@ -165,11 +178,11 @@ async def typeahead(prefix: str):
     return await Q.typeahead(aioes, prefix)
 
 
-@app.get('/keywords/related/{keywords}', operation_id='loadRelated')
-def related(keywords: str):
+@app.get('/keywords/related', operation_id='loadRelated', response_model=List[str])
+def related(terms: List[str] = Query(None)):
 
     terms = []
-    for term in keywords.split(','):
+    for term in terms:
         # convert to ngram representation
         term = term.lower().replace(' ', '_')
         if word_vecs.key_to_index.get(term, False):
@@ -182,29 +195,44 @@ def related(keywords: str):
         return []
 
 
-@app.get('/keywords/count/{terms}', operation_id='countTerm')
-async def count_term(terms: str):
+@app.get('/keywords/count', operation_id='loadTermCounts', response_model=Dict[str, int])
+async def count_terms(
+    org: str,
+    terms: List[str] = Query(None)
+):
 
-    counts = await Q.term_freqs(aioes, terms.split(','), ['title', 'abstract'])
-    return [c['count'] for c in counts]
+    counts = await Q.term_freqs(aioes, org, terms, ['title', 'abstract'])
+    return dict(zip(terms, [c['count'] for c in counts]))
 
 
-@app.post('/grants', operation_id='loadGrants', response_model=List[Grant])
-async def grant_data(request: GrantsRequest):
+@app.get('/grants', operation_id='loadGrants', response_model=List[Grant])
+async def grant_data(
+    idx: int,
+    org: str,
+    intersection: bool,
+    # TODO have these line up with frontend
+    order_by: str,
+    order: str,
+    start: str,
+    end: str,
+    divisions: List[str] = Query(None),
+    match: List[str] = Query(None),
+    terms: List[str] = Query(None),
+):
 
     try:
         grants = Q.grants(
             aioes,
-            idx=request.idx,
-            org=request.org,
-            intersection=request.intersection,
-            order_by=request.order_by,
-            order=request.order,
-            divisions=request.divisions,
-            match=request.match,
-            terms=request.terms,
-            start=request.start,
-            end=request.end,
+            idx=idx,
+            org=org,
+            intersection=intersection,
+            sort=order_by,
+            direction=order,
+            divisions=divisions,
+            match=match,
+            terms=terms,
+            start=start,
+            end=end,
         )
 
         return [grant async for grant in grants]

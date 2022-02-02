@@ -13,6 +13,11 @@ export const ArrayParam = withDefault(
   [],
 ) as QueryParamConfig<string[]>;
 
+export const DefaultStringParam = withDefault(
+  StringParam,
+  undefined
+) as QueryParamConfig<string | undefined>;
+
 export const DefaultNumberParam = withDefault(
   NumberParam,
   undefined
@@ -41,22 +46,36 @@ const MatchParam = withDefault(
 export const paramConfigMap = {
   'org': OrgParam,
   'terms': ArrayParam,
-  'divisions': ArrayParam,
   'start': DefaultNumberParam,
   'end': DefaultNumberParam,
   'intersection': DefaultBooleanParam,
   'match': MatchParam,
   'sort': SortParam,
   'direction': SortDirectionParam,
+};
+
+const grantParamConfig = {
   'grantDialogOpen': BooleanParam,
   'grantDialogYear': NumberParam,
   'grantDialogDivision': StringParam,
   'grantSort': StringParam,
   'grantDirection': SortDirectionParam,
+  'grantId': DefaultStringParam,
 };
 
-export const useQuery = () => (
+export const useSearchQuery = () => (
   useQueryParams(paramConfigMap)
+);
+
+export const useGrantsDialogQuery = () => (
+  useQueryParams(grantParamConfig)
+);
+
+export const useQuery = () => (
+  useQueryParams({
+    ...paramConfigMap,
+    'divisions': ArrayParam,
+  })
 );
 
 export type QueryParams = ReturnType<typeof useQuery>[0];

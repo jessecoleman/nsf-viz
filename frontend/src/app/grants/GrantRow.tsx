@@ -1,11 +1,10 @@
 import { CSSProperties } from 'react';
-import { loadAbstract } from 'app/actions';
 import { alpha, styled } from '@material-ui/core';
-import { useAppDispatch, useAppSelector } from 'app/store';
+import { useAppSelector } from 'app/store';
 import { getGrant } from 'app/selectors';
-import { Grant } from 'api/models/Grant';
+import { Grant } from 'oldapi/models/Grant';
 import { timeFormat, timeParse, format } from 'd3';
-import { useQuery } from 'app/query';
+import { useGrantsDialogQuery } from 'app/query';
 
 type Column = {
   id: keyof Grant
@@ -58,17 +57,13 @@ const GrantRow = (props: GrantRowProps) => {
 
   const { index, style } = props;
 
-  const [{ terms }] = useQuery();
-  const dispatch = useAppDispatch();
+  const [ , setDialog ] = useGrantsDialogQuery();
   const grant = useAppSelector(state => getGrant(state, index));
 
   if (!grant) return null;
 
   const setSelectedGrant = () => {
-    dispatch(loadAbstract({
-      id: grant.id,
-      terms: terms ?? [],
-    }));
+    setDialog({ grantId: grant.id });
   };
 
   return (

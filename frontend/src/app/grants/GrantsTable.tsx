@@ -5,7 +5,7 @@ import InfiniteLoader from 'react-window-infinite-loader';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getNumGrants, loadingGrants, noMoreGrants } from 'app/selectors';
 import { useWindowDimensions } from 'app/hooks';
-import { useQuery } from 'app/query';
+import { useGrantsDialogQuery, useQuery } from 'app/query';
 import { loadGrants } from 'app/actions';
 import GrantRow from './GrantRow';
 
@@ -17,6 +17,7 @@ const GrantsTable = (props: GrantsTableProps) => {
 
   const dispatch = useAppDispatch();
   const [ query ] = useQuery();
+  const [ dialog ] = useGrantsDialogQuery();
   const [ , height ] = useWindowDimensions();
   const hasMountedRef = useRef(false);
   const grantsRef = useRef<InfiniteLoader>(null);
@@ -31,17 +32,17 @@ const GrantsTable = (props: GrantsTableProps) => {
       grantsRef.current.resetloadMoreItemsCache();
     }
     hasMountedRef.current = true;
-  }, [ query.grantSort, query.grantDirection, hasMountedRef.current ]);
+  }, [ dialog.grantSort, dialog.grantDirection, hasMountedRef.current ]);
 
   const handleLoadGrants = async (idx: number) => {
     if (!loading) {
       await dispatch(loadGrants({
         ...query,
         order: query.direction,
-        order_by: (query.grantSort === 'title' || !query.grantSort) ? 'title.raw' : query.grantSort,
-        start: query.grantDialogYear ?? query.start,
-        end: query.grantDialogYear ?? query.end,
-        divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
+        order_by: (dialog.grantSort === 'title' || !dialog.grantSort) ? 'title.raw' : dialog.grantSort,
+        start: dialog.grantDialogYear ?? query.start,
+        end: dialog.grantDialogYear ?? query.end,
+        divisions: dialog.grantDialogDivision ? [dialog.grantDialogDivision] : query.divisions,
         idx
       }));
     }

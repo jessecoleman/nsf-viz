@@ -21,7 +21,17 @@ import {
 } from 'react-query';
 export type GetAbstractAbstractIdGetParams = { terms?: unknown };
 
-export type SearchParams = { org: string; start?: number; end?: number; terms?: string[]; match?: string[]; intersection?: boolean };
+export type LoadGrantsParams = { idx: number; org: string; intersection: boolean; order_by: string; order: string; start: string; end: string; divisions?: string[]; match?: string[]; terms?: string[] };
+
+export type LoadTermCounts200 = {[key: string]: number};
+
+export type LoadTermCountsParams = { org: string; terms?: string[] };
+
+export type LoadRelatedParams = { terms?: string[] };
+
+export type YearsParams = { org: string; terms?: string[]; divisions?: string[]; match?: string[]; intersection?: boolean };
+
+export type SearchParams = { org: string; sort: string; direction: string; start?: number; end?: number; terms?: string[]; divisions?: string[]; match?: string[]; intersection?: boolean };
 
 export interface YearsResponse {
   per_year: YearAggregate[];
@@ -57,16 +67,6 @@ export interface SearchResponse {
   per_year: YearDivisionAggregate[];
   overall: DivisionAggregate[];
   per_directory: DivisionAggregate[];
-}
-
-export interface SearchRequest {
-  intersection?: boolean;
-  terms: string[];
-  org: string;
-  divisions: string[];
-  match?: string[];
-  start?: number;
-  end?: number;
 }
 
 export interface HTTPValidationError {
@@ -248,29 +248,31 @@ export const useSearch = <TData = AsyncReturnType<typeof search>, TError = Axios
  * @summary Years
  */
 export const years = (
-  searchRequest: SearchRequest, options?: AxiosRequestConfig
+  params?: YearsParams, options?: AxiosRequestConfig
 ): Promise<AxiosResponse<YearsResponse>> => {
   return axios.get(
-    '/years',options
+    '/years',{
+      params,
+      ...options}
   );
 };
 
 
-export const getYearsQueryKey = (searchRequest: SearchRequest,) => ['/years', searchRequest];
+export const getYearsQueryKey = (params?: YearsParams,) => ['/years', ...(params ? [params]: [])];
 
     
 export const useYears = <TData = AsyncReturnType<typeof years>, TError = AxiosError<HTTPValidationError>>(
-  searchRequest: SearchRequest, options?: { query?:UseQueryOptions<AsyncReturnType<typeof years>, TError, TData>, axios?: AxiosRequestConfig}
+  params?: YearsParams, options?: { query?:UseQueryOptions<AsyncReturnType<typeof years>, TError, TData>, axios?: AxiosRequestConfig}
 
 ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
   const {query: queryOptions, axios: axiosOptions} = options || {};
 
-  const queryKey = queryOptions?.queryKey ?? getYearsQueryKey(searchRequest);
+  const queryKey = queryOptions?.queryKey ?? getYearsQueryKey(params);
 
   
 
-  const queryFn: QueryFunction<AsyncReturnType<typeof years>> = () => years(searchRequest, axiosOptions);
+  const queryFn: QueryFunction<AsyncReturnType<typeof years>> = () => years(params, axiosOptions);
 
   const query = useQuery<AsyncReturnType<typeof years>, TError, TData>(queryKey, queryFn, queryOptions);
 
@@ -322,31 +324,33 @@ export const useLoadTypeahead = <TData = AsyncReturnType<typeof loadTypeahead>, 
  * @summary Related
  */
 export const loadRelated = (
-  keywords: string, options?: AxiosRequestConfig
-): Promise<AxiosResponse<unknown>> => {
+  params?: LoadRelatedParams, options?: AxiosRequestConfig
+): Promise<AxiosResponse<string[]>> => {
   return axios.get(
-    `/keywords/related/${keywords}`,options
+    '/keywords/related',{
+      params,
+      ...options}
   );
 };
 
 
-export const getLoadRelatedQueryKey = (keywords: string,) => [`/keywords/related/${keywords}`];
+export const getLoadRelatedQueryKey = (params?: LoadRelatedParams,) => ['/keywords/related', ...(params ? [params]: [])];
 
     
 export const useLoadRelated = <TData = AsyncReturnType<typeof loadRelated>, TError = AxiosError<HTTPValidationError>>(
-  keywords: string, options?: { query?:UseQueryOptions<AsyncReturnType<typeof loadRelated>, TError, TData>, axios?: AxiosRequestConfig}
+  params?: LoadRelatedParams, options?: { query?:UseQueryOptions<AsyncReturnType<typeof loadRelated>, TError, TData>, axios?: AxiosRequestConfig}
 
 ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
   const {query: queryOptions, axios: axiosOptions} = options || {};
 
-  const queryKey = queryOptions?.queryKey ?? getLoadRelatedQueryKey(keywords);
+  const queryKey = queryOptions?.queryKey ?? getLoadRelatedQueryKey(params);
 
   
 
-  const queryFn: QueryFunction<AsyncReturnType<typeof loadRelated>> = () => loadRelated(keywords, axiosOptions);
+  const queryFn: QueryFunction<AsyncReturnType<typeof loadRelated>> = () => loadRelated(params, axiosOptions);
 
-  const query = useQuery<AsyncReturnType<typeof loadRelated>, TError, TData>(queryKey, queryFn, {enabled: !!(keywords), ...queryOptions});
+  const query = useQuery<AsyncReturnType<typeof loadRelated>, TError, TData>(queryKey, queryFn, queryOptions);
 
   return {
     queryKey,
@@ -356,34 +360,36 @@ export const useLoadRelated = <TData = AsyncReturnType<typeof loadRelated>, TErr
 
 
 /**
- * @summary Count Term
+ * @summary Count Terms
  */
-export const countTerm = (
-  terms: string, options?: AxiosRequestConfig
-): Promise<AxiosResponse<unknown>> => {
+export const loadTermCounts = (
+  params?: LoadTermCountsParams, options?: AxiosRequestConfig
+): Promise<AxiosResponse<LoadTermCounts200>> => {
   return axios.get(
-    `/keywords/count/${terms}`,options
+    '/keywords/count',{
+      params,
+      ...options}
   );
 };
 
 
-export const getCountTermQueryKey = (terms: string,) => [`/keywords/count/${terms}`];
+export const getLoadTermCountsQueryKey = (params?: LoadTermCountsParams,) => ['/keywords/count', ...(params ? [params]: [])];
 
     
-export const useCountTerm = <TData = AsyncReturnType<typeof countTerm>, TError = AxiosError<HTTPValidationError>>(
-  terms: string, options?: { query?:UseQueryOptions<AsyncReturnType<typeof countTerm>, TError, TData>, axios?: AxiosRequestConfig}
+export const useLoadTermCounts = <TData = AsyncReturnType<typeof loadTermCounts>, TError = AxiosError<HTTPValidationError>>(
+  params?: LoadTermCountsParams, options?: { query?:UseQueryOptions<AsyncReturnType<typeof loadTermCounts>, TError, TData>, axios?: AxiosRequestConfig}
 
 ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
   const {query: queryOptions, axios: axiosOptions} = options || {};
 
-  const queryKey = queryOptions?.queryKey ?? getCountTermQueryKey(terms);
+  const queryKey = queryOptions?.queryKey ?? getLoadTermCountsQueryKey(params);
 
   
 
-  const queryFn: QueryFunction<AsyncReturnType<typeof countTerm>> = () => countTerm(terms, axiosOptions);
+  const queryFn: QueryFunction<AsyncReturnType<typeof loadTermCounts>> = () => loadTermCounts(params, axiosOptions);
 
-  const query = useQuery<AsyncReturnType<typeof countTerm>, TError, TData>(queryKey, queryFn, {enabled: !!(terms), ...queryOptions});
+  const query = useQuery<AsyncReturnType<typeof loadTermCounts>, TError, TData>(queryKey, queryFn, queryOptions);
 
   return {
     queryKey,
@@ -396,34 +402,41 @@ export const useCountTerm = <TData = AsyncReturnType<typeof countTerm>, TError =
  * @summary Grant Data
  */
 export const loadGrants = (
-  grantsRequest: GrantsRequest, options?: AxiosRequestConfig
+  params?: LoadGrantsParams, options?: AxiosRequestConfig
 ): Promise<AxiosResponse<Grant[]>> => {
-  return axios.post(
-    '/grants',
-    grantsRequest,options
+  return axios.get(
+    '/grants',{
+      params,
+      ...options}
   );
 };
 
 
+export const getLoadGrantsQueryKey = (params?: LoadGrantsParams,) => ['/grants', ...(params ? [params]: [])];
 
-export const useLoadGrants = <TError = AxiosError<HTTPValidationError>,
     
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<AsyncReturnType<typeof loadGrants>, TError,{data: GrantsRequest}, TContext>, axios?: AxiosRequestConfig}
-  ) => {
-  const {mutation: mutationOptions, axios: axiosOptions} = options || {};
+export const useLoadGrants = <TData = AsyncReturnType<typeof loadGrants>, TError = AxiosError<HTTPValidationError>>(
+  params?: LoadGrantsParams, options?: { query?:UseQueryOptions<AsyncReturnType<typeof loadGrants>, TError, TData>, axios?: AxiosRequestConfig}
 
-      
+):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
+  const {query: queryOptions, axios: axiosOptions} = options || {};
 
-  const mutationFn: MutationFunction<AsyncReturnType<typeof loadGrants>, {data: GrantsRequest}> = (props) => {
-    const {data} = props || {};
+  const queryKey = queryOptions?.queryKey ?? getLoadGrantsQueryKey(params);
 
-    return  loadGrants(data,axiosOptions);
+  
+
+  const queryFn: QueryFunction<AsyncReturnType<typeof loadGrants>> = () => loadGrants(params, axiosOptions);
+
+  const query = useQuery<AsyncReturnType<typeof loadGrants>, TError, TData>(queryKey, queryFn, queryOptions);
+
+  return {
+    queryKey,
+    ...query
   };
-
-  return useMutation<AsyncReturnType<typeof loadGrants>, TError, {data: GrantsRequest}, TContext>(mutationFn, mutationOptions);
 };
-    
+
+
 /**
  * @summary Grant Download
  */

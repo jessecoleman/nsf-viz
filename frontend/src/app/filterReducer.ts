@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { loadDirectory, loadDivisions } from './actions';
-import { Division } from '../api/models/Division';
+import { Division } from '../oldapi/models/Division';
 import { Directory, Grant } from 'api';
 
 type Field = 'title' | 'abstract';

@@ -11,13 +11,13 @@ import {
 } from '@material-ui/core';
 
 import { loadGrants } from 'app/actions';
-import { Grant } from '../../api/models/Grant';
+import { Grant } from '../../oldapi/models/Grant';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { getNumGrants, loadingGrants } from 'app/selectors';
 import { clearGrants } from 'app/dataReducer';
 import { useEffect } from 'react';
 import { useMeasure } from 'app/hooks';
-import { useQuery } from 'app/query';
+import { useGrantsDialogQuery, useQuery } from 'app/query';
 import AbstractDialog from './AbstractDialog';
 import { cols, GrantColumn, GrantListItem } from './GrantRow';
 import GrantsTable from './GrantsTable';
@@ -41,6 +41,7 @@ export const GrantListHeader = styled(GrantListItem)<GrantListHeaderStyles>(({ t
 const GrantsDialog = () => {
 
   const [ query, setQuery ] = useQuery();
+  const [ dialog, setDialogQuery ] = useGrantsDialogQuery();
   const handleDownloadGrants = useGrantsDownload();
 
   useEffect(() => {
@@ -54,18 +55,18 @@ const GrantsDialog = () => {
   const [ firstOpen, setFirstOpen ] = useState(0);
   
   useEffect(() => {
-    if (query.grantDialogOpen) {
+    if (dialog.grantDialogOpen) {
       setFirstOpen(c => c + 1);
     } else {
       setFirstOpen(0);
     }
-  }, [query.grantDialogOpen, numGrants]);
+  }, [dialog.grantDialogOpen, numGrants]);
 
   const handleSort = (property: keyof Grant) => () => {
-    const direction = query.grantSort === property
-      && query.grantDirection === 'asc' ? 'desc' : 'asc';
+    const direction = dialog.grantSort === property
+      && dialog.grantDirection === 'asc' ? 'desc' : 'asc';
 
-    setQuery({
+    setDialogQuery({
       grantSort: property,
       grantDirection: direction,
     });
@@ -74,24 +75,24 @@ const GrantsDialog = () => {
       ...query,
       order: direction,
       order_by: property === 'title' ? 'title.raw' : property,
-      start: query.grantDialogYear ?? query.start,
-      end: query.grantDialogYear ?? query.end,
-      divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
+      start: dialog.grantDialogYear ?? query.start,
+      end: dialog.grantDialogYear ?? query.end,
+      divisions: dialog.grantDialogDivision ? [dialog.grantDialogDivision] : query.divisions,
       idx: 0,
     }));
   };
 
   const handleClose = () => {
-    setQuery({ grantDialogOpen: false });
+    setDialogQuery({ grantDialogOpen: false });
   };
 
   const handleClearFilter = (key: keyof Grant) => () => {
     switch (key) {
       case 'date':
-        setQuery({ grantDialogYear: undefined });
+        setDialogQuery({ grantDialogYear: undefined });
         break;
       case'cat1_raw':
-        setQuery({ grantDialogDivision: undefined });
+        setDialogQuery({ grantDialogDivision: undefined });
         break;
     }
   };
@@ -99,9 +100,9 @@ const GrantsDialog = () => {
   const getFilterLabel = (field: keyof Grant) => {
     switch (field) {
       case 'cat1_raw':
-        return query.grantDialogDivision?.toUpperCase() ?? '';
+        return dialog.grantDialogDivision?.toUpperCase() ?? '';
       case 'date':
-        return query.grantDialogYear?.toString() ?? '';
+        return dialog.grantDialogYear?.toString() ?? '';
       default:
         return '';
     }
@@ -112,7 +113,7 @@ const GrantsDialog = () => {
       <Dialog
         fullWidth={true}
         maxWidth='xl'
-        open={!!query.grantDialogOpen}
+        open={!!dialog.grantDialogOpen}
         onClose={handleClose}
       >
         <GrantListHeader scrollOffset={24}>
@@ -120,8 +121,8 @@ const GrantsDialog = () => {
             <GrantColumn key={id} column={id}>
               <Box position='relative' width='100%'>
                 <TableSortLabel
-                  active={query.grantSort === id}
-                  direction={query.grantDirection}
+                  active={dialog.grantSort === id}
+                  direction={dialog.grantDirection}
                   onClick={handleSort(id)}
                 >
                   {label}

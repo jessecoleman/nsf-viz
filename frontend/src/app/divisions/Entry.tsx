@@ -1,7 +1,7 @@
 import { MouseEvent } from 'react';
 import styled from '@emotion/styled';
 import { Tooltip } from '@material-ui/core';
-import { TreeItem, treeItemClasses, TreeItemProps } from '@mui/lab';
+import { TreeItem, treeItemClasses, TreeItemProps } from '@material-ui/lab';
 import { colorScales } from 'theme';
 import DivisionRow from './DivisionRow';
 import { KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
@@ -62,7 +62,6 @@ const DirectoryEntry = (props: DirectoryProps) => {
     children,
     checked,
     onCheck,
-    onFocus,
     ...other
   } = props;
   
@@ -93,7 +92,7 @@ const DirectoryEntry = (props: DirectoryProps) => {
                 // tabIndex={-1}
               />
             }
-            //{...other}
+            {...other}
           >
             {children}
           </DirectoryRoot>

@@ -2,11 +2,13 @@
 import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useAppSelector } from 'app/store';
-import { getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selectors';
+import { getLegendFilters } from 'app/selectors';
 import { useMeasure } from 'app/hooks';
 import { useQuery } from 'app/query';
 import { colorScales } from '../../theme';
 import { Flipper, Flipped } from 'react-flip-toolkit';
+import { useLoadDivisions, useSearch } from 'api';
+import { stableSort } from 'app/sort';
 
 export type TooltipProps = {
   dataKey?: string
@@ -25,15 +27,29 @@ const ChartTooltip = (props: TooltipProps) => {
   const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
   const { dataKey, year } = props;
   const [ query ] = useQuery();
+  const { data: divisions } = useSearch(query, {
+    query: {
+      select: ({ data }) => stableSort(
+        data.per_year.find(d => d.key === year)?.divisions ?? [],
+        query.sort,
+        query.direction
+      )
+    }
+  });
+  const { data: divMap } = useLoadDivisions(query.org, {
+    query: {
+      select: ({ data }) => Object.fromEntries(data.map(div => [div.key, div.name]))
+    }
+  });
+  console.log(divisions);
   const legendFilter = useAppSelector(getLegendFilters);
-  const divisionAggs = useAppSelector(state => getDivisionYear(state, { ...query, year }));
-  const divMap = useAppSelector(state => getDivisionsMap(state, query));
+  // const divMap = useAppSelector(state => getDivisionsMap(state, query));
   const totals: CellData[] = [
     { name: 'count', value: 0 },
     { name: 'amount', value: 0 },
   ];
 
-  const rows = divisionAggs?.filter(d => query.divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
+  const rows = divisions?.filter(d => query.divisions.includes(d.key) && d.count > 0).map((d): RowTuple => [
     d.key,
     ['count', 'amount'].map((field, i) => {
       totals[i].value += d[field];
@@ -46,6 +62,8 @@ const ChartTooltip = (props: TooltipProps) => {
   ]) ?? [];
   
   const cells = totals.filter((t, i) => [legendFilter.counts, legendFilter.amounts][i]);
+  
+  if (!divMap) return null;
 
   return (
     <Paper id='tooltip' elevation={5}>

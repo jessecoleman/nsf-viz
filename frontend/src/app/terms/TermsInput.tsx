@@ -2,9 +2,8 @@ import { FocusEvent, forwardRef, KeyboardEvent, useRef, useState } from 'react';
 import { Flipper } from 'react-flip-toolkit';
 import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
 import TermsList from './TermsList';
-import { useAppSelector } from 'app/store';
-import { getRelated, getTerms } from 'app/selectors';
 import { useLoadRelated, useLoadTypeahead } from 'api';
+import { useQuery } from 'app/query';
 
 const ChipInput = styled(InputBase)(({ theme }) => `
   color: 'inherit';
@@ -51,13 +50,10 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [ focused, setFocused ] = useState(false);
   const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
-  const terms = useAppSelector(getTerms);
+  const [{ terms }] = useQuery();
   // TODO add debounce
   const { data: typeahead } = useLoadTypeahead(props.value);
-  console.log(typeahead);
-  const { data: data2 } = useLoadRelated(props.value);
-  // const typeahead = useAppSelector(getTypeahead);
-  const related = useAppSelector(getRelated);
+  const { data: related } = useLoadRelated({ terms });
 
   const handleFocus = (e: FocusEvent) => {
     setFocused(true);
@@ -120,15 +116,15 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
                       ? <TermsList
                         input={props.value}
                         header='autocomplete'
-                        filter={terms.map(t => t.term)}
+                        filter={terms}
                         terms={typeahead?.data ?? []}
                         onAddChip={onAddChip}
                       />
                       : <TermsList
                         input={props.value}
                         header='related terms'
-                        filter={terms.map(t => t.term)}
-                        terms={related}
+                        filter={terms}
+                        terms={related?.data ?? []}
                         onAddChip={onAddChip}
                       />
                     }

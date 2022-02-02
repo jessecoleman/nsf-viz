@@ -1,9 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { DivisionAggregate } from 'api/models/DivisionAggregate';
+import { DivisionAggregate } from 'oldapi/models/DivisionAggregate';
 import { loadAbstract, loadData, loadGrants, loadRelated, loadTypeahead, loadYears } from './actions';
-import { Grant } from '../api/models/Grant';
-import { YearDivisionAggregate } from 'api/models/YearDivisionAggregate';
-import { YearAggregate } from 'api/models/YearAggregate';
+import { Grant } from '../oldapi/models/Grant';
+import { YearDivisionAggregate } from 'oldapi/models/YearDivisionAggregate';
+import { YearAggregate } from 'oldapi/models/YearAggregate';
 
 type GrantState = {
   yearAgg: YearAggregate[],

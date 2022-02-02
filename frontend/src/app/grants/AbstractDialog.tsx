@@ -1,7 +1,8 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
-import { dismissAbstractDialog } from 'app/dataReducer';
-import { getDivisionsMap, getSelectedAbstract, getSelectedGrant } from 'app/selectors';
-import { useAppDispatch, useAppSelector } from 'app/store';
+import { useLoadAbstract } from 'api';
+import { useGrantsDialogQuery, useQuery } from 'app/query';
+import { getSelectedGrant } from 'app/selectors';
+import { useAppSelector } from 'app/store';
 import * as d3 from 'd3';
 
 const Title = styled(Typography)(({ theme }) => `
@@ -24,14 +25,19 @@ const Abstract = styled(Typography)(({ theme }) => `
 `);
 
 const AbstractDialog = () => {
-  
-  const selectedGrant = useAppSelector(getSelectedGrant);
-  const selectedAbstract = useAppSelector(getSelectedAbstract);
 
-  const dispatch = useAppDispatch();
+  const [{ terms }] = useQuery();
+  const [{ grantId }, setDialog ] = useGrantsDialogQuery();
+  const grant = useAppSelector(state => getSelectedGrant(state, grantId));
+  const { data: abstract } = useLoadAbstract(grant?.id, terms, {
+    query: {
+      enabled: grant !== undefined,
+      select: (d) => d.data
+    }
+  });
 
   const dismissDialog = () => {
-    dispatch(dismissAbstractDialog());
+    setDialog({ grantId: undefined });
   };
 
   const timeConvert = (date: string) => (
@@ -40,26 +46,26 @@ const AbstractDialog = () => {
     )
   );
 
-  const loading = selectedAbstract === undefined;
+  const loading = abstract === undefined;
   
-  if (!selectedGrant) return null;
+  if (!grant) return null;
  
   return (
     <Dialog
-      open={selectedGrant !== undefined}
+      open={grant !== undefined}
       onClose={dismissDialog}
     >
       <DialogTitle>
-        <Title variant='h5'>{selectedGrant.title}</Title>
-        <Subtitle variant='h6'>{selectedGrant.cat1_raw}</Subtitle>
-        <Subtitle variant='h6'>{timeConvert(selectedGrant.date)}</Subtitle>
-        <Subtitle variant='h6'>{d3.format('$,')(selectedGrant.amount)}</Subtitle>
+        <Title variant='h5'>{grant.title}</Title>
+        <Subtitle variant='h6'>{grant.cat1_raw}</Subtitle>
+        <Subtitle variant='h6'>{timeConvert(grant.date)}</Subtitle>
+        <Subtitle variant='h6'>{d3.format('$,')(grant.amount)}</Subtitle>
       </DialogTitle>
       <DialogContent>
         {loading && <LinearProgress />}
-        <Collapse in={!loading}>
+        <Collapse in={!!abstract}>
           <Abstract dangerouslySetInnerHTML={{
-            __html: selectedAbstract ?? ''
+            __html: abstract ?? ''
           }} />
         </Collapse>
       </DialogContent>

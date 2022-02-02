@@ -86,6 +86,18 @@ def org_match(org: str):
             'agency': org
         }
     }
+    
+
+def divisions_match(divisions: List[str]):
+    return {
+        'bool': {
+            'should': [{
+                'match': {
+                    'cat1': division
+                }
+            } for division in divisions]
+        }
+    }
 
     
 def year_range_filter(start: int, end: int):
@@ -146,12 +158,13 @@ async def year_aggregates(
     org: str,
     intersection: bool,
     terms: List[str] = None,
+    divisions: List[str] = None,
     match = ('title', 'abstract'),
     sort = False
 ):
     must_or_should = 'must' if intersection else 'should'
 
-    if len(match) == 0:
+    if not match or len(match) == 0:
         match = ('title', 'abstract')
 
     query = {
@@ -159,7 +172,8 @@ async def year_aggregates(
             'bool': {
                 'must': [
                     terms_multi_match(terms, match, must_or_should),
-                    org_match(org)
+                    org_match(org),
+                    divisions_match(divisions)
                 ],
             }
         },
@@ -176,12 +190,14 @@ async def year_aggregates(
 async def division_aggregates(
         aioes: Elasticsearch,
         org: str,
+        sort: str,
+        direction: str,
         intersection: bool,
         start: Optional[int],
         end: Optional[int],
         match: Optional[List[str]],
+        divisions: List[str],
         terms: List[str] = None,
-        sort = False
     ):
     
     must_or_should = 'must' if intersection else 'should'
@@ -195,16 +211,24 @@ async def division_aggregates(
                 'must': [
                     terms_multi_match(terms, match, must_or_should),
                     org_match(org),
+                    # TODO should this be filtered client side?
+                    divisions_match(divisions),
                 ]
             }
         },
         'aggs': {
             **term_agg('cat1', grant_amount_agg),
-            **term_agg('cat2', term_agg('cat1', grant_amount_agg)),
+            **term_agg('cat2', grant_amount_agg), #term_agg('cat1', grant_amount_agg)),
             **year_histogram({
                 **term_agg('cat1', grant_amount_agg),
             }),
-        }
+        },
+        # TODO
+        # 'sort': [
+        #     {
+        #         sort: { 'order': direction }
+        #     }
+        # ]
     }
     
     if start is not None or end is not None:
@@ -228,7 +252,7 @@ async def division_aggregates(
     # overall_buckets = hits['aggregations']['key1']['buckets']
     # overall_buckets2 = hits['aggregations']['key2']['buckets']
     overall_buckets = hits['aggregations']['cat1']['buckets']
-    print(json.dumps(query, indent=2))
+    # print(json.dumps(query, indent=2))
     # print(json.dumps(per_directory_buckets, indent=2))
 
     return SearchResponse(
@@ -239,16 +263,28 @@ async def division_aggregates(
     )
  
 
-async def term_freqs(aioes: Elasticsearch, terms: List[str], match: List[str]):
+async def term_freqs(
+    aioes: Elasticsearch,
+    org: str,
+    terms: List[str],
+    match: List[str]
+):
 
     queries = [{
         'query': {
-            'multi_match': {
-                'fields': match,
-                'query': term,
-                'type': 'phrase',
+            'bool': {
+                'must': [
+                    {
+                        'multi_match': {
+                            'fields': match,
+                            'query': term,
+                            'type': 'phrase',
+                        }
+                    },
+                    org_match(org)
+                ]
             }
-        },
+        }
     } for term in terms]
     
     return await asyncio.gather(*(
@@ -261,7 +297,7 @@ async def grants(aioes,
         idx: int,
         org: str,
         intersection: bool,
-        order_by: str,
+        sort: str,
         order: str,
         divisions: List[str],
         match: List[str],
@@ -301,7 +337,7 @@ async def grants(aioes,
         },
         'sort': [
             {
-                order_by: {
+                sort: {
                     'order': order
                 }
             }
