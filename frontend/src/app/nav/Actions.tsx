@@ -7,11 +7,11 @@ const Actions = () => {
   const handleDownloadGrants = useGrantsDownload();
 
   const actions = [
-    {
-      name: 'Download Tabular Data',
-      icon: <GridOn />,
-      href: ''
-    },
+    // {
+    //   name: 'Download Tabular Data',
+    //   icon: <GridOn />,
+    //   href: ''
+    // },
     {
       name: 'Download Grant Data',
       icon: <InsertDriveFile />,
