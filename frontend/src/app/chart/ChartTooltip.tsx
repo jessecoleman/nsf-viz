@@ -6,6 +6,7 @@ import { getDivisionsMap, getDivisionYear, getLegendFilters } from 'app/selector
 import { useMeasure } from 'app/hooks';
 import { useQuery } from 'app/query';
 import { colorScales } from '../../theme';
+import { Flipper, Flipped } from 'react-flip-toolkit';
 
 export type TooltipProps = {
   dataKey?: string
@@ -55,20 +56,26 @@ const ChartTooltip = (props: TooltipProps) => {
         cells={cells}
         header
       />
-      <ScrollableDiv>
-        <div ref={widthRef} />
-        {rows.map(([ key, cells ]) => (
-          <DivisionRow
-            tooltip
-            key={key}
-            id={`${key}-tooltip`}
-            selected={dataKey?.split('-')[0] === key}
-            dataKey={key}
-            name={divMap[key]}
-            cells={cells}
-          />
-        ))}
-      </ScrollableDiv>
+      <Flipper flipKey={props.year}>
+        <ScrollableDiv>
+          <div ref={widthRef} />
+          {rows.map(([ key, cells ]) => (
+            <Flipped key={key} flipId={key}>
+              <div>
+                <DivisionRow
+                  tooltip
+                  key={key}
+                  id={`${key}-tooltip`}
+                  selected={dataKey?.split('-')[0] === key}
+                  dataKey={key}
+                  name={divMap[key]}
+                  cells={cells}
+                />
+              </div>
+            </Flipped>
+          ))}
+        </ScrollableDiv>
+      </Flipper>
     </Paper>
   );
 };

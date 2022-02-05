@@ -19,6 +19,12 @@ const ExpandButton = styled(IconButton)`
   margin-left: 4px;
 `;
 
+const Container = styled(Box)(({ theme }) => `
+  border-bottom: 1px solid ${theme.palette.grey[200]};
+  display: flex;
+  flex-direction: row;
+`);
+
 type Columns = {
   Component: typeof Column | typeof NumberColumn,
   id: SortableKeys,
@@ -47,7 +53,7 @@ type EnhancedTableHeadProps = {
 }
 
 const DirectoryTableHead = (props: EnhancedTableHeadProps) => (
-  <Box display='flex' flexDirection='row'>
+  <Container>
     <ExpandButton onClick={props.onExpandAll}>
       {props.allExpanded
         ? <UnfoldLess />
@@ -84,7 +90,7 @@ const DirectoryTableHead = (props: EnhancedTableHeadProps) => (
         </c.Component>
       ))}
     </Row>
-  </Box>
+  </Container>
 );
 
 export default DirectoryTableHead;

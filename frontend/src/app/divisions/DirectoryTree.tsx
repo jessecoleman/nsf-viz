@@ -1,11 +1,9 @@
 import { MouseEvent, useEffect } from 'react';
 import { Flipper, Flipped } from 'react-flip-toolkit';
 import match from 'autosuggest-highlight/match';
-import { SelectChangeEvent } from '@material-ui/core';
+import { Box, LinearProgress, SelectChangeEvent, styled } from '@material-ui/core';
 import { TreeView } from '@material-ui/lab';
 
-import { getSortedDivisionAggs, getDivisionsMap, getDirectoryAggs, getDepartmentMap, SortableKeys } from 'app/selectors';
-import{ loadDirectory, loadDivisions } from '../actions';
 import { useAppDispatch, useAppSelector } from 'app/store';
 import { useDebouncedCallback, useMeasure } from 'app/hooks';
 import { Organization, useQuery } from 'app/query';
@@ -13,12 +11,20 @@ import { highlightDivision, SortDirection } from 'app/filterReducer';
 import { colorScales } from 'theme';
 import { ChangeEvent, useState } from 'react';
 import Highlight from 'app/Highlight';
+import { getSortedDivisionAggs, getDivisionsMap, getDirectoryAggs, getDepartmentMap, SortableKeys } from 'app/selectors';
 import DivisionToolbar from './DivisionToolbar';
 import { ArrowDropDown, ArrowRight } from '@mui/icons-material';
 import DirectoryEntry from './Entry';
 import DirectoryTableHead, { CheckboxState } from './DirectoryTableHead';
+import { Directory, Division } from '../../api';
+import { loadDirectory, loadDivisions } from 'app/actions';
 
-const Directory = () => {
+const ScrollableDiv = styled('div')`
+  overflow-y: scroll;
+  height: 100%;
+`;
+
+const DirectoryTree = () => {
 
   const dispatch = useAppDispatch();
   const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
@@ -29,9 +35,6 @@ const Directory = () => {
   console.log(directory);
   const depMap = useAppSelector(state => getDepartmentMap(state, query));
   const divMap = useAppSelector(state => getDivisionsMap(state, query));
-  const allDivisions = directory.flatMap(directory =>
-    [directory.abbr].concat((directory.departments ?? []).map(div => div.abbr))
-  );
 
   const debouncedHighlight = useDebouncedCallback(key => {
     dispatch(highlightDivision(key));
@@ -41,7 +44,7 @@ const Directory = () => {
     dispatch(loadDivisions());
     dispatch(loadDirectory());
   }, []);
- 
+  
   const selectedDivisions = new Set(query.divisions);
   const [ expanded, setExpanded ] = useState<string[]>([]);
 
@@ -75,6 +78,12 @@ const Directory = () => {
 
     setQuery({ divisions });
   };
+  
+  if (!directory || !divisions) return <LinearProgress />;
+  
+  const allDivisions = directory.flatMap(directory =>
+    [directory.abbr].concat((directory.departments ?? []).map(div => div.abbr))
+  );
 
   const handleSelectAll = (checked: CheckboxState) => {
     switch (checked) {
@@ -140,18 +149,18 @@ const Directory = () => {
       return 'indeterminate';
     }
   };
-
-  const filtered = Object.values(divisions)
-    .map(d => divMap[d.key])
-    .filter(d => d)
-    .filter(d => !divisionFilter || match(d, divisionFilter).length);
-    
-  let checked: CheckboxState = 'unchecked';
-  if (selectedDivisions.size == allDivisions.length) checked = 'checked';
-  else if (selectedDivisions.size > 0) checked = 'indeterminate';
-
+  
+  let allChecked: CheckboxState = 'unchecked';
+  if (selectedDivisions.size == allDivisions.length) allChecked = 'checked';
+  else if (selectedDivisions.size > 0) allChecked = 'indeterminate';
+  
+  const isFiltered = (d: Pick<Division, 'name'>) => !divisionFilter || match(d.name, divisionFilter).length > 0;
+  const isDirFiltered = (dir: Directory) => (dir.departments ?? []).concat([dir]).filter(isFiltered).length > 0;
+  const isExpanded = (dir: Directory) => expanded.includes(dir.abbr);
+  const isExpandedOrFiltered = (dir: Directory) => isExpanded(dir) || (divisionFilter && isDirFiltered(dir));
+  
   return (
-    <div>
+    <Box display='flex' flexDirection='column' overflow='hidden'>
       <DivisionToolbar
         org={query.org}
         filter={divisionFilter}
@@ -161,57 +170,63 @@ const Directory = () => {
       />
       <DirectoryTableHead
         scrollOffset={scrollOffset}
-        checked={checked}
-        allExpanded={directory.every(dir => expanded.includes(dir.abbr))}
+        checked={allChecked}
+        allExpanded={directory.every(isExpanded)}
         orderBy={query.sort ?? 'name'}
         direction={query.direction}
         onExpandAll={handleExpandAll}
         onSelectAllClick={handleSelectAll}
         onRequestSort={handleRequestSort}
       />
-      <TreeView
-        key={query.org}
-        aria-label='directory'
-        defaultCollapseIcon={<ArrowDropDown />}
-        defaultExpandIcon={<ArrowRight />}
-        defaultEndIcon={<div style={{ width: 24 }} />}
-        expanded={expanded}
-        multiSelect
-        selected={query.divisions}
-        onNodeToggle={handleToggle}
-        // onNodeSelect={handleSelect}
-      >
-        {directory.map(dir => (
-          <DirectoryEntry
-            key={dir.abbr}
-            nodeId={dir.abbr}
-            desc={dir.desc}
-            name={<Highlight value={dir.name} query={divisionFilter} />}
-            count={dir.count ?? 0}
-            amount={dir.amount ?? 0}
-            checked={getDirectoryCheckState(dir.abbr)}
-            onCheck={handleSelectGroup}
+      <ScrollableDiv>
+        <Flipper flipKey={JSON.stringify([divisionFilter, query.terms, query.direction, query.sort])}>
+          <TreeView
+            key={query.org}
+            aria-label='directory'
+            defaultCollapseIcon={<ArrowDropDown />}
+            defaultExpandIcon={<ArrowRight />}
+            defaultEndIcon={<div style={{ width: 24 }} />}
+            expanded={directory.filter(isExpandedOrFiltered).map(dir => dir.abbr)}
+            multiSelect
+            selected={query.divisions}
+            onNodeToggle={handleToggle}
+            // onNodeSelect={handleSelect}
           >
-            {dir.departments
-              ?.filter(d => filtered.includes(d.name))
-              .map(dep => (
+            {directory
+              .filter(isDirFiltered)
+              .map(dir => (
                 <DirectoryEntry
-                  key={dep.abbr}
-                  nodeId={dep.abbr}
-                  desc={dep.desc}
-                  name={<Highlight value={dep.name} query={divisionFilter} />}
-                  count={divisions[dep.abbr]?.count ?? 0}
-                  amount={divisions[dep.abbr]?.amount ?? 0}
-                  checked={selectedDivisions.has(dep.abbr) ? 'checked' : 'unchecked'}
-                  onCheck={handleCheck}
-                />
-              ))
-            }
-          </DirectoryEntry>
-        ))}
-      </TreeView>
-    </div>
+                  key={dir.abbr}
+                  nodeId={dir.abbr}
+                  desc={dir.desc}
+                  name={<Highlight value={dir.name} query={divisionFilter} />}
+                  count={dir.count ?? 0}
+                  amount={dir.amount ?? 0}
+                  checked={getDirectoryCheckState(dir.abbr)}
+                  onCheck={handleSelectGroup}
+                >
+                  {dir.departments
+                    ?.filter(isFiltered)
+                    ?.map(dep => (
+                      <DirectoryEntry
+                        key={dep.abbr}
+                        nodeId={dep.abbr}
+                        desc={dep.desc}
+                        name={<Highlight value={dep.name} query={divisionFilter} />}
+                        count={divisions[dep.abbr]?.count ?? 0}
+                        amount={divisions[dep.abbr]?.amount ?? 0}
+                        checked={selectedDivisions.has(dep.abbr) ? 'checked' : 'unchecked'}
+                        onCheck={handleCheck}
+                      />
+                    ))
+                  }
+                </DirectoryEntry>
+              ))}
+          </TreeView>
+        </Flipper>
+      </ScrollableDiv>
+    </Box>
   );
 };
 
-export default Directory;
+export default DirectoryTree;
