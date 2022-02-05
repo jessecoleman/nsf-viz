@@ -17,7 +17,6 @@ import { ArrowDropDown, ArrowRight } from '@mui/icons-material';
 import DirectoryEntry from './Entry';
 import DirectoryTableHead, { CheckboxState } from './DirectoryTableHead';
 import { Directory, Division } from '../../api';
-import { stableSort } from 'app/sort';
 import { loadDirectory, loadDivisions } from 'app/actions';
 
 const ScrollableDiv = styled('div')`
