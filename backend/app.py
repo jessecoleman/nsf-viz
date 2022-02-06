@@ -198,10 +198,17 @@ def related(terms: List[str] = Query(None)):
 @app.get('/keywords/count', operation_id='loadTermCounts', response_model=Dict[str, int])
 async def count_terms(
     org: str,
+    match: List[str] = Query(['title', 'abstract']),
     terms: List[str] = Query(None)
 ):
 
-    counts = await Q.term_freqs(aioes, org, terms, ['title', 'abstract'])
+    counts = await Q.term_freqs(
+        aioes, 
+        org=org,
+        terms=terms,
+        match=match
+    )
+
     return dict(zip(terms, [c['count'] for c in counts]))
 
 
@@ -209,55 +216,65 @@ async def count_terms(
 async def grant_data(
     idx: int,
     org: str,
-    intersection: bool,
-    # TODO have these line up with frontend
-    order_by: str,
-    order: str,
-    start: str,
-    end: str,
+    start: Optional[int] = None,
+    end: Optional[int] = None,
     divisions: List[str] = Query(None),
-    match: List[str] = Query(None),
+    match: List[str] = Query(['title', 'abstract']),
     terms: List[str] = Query(None),
+    sort: Optional[str] = 'title',
+    order: Optional[str] = 'desc',
+    intersection: Optional[bool] = False,
 ):
 
-    try:
-        grants = Q.grants(
-            aioes,
-            idx=idx,
-            org=org,
-            intersection=intersection,
-            sort=order_by,
-            direction=order,
-            divisions=divisions,
-            match=match,
-            terms=terms,
-            start=start,
-            end=end,
-        )
+    grants = Q.grants(
+        aioes,
+        idx=idx,
+        org=org,
+        intersection=intersection,
+        sort=sort,
+        order=order,
+        divisions=divisions,
+        match=match,
+        terms=terms,
+        start=start,
+        end=end,
+    )
 
-        return [grant async for grant in grants]
+    response = [grant async for grant in grants]
 
-    except IndexError:
+    if len(response) == 0:
         raise HTTPException(404, detail='index out of bounds')
+    
+    return response
 
 
-@app.post('/grants/download', operation_id='downloadGrants')
-async def grant_download(request: GrantsRequest):
+@app.get('/grants/download', operation_id='downloadGrants')
+async def grant_download(
+    org: str,
+    start: Optional[int] = None,
+    end: Optional[int] = None,
+    divisions: List[str] = Query(None),
+    match: List[str] = Query(['title', 'abstract']),
+    terms: List[str] = Query(None),
+    sort: Optional[str] = 'title',
+    order: Optional[str] = 'desc',
+    intersection: Optional[bool] = False,
+):
 
     try:
         grants = Q.grants(
             aioes,
             idx=0,
             limit=10000,
-            org=request.org,
-            intersection=request.intersection,
-            order_by=request.order_by,
-            order=request.order,
-            divisions=request.divisions,
-            match=request.match,
-            terms=request.terms,
-            start=request.start,
-            end=request.end,
+            org=org,
+            intersection=intersection,
+            sort=sort,
+            order=order,
+            divisions=divisions,
+            match=match,
+            terms=terms,
+            start=start,
+            end=end,
             include_abstract=True,
         )
 

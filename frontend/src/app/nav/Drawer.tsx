@@ -1,7 +1,7 @@
 import { Drawer, useMediaQuery } from '@material-ui/core';
 import { styled } from '@material-ui/core';
 import DirectoryTree from 'app/divisions/DirectoryTree';
-import { useDrawer } from 'app/hooks';
+import { BooleanParam, useQueryParam } from 'use-query-params';
     
 const Container = styled('nav')(({ theme }) => `
   & .MuiDrawer-paper {
@@ -17,7 +17,7 @@ const Container = styled('nav')(({ theme }) => `
 const DivisionDrawer = () => {
   
   const wideScreen = useMediaQuery('(min-width:960px)');
-  const [ open, handleToggle ] = useDrawer();
+  const [ drawerOpen, setDrawerOpen ] = useQueryParam('drawer', BooleanParam);
  
   return (
     <Container aria-label='divisions filter'>
@@ -25,8 +25,8 @@ const DivisionDrawer = () => {
         container={window.document.body}
         variant={wideScreen ? 'permanent' : 'temporary'}
         anchor='left'
-        open={wideScreen || open}
-        onClose={handleToggle}
+        open={wideScreen || !!drawerOpen}
+        onClose={() => setDrawerOpen(false)}
         ModalProps={{
           keepMounted: true
         }}

@@ -1,5 +1,5 @@
-import { MouseEvent, ChangeEvent, useEffect } from 'react';
-import { Flipper, Flipped } from 'react-flip-toolkit';
+import { MouseEvent, ChangeEvent } from 'react';
+import { Flipper } from 'react-flip-toolkit';
 import { styled } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles';
 
@@ -14,15 +14,11 @@ import {
   HighlightOff,
 } from '@mui/icons-material';
 
-import {
-  loadRelated,
-} from 'app/actions';
-import { useAppDispatch } from 'app/store';
 import { useDebouncedSearch } from 'app/hooks';
 import { ArrayParam, useQuery } from 'app/query';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
-import { clearTypeahead } from 'app/dataReducer';
+// import { clearTypeahead } from 'app/dataReducer';
 import { useQueryParam } from 'use-query-params';
 import { useLoadTermCounts } from 'api';
 
@@ -73,7 +69,6 @@ const exitThenFlipThenEnter = ({
 
 const TermsFilter = () => {
 
-  const dispatch = useAppDispatch();
   const { input, setInput, results } = useDebouncedSearch(input => (
     console.log(input)
   ), 300);
@@ -84,13 +79,10 @@ const TermsFilter = () => {
 
   const { data: counts } = useLoadTermCounts({ org, terms }, {
     query: {
+      // enabled: terms.length,
       select: ({ data }) => data
     }
   });
-
-  useEffect(() => {
-    dispatch(loadRelated(terms));
-  }, [JSON.stringify(terms)]);
 
   const handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -118,7 +110,7 @@ const TermsFilter = () => {
   };
   
   const handleClearInput = () => {
-    dispatch(clearTypeahead());
+    // dispatch(clearTypeahead());
   };
  
   const handleClearTerms = () => {

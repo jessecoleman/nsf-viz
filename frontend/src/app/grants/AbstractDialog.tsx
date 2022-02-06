@@ -1,8 +1,6 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
-import { useLoadAbstract } from 'api';
+import { Grant, useLoadAbstract } from 'api';
 import { useGrantsDialogQuery, useQuery } from 'app/query';
-import { getSelectedGrant } from 'app/selectors';
-import { useAppSelector } from 'app/store';
 import * as d3 from 'd3';
 
 const Title = styled(Typography)(({ theme }) => `
@@ -28,10 +26,10 @@ const AbstractDialog = () => {
 
   const [{ terms }] = useQuery();
   const [{ grantId }, setDialog ] = useGrantsDialogQuery();
-  const grant = useAppSelector(state => getSelectedGrant(state, grantId));
-  const { data: abstract } = useLoadAbstract(grant?.id, terms, {
+  const grant: Grant = {} as Grant;
+  const { data: abstract } = useLoadAbstract(grantId, terms, {
     query: {
-      enabled: grant !== undefined,
+      enabled: grantId !== undefined,
       select: (d) => d.data
     }
   });
@@ -52,7 +50,7 @@ const AbstractDialog = () => {
  
   return (
     <Dialog
-      open={grant !== undefined}
+      open={false} //grant !== undefined}
       onClose={dismissDialog}
     >
       <DialogTitle>

@@ -10,11 +10,8 @@ import {
   Box,
 } from '@material-ui/core';
 
-import { loadGrants } from 'app/actions';
-import { Grant } from '../../oldapi/models/Grant';
-import { useAppDispatch, useAppSelector } from 'app/store';
-import { getNumGrants, loadingGrants } from 'app/selectors';
-import { clearGrants } from 'app/dataReducer';
+import { Grant } from 'api';
+import { useInfiniteLoadGrants } from './useInfiniteLoadGrants';
 import { useEffect } from 'react';
 import { useMeasure } from 'app/hooks';
 import { useGrantsDialogQuery, useQuery } from 'app/query';
@@ -40,18 +37,18 @@ export const GrantListHeader = styled(GrantListItem)<GrantListHeaderStyles>(({ t
 
 const GrantsDialog = () => {
 
-  const [ query, setQuery ] = useQuery();
+  const [ query, ] = useQuery();
   const [ dialog, setDialogQuery ] = useGrantsDialogQuery();
-  const handleDownloadGrants = useGrantsDownload();
+  const url = useGrantsDownload();
 
   useEffect(() => {
-    dispatch(clearGrants());
+    clearGrants();
   }, [JSON.stringify(query)]);
 
-  const dispatch = useAppDispatch();
   const [ widthRef, ] = useMeasure<HTMLDivElement>();
-  const loading = useAppSelector(loadingGrants);
-  const numGrants = useAppSelector(getNumGrants);
+  // const { data: grants } = useLoadGrants();
+  const loading = false;
+  const { count, clearGrants } = useInfiniteLoadGrants();
   const [ firstOpen, setFirstOpen ] = useState(0);
   
   useEffect(() => {
@@ -60,7 +57,7 @@ const GrantsDialog = () => {
     } else {
       setFirstOpen(0);
     }
-  }, [dialog.grantDialogOpen, numGrants]);
+  }, [dialog.grantDialogOpen, count]);
 
   const handleSort = (property: keyof Grant) => () => {
     const direction = dialog.grantSort === property
@@ -70,16 +67,16 @@ const GrantsDialog = () => {
       grantSort: property,
       grantDirection: direction,
     });
-    dispatch(clearGrants());
-    dispatch(loadGrants({
-      ...query,
-      order: direction,
-      order_by: property === 'title' ? 'title.raw' : property,
-      start: dialog.grantDialogYear ?? query.start,
-      end: dialog.grantDialogYear ?? query.end,
-      divisions: dialog.grantDialogDivision ? [dialog.grantDialogDivision] : query.divisions,
-      idx: 0,
-    }));
+    clearGrants();
+    // dispatch(loadGrants({
+    //   ...query,
+    //   order: direction,
+    //   order_by: property === 'title' ? 'title.raw' : property,
+    //   start: dialog.grantDialogYear ?? query.start,
+    //   end: dialog.grantDialogYear ?? query.end,
+    //   divisions: dialog.grantDialogDivision ? [dialog.grantDialogDivision] : query.divisions,
+    //   idx: 0,
+    // }));
   };
 
   const handleClose = () => {
@@ -137,12 +134,12 @@ const GrantsDialog = () => {
             </GrantColumn>
           ))}
         </GrantListHeader>
-        <Collapse in={firstOpen !== 1 || numGrants > 0}>
+        <Collapse in={firstOpen !== 1 || count > 0}>
           <GrantsTable widthRef={widthRef} />
         </Collapse>
         {loading && <ProgressBar />}
         <DialogActions>
-          <Button onClick={handleDownloadGrants}>
+          <Button component='a' href={url}>
             Download
           </Button>
           <Button onClick={handleClose}>

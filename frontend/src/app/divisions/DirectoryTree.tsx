@@ -1,14 +1,13 @@
 import { MouseEvent } from 'react';
-import { Flipper, Flipped } from 'react-flip-toolkit';
+import { Flipper } from 'react-flip-toolkit';
 import match from 'autosuggest-highlight/match';
 import { Box, LinearProgress, SelectChangeEvent, styled } from '@material-ui/core';
 import { TreeView } from '@material-ui/lab';
 
-import { SortableKeys } from 'app/selectors';
-import { useAppDispatch, useAppSelector } from 'app/store';
+import { SortableKeys } from 'app/sort';
 import { useDebouncedCallback, useMeasure } from 'app/hooks';
 import { Organization, useQuery } from 'app/query';
-import { highlightDivision, SortDirection } from 'app/filterReducer';
+import { SortDirection } from '@material-ui/core';
 import { colorScales } from 'theme';
 import { ChangeEvent, useState } from 'react';
 import Highlight from 'app/Highlight';
@@ -27,7 +26,6 @@ const ScrollableDiv = styled('div')`
 
 const DirectoryTree = () => {
 
-  const dispatch = useAppDispatch();
   const [ widthRef, scrollOffset ] = useMeasure<HTMLDivElement>();
   const [ divisionFilter, setDivisionFilter ] = useState<string>('');
   const [ query, setQuery ] = useQuery();
@@ -54,7 +52,7 @@ const DirectoryTree = () => {
   ]));
 
   const debouncedHighlight = useDebouncedCallback(key => {
-    dispatch(highlightDivision(key));
+    // dispatch(highlightDivision(key));
   }, 150);
 
   const selectedDivisions = new Set(query.divisions);

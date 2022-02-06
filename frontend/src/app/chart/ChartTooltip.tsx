@@ -1,8 +1,6 @@
 // import FlipMove from 'react-flip-move';
 import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
-import { useAppSelector } from 'app/store';
-import { getLegendFilters } from 'app/selectors';
 import { useMeasure } from 'app/hooks';
 import { useQuery } from 'app/query';
 import { colorScales } from '../../theme';
@@ -41,8 +39,7 @@ const ChartTooltip = (props: TooltipProps) => {
       select: ({ data }) => Object.fromEntries(data.map(div => [div.key, div.name]))
     }
   });
-  console.log(divisions);
-  const legendFilter = useAppSelector(getLegendFilters);
+  const legendFilter = { counts: true, amounts: true };
   // const divMap = useAppSelector(state => getDivisionsMap(state, query));
   const totals: CellData[] = [
     { name: 'count', value: 0 },

@@ -1,5 +1,5 @@
 import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParams, withDefault } from 'use-query-params';
-import { SortableKeys } from './selectors';
+import { SortableKeys } from 'app/sort';
 
 export type Organization = 'nsf' | 'nih';
 
@@ -58,7 +58,7 @@ const grantParamConfig = {
   'grantDialogOpen': BooleanParam,
   'grantDialogYear': NumberParam,
   'grantDialogDivision': StringParam,
-  'grantSort': StringParam,
+  'grantSort': DefaultStringParam,
   'grantDirection': SortDirectionParam,
   'grantId': DefaultStringParam,
 };

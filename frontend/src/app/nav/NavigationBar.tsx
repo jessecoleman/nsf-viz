@@ -5,7 +5,6 @@ import {
   Box,
   styled
 } from '@material-ui/core';
-import { Menu } from '@mui/icons-material';
 
 import TermsFilter from 'app/terms/TermsFilter';
 
@@ -64,9 +63,7 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => (
   <AppBar position='static' ref={ref}>
     <StyledToolbar>
       <TitleBar>
-        <DrawerToggle>
-          <Menu color='inherit' />
-        </DrawerToggle>
+        <DrawerToggle />
         <Logo src={grantExplorer} alt='national science foundation logo' />
         <Title variant='h6' noWrap>
           Grant Explorer

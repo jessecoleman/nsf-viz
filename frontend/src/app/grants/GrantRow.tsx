@@ -1,10 +1,9 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useMemo } from 'react';
 import { alpha, styled } from '@material-ui/core';
-import { useAppSelector } from 'app/store';
-import { getGrant } from 'app/selectors';
-import { Grant } from 'oldapi/models/Grant';
+import { Grant } from 'api';
 import { timeFormat, timeParse, format } from 'd3';
 import { useGrantsDialogQuery } from 'app/query';
+import { useInfiniteLoadGrants } from './useInfiniteLoadGrants';
 
 type Column = {
   id: keyof Grant
@@ -58,9 +57,16 @@ const GrantRow = (props: GrantRowProps) => {
   const { index, style } = props;
 
   const [ , setDialog ] = useGrantsDialogQuery();
-  const grant = useAppSelector(state => getGrant(state, index));
-
-  if (!grant) return null;
+  const { data, isFetching } = useInfiniteLoadGrants();
+  const grant = useMemo(() => {
+    if (data?.pages) {
+      return data.pages[Math.floor(index / 50)][index % 50];
+    } else {
+      return undefined;
+    }
+  }, [data, isFetching]);
+  
+  if (grant === undefined) return null;
 
   const setSelectedGrant = () => {
     setDialog({ grantId: grant.id });

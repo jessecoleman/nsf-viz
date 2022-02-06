@@ -1,16 +1,14 @@
-import { getHighlightedDivision, isAgg } from 'app/selectors';
-import { useAppDispatch, useAppSelector } from 'app/store';
 import { useGrantsDialogQuery, useQuery } from 'app/query';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
-import { clearGrants } from 'app/dataReducer';
 import { useEffect, useRef, useState } from 'react';
+import { useInfiniteLoadGrants } from '../grants/useInfiniteLoadGrants';
 import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { colorScales } from 'theme';
 import { useSearch } from 'api';
-import { stableSort } from 'app/sort';
+import { isAgg, stableSort } from 'app/sort';
 import { useYears } from 'api';
 
 let vis: BarChart;
@@ -65,9 +63,9 @@ type ChartProps = {
 const Chart = (props: ChartProps) => {
 
   const visRef = useRef<HTMLDivElement>(null);
-  const dispatch = useAppDispatch();
   const [ query, setQuery ] = useQuery();
   const [ , setDialogQuery ] = useGrantsDialogQuery();
+  const { clearGrants } = useInfiniteLoadGrants();
 
   // TODO reimplement this?
   // const { counts, amounts } = useAppSelector(getLegendFilters);
@@ -93,7 +91,7 @@ const Chart = (props: ChartProps) => {
     }
   });
 
-  const highlightedDivision = useAppSelector(getHighlightedDivision);
+  // const highlightedDivision = useAppSelector(getHighlightedDivision);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
 
   // update colors globally with new domain
@@ -143,9 +141,9 @@ const Chart = (props: ChartProps) => {
   }, [vis, query.sort, yearData]);
   
   // update bar styles on highlight
-  useEffect(() => {
-    vis?.highlightGroup(highlightedDivision);
-  }, [highlightedDivision]);
+  // useEffect(() => {
+  //   vis?.highlightGroup(highlightedDivision);
+  // }, [highlightedDivision]);
 
   // update chart on window resize
   useEffect(() => {
@@ -166,7 +164,7 @@ const Chart = (props: ChartProps) => {
   };
 
   const handleBarClick = (key: string, year: number) => {
-    dispatch(clearGrants());
+    clearGrants();
     setDialogQuery({
       grantDialogOpen: true,
       grantDialogYear: year,

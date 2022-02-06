@@ -56,12 +56,16 @@ def convert(bucket, keys=['cat1']):
     return bucket
 
 
-def terms_multi_match(terms: List[str], match: List[str], must_or_should: Optional[str] = None):
+def terms_multi_match(
+    terms: List[str],
+    match: List[str],
+    must_or_should: Optional[str] = None
+):
     if terms is None or len(terms) == 0:
         return {
             'match_all': {}
         }
-
+        
     query = {
         'bool': {
             must_or_should: [{
@@ -173,7 +177,7 @@ async def year_aggregates(
                 'must': [
                     terms_multi_match(terms, match, must_or_should),
                     org_match(org),
-                    divisions_match(divisions)
+                    # divisions_match(divisions)
                 ],
             }
         },
@@ -185,6 +189,18 @@ async def year_aggregates(
     return YearsResponse(
         per_year=[convert(bucket) for bucket in per_year_buckets]
     )
+    
+
+def grants_sort(sort: str, order: str):
+    if sort == 'title' or sort is None:
+        sort = 'title.raw'
+    return [
+        {
+            sort: {
+                'order': order
+            }
+        }
+    ]
 
 
 async def division_aggregates(
@@ -212,7 +228,7 @@ async def division_aggregates(
                     terms_multi_match(terms, match, must_or_should),
                     org_match(org),
                     # TODO should this be filtered client side?
-                    divisions_match(divisions),
+                    # divisions_match(divisions),
                 ]
             }
         },
@@ -297,13 +313,13 @@ async def grants(aioes,
         idx: int,
         org: str,
         intersection: bool,
-        sort: str,
-        order: str,
         divisions: List[str],
         match: List[str],
         terms: List[str],
         start: Optional[int],
         end: Optional[int],
+        sort: Optional[str] = 'title',
+        order: Optional[str] = 'desc',
         limit: int = 50,
         include_abstract: bool = False,
     ):
@@ -335,13 +351,7 @@ async def grants(aioes,
                 'must': must_query
             }
         },
-        'sort': [
-            {
-                sort: {
-                    'order': order
-                }
-            }
-        ],
+        'sort': grants_sort(sort, order),
         'track_scores': True
     }
     

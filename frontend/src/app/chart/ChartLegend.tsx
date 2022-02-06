@@ -1,9 +1,6 @@
 import { Checkbox, Paper, FormControlLabel, styled, Radio, RadioGroup } from '@material-ui/core';
 import { AttachFile, AttachMoney, InsertDriveFile } from '@mui/icons-material';
-import { setLegendFilters } from 'app/filterReducer';
 import { useQuery } from 'app/query';
-import { getLegendFilters } from 'app/selectors';
-import { useAppSelector } from 'app/store';
 import { ChangeEvent } from 'react';
 
 
@@ -22,7 +19,7 @@ const Label = styled('div')`
 
 const ChartLegend = () => {
   
-  const { counts, amounts } = useAppSelector(getLegendFilters);
+  const { counts, amounts } = { counts: true, amounts: true };
   const [ query, setQuery ] = useQuery();
 
   const handleChangeFilters = (e: ChangeEvent, checked: boolean) => {
