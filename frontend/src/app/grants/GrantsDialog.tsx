@@ -1,28 +1,25 @@
-import { useState } from 'react';
 import { styled } from '@material-ui/core/styles';
 import { 
   Dialog,
   Button,
   TableSortLabel,
   DialogActions,
-  Collapse,
-  LinearProgress,
   Box,
 } from '@material-ui/core';
 
 import { Grant } from 'api';
-import { useInfiniteLoadGrants } from './useInfiniteLoadGrants';
-import { useEffect } from 'react';
 import { useMeasure } from 'app/hooks';
-import { useGrantsDialogQuery, useQuery } from 'app/query';
+import { useGrantsDialogQuery } from 'app/query';
 import AbstractDialog from './AbstractDialog';
 import { cols, GrantColumn, GrantListItem } from './GrantRow';
 import GrantsTable from './GrantsTable';
 import FilterChip from './FilterChip';
 import useGrantsDownload from './grantsDownload';
 
-const ProgressBar = styled(LinearProgress)`
-  margin-bottom: -4px;
+const TopAlignedDialog = styled(Dialog)`
+  & .MuiDialog-container {
+    align-items: start !important;
+  }
 `;
 
 type GrantListHeaderStyles = {
@@ -37,46 +34,21 @@ export const GrantListHeader = styled(GrantListItem)<GrantListHeaderStyles>(({ t
 
 const GrantsDialog = () => {
 
-  const [ query, ] = useQuery();
   const [ dialog, setDialogQuery ] = useGrantsDialogQuery();
   const url = useGrantsDownload();
 
-  useEffect(() => {
-    clearGrants();
-  }, [JSON.stringify(query)]);
-
   const [ widthRef, ] = useMeasure<HTMLDivElement>();
-  // const { data: grants } = useLoadGrants();
-  const loading = false;
-  const { count, clearGrants } = useInfiniteLoadGrants();
-  const [ firstOpen, setFirstOpen ] = useState(0);
   
-  useEffect(() => {
-    if (dialog.grantDialogOpen) {
-      setFirstOpen(c => c + 1);
-    } else {
-      setFirstOpen(0);
-    }
-  }, [dialog.grantDialogOpen, count]);
-
-  const handleSort = (property: keyof Grant) => () => {
-    const direction = dialog.grantSort === property
-      && dialog.grantDirection === 'asc' ? 'desc' : 'asc';
+  const handleSort = (sort: keyof Grant) => () => {
+    const direction = (
+      dialog.grantSort === sort
+      && dialog.grantDirection === 'asc' ? 'desc' : 'asc'
+    );
 
     setDialogQuery({
-      grantSort: property,
+      grantSort: sort,
       grantDirection: direction,
     });
-    clearGrants();
-    // dispatch(loadGrants({
-    //   ...query,
-    //   order: direction,
-    //   order_by: property === 'title' ? 'title.raw' : property,
-    //   start: dialog.grantDialogYear ?? query.start,
-    //   end: dialog.grantDialogYear ?? query.end,
-    //   divisions: dialog.grantDialogDivision ? [dialog.grantDialogDivision] : query.divisions,
-    //   idx: 0,
-    // }));
   };
 
   const handleClose = () => {
@@ -107,7 +79,7 @@ const GrantsDialog = () => {
 
   return (
     <>
-      <Dialog
+      <TopAlignedDialog
         fullWidth={true}
         maxWidth='xl'
         open={!!dialog.grantDialogOpen}
@@ -134,10 +106,7 @@ const GrantsDialog = () => {
             </GrantColumn>
           ))}
         </GrantListHeader>
-        <Collapse in={firstOpen !== 1 || count > 0}>
-          <GrantsTable widthRef={widthRef} />
-        </Collapse>
-        {loading && <ProgressBar />}
+        <GrantsTable widthRef={widthRef} />
         <DialogActions>
           <Button component='a' href={url}>
             Download
@@ -146,7 +115,7 @@ const GrantsDialog = () => {
             Dismiss
           </Button>
         </DialogActions>
-      </Dialog>
+      </TopAlignedDialog>
       <AbstractDialog />
     </>
   );

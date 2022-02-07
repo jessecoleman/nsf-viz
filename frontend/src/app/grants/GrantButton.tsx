@@ -6,7 +6,6 @@ const GrantButton = () => {
   const [ , setDialogQuery ] = useGrantsDialogQuery();
 
   const handleOpen = () => {
-    // clearGrants();
     setDialogQuery({ grantDialogOpen: true });
   };
 

@@ -1,4 +1,4 @@
-import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParams, withDefault } from 'use-query-params';
+import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParam, useQueryParams, withDefault } from 'use-query-params';
 import { SortableKeys } from 'app/sort';
 
 export type Organization = 'nsf' | 'nih';
@@ -60,7 +60,6 @@ const grantParamConfig = {
   'grantDialogDivision': StringParam,
   'grantSort': DefaultStringParam,
   'grantDirection': SortDirectionParam,
-  'grantId': DefaultStringParam,
 };
 
 export const useSearchQuery = () => (
@@ -69,6 +68,10 @@ export const useSearchQuery = () => (
 
 export const useGrantsDialogQuery = () => (
   useQueryParams(grantParamConfig)
+);
+
+export const useGrantIdQuery = () => (
+  useQueryParam('grantId', DefaultStringParam)
 );
 
 export const useQuery = () => (

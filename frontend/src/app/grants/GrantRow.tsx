@@ -1,9 +1,9 @@
-import { CSSProperties, useMemo } from 'react';
-import { alpha, styled } from '@material-ui/core';
+import { CSSProperties } from 'react';
+import { alpha, styled, Typography } from '@material-ui/core';
 import { Grant } from 'api';
 import { timeFormat, timeParse, format } from 'd3';
-import { useGrantsDialogQuery } from 'app/query';
-import { useInfiniteLoadGrants } from './useInfiniteLoadGrants';
+import { useGrantIdQuery } from 'app/query';
+import { useGrant } from './useInfiniteLoadGrants';
 
 type Column = {
   id: keyof Grant
@@ -33,6 +33,15 @@ export const GrantListItem = styled('div')(({ theme }) => `
   }
 `);
 
+export const EndOfListItem = styled('div')(({ theme }) => `
+  padding-left: ${theme.spacing(3)};
+  padding-right: ${theme.spacing(1)};
+  // border-bottom: 1px solid ${theme.palette.grey[300]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`);
+
 type ColumnStyles = {
   column: string
 };
@@ -56,20 +65,19 @@ const GrantRow = (props: GrantRowProps) => {
 
   const { index, style } = props;
 
-  const [ , setDialog ] = useGrantsDialogQuery();
-  const { data, isFetching } = useInfiniteLoadGrants();
-  const grant = useMemo(() => {
-    if (data?.pages) {
-      return data.pages[Math.floor(index / 50)][index % 50];
-    } else {
-      return undefined;
-    }
-  }, [data, isFetching]);
+  const [ , setGrantId ] = useGrantIdQuery();
+  const grant = useGrant(index);
   
-  if (grant === undefined) return null;
+  if (grant === undefined) return (
+    <EndOfListItem style={style}>
+      <Typography color='grey'>
+        {index} grants loaded
+      </Typography>
+    </EndOfListItem>
+  );
 
   const setSelectedGrant = () => {
-    setDialog({ grantId: grant.id });
+    setGrantId(grant.id);
   };
 
   return (

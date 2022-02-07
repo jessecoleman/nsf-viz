@@ -3,7 +3,6 @@ import { useGrantsDialogQuery, useQuery } from 'app/query';
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
 import { useEffect, useRef, useState } from 'react';
-import { useInfiniteLoadGrants } from '../grants/useInfiniteLoadGrants';
 import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { colorScales } from 'theme';
@@ -65,7 +64,6 @@ const Chart = (props: ChartProps) => {
   const visRef = useRef<HTMLDivElement>(null);
   const [ query, setQuery ] = useQuery();
   const [ , setDialogQuery ] = useGrantsDialogQuery();
-  const { clearGrants } = useInfiniteLoadGrants();
 
   // TODO reimplement this?
   // const { counts, amounts } = useAppSelector(getLegendFilters);
@@ -164,7 +162,6 @@ const Chart = (props: ChartProps) => {
   };
 
   const handleBarClick = (key: string, year: number) => {
-    clearGrants();
     setDialogQuery({
       grantDialogOpen: true,
       grantDialogYear: year,

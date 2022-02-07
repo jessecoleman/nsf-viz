@@ -79,7 +79,7 @@ const TermsFilter = () => {
 
   const { data: counts } = useLoadTermCounts({ org, terms }, {
     query: {
-      // enabled: terms.length,
+      enabled: terms.length > 0,
       select: ({ data }) => data
     }
   });

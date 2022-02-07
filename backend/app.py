@@ -307,9 +307,8 @@ async def grant_download(
         raise HTTPException(404, detail='index out of bounds')
         
 
-@app.get('/abstract/{_id}/')
-@app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract', response_model=str)
-async def get_abstract(_id, terms=""):
+@app.get('/abstract/{_id}', operation_id='loadAbstract', response_model=Grant)
+async def get_abstract(_id, terms: List[str] = Query([])):
     logger.debug(f"terms: {terms}")
     return await Q.abstract(aioes, _id, terms)
 

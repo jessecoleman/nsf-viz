@@ -52,8 +52,16 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
   const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
   const [{ terms }] = useQuery();
   // TODO add debounce
-  const { data: typeahead } = useLoadTypeahead(props.value);
-  const { data: related } = useLoadRelated({ terms });
+  const { data: typeahead } = useLoadTypeahead(props.value, {
+    query: {
+      enabled: props.value.length > 0
+    }
+  });
+  const { data: related } = useLoadRelated({ terms }, {
+    query: {
+      enabled: terms.length > 0
+    }
+  });
 
   const handleFocus = (e: FocusEvent) => {
     setFocused(true);

@@ -5,7 +5,7 @@ import { useMeasure } from 'app/hooks';
 import { useQuery } from 'app/query';
 import { colorScales } from '../../theme';
 import { Flipper, Flipped } from 'react-flip-toolkit';
-import { useLoadDivisions, useSearch } from 'api';
+import { useLoadDirectory, useSearch } from 'api';
 import { stableSort } from 'app/sort';
 
 export type TooltipProps = {
@@ -34,13 +34,16 @@ const ChartTooltip = (props: TooltipProps) => {
       )
     }
   });
-  const { data: divMap } = useLoadDivisions(query.org, {
+  const { data: divMap } = useLoadDirectory(query.org, {
     query: {
-      select: ({ data }) => Object.fromEntries(data.map(div => [div.key, div.name]))
+      select: ({ data }) => Object.fromEntries(
+        data.flatMap(dir => [[dir.abbr, dir.name]].concat(
+          (dir?.departments ?? []).map(div => [div.abbr, div.name]))
+        )
+      )
     }
   });
   const legendFilter = { counts: true, amounts: true };
-  // const divMap = useAppSelector(state => getDivisionsMap(state, query));
   const totals: CellData[] = [
     { name: 'count', value: 0 },
     { name: 'amount', value: 0 },

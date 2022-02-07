@@ -1,11 +1,15 @@
-import { useRef, useEffect, RefObject } from 'react';
+import { RefObject } from 'react';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
 import { useWindowDimensions } from 'app/hooks';
-import { useGrantsDialogQuery, useQuery } from 'app/query';
 import GrantRow from './GrantRow';
 import { useInfiniteLoadGrants } from './useInfiniteLoadGrants';
+import { Collapse, LinearProgress, styled } from '@material-ui/core';
+
+const ProgressBar = styled(LinearProgress)`
+  margin-bottom: -4px;
+`;
 
 type GrantsTableProps = {
   widthRef: RefObject<HTMLDivElement>
@@ -13,43 +17,48 @@ type GrantsTableProps = {
 
 const GrantsTable = (props: GrantsTableProps) => {
 
-  const [ dialog ] = useGrantsDialogQuery();
   const [ , height ] = useWindowDimensions();
-  const hasMountedRef = useRef(false);
-  const grantsRef = useRef<InfiniteLoader>(null);
+  const { loaderRef, count, hasNextPage, isFetching, isFetchingNextPage, isFetchedAfterMount, fetchNextPage } = useInfiniteLoadGrants();
+  console.log({ count, hasNextPage, isFetching, isFetchingNextPage });
 
-  const { count, noMore, fetchNextPage } = useInfiniteLoadGrants();
+  const isLoaded = (idx: number) => !hasNextPage || idx < count;
+  const itemSize = 64;
 
-  // clear grants when sort direction changes
-  useEffect(() => {
-    if (hasMountedRef.current && grantsRef.current) {
-      grantsRef.current.resetloadMoreItemsCache();
+  const handleLoadGrants = (idx: number) => {
+    if (!isFetchingNextPage) {
+      console.log('fetching!!!!!!', idx);
+      return fetchNextPage({ pageParam: idx });
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      return new Promise(() => {});
     }
-    hasMountedRef.current = true;
-  }, [ dialog.grantSort, dialog.grantDirection, hasMountedRef.current ]);
-
-  const isLoaded = (idx: number) => noMore || idx < count;
+  };
 
   return (
-    <InfiniteLoader
-      ref={grantsRef}
-      isItemLoaded={isLoaded}
-      itemCount={noMore ? count : count + 1}
-      loadMoreItems={() => fetchNextPage()}
-    >
-      {({ onItemsRendered, ref }) => (
-        <FixedSizeList
-          onItemsRendered={onItemsRendered}
-          height={height - 256}
-          width='100%'
-          itemSize={64}
-          itemCount={count}
-          ref={ref}
+    <>
+      <Collapse in={count > 0 && isFetchedAfterMount}>
+        <InfiniteLoader
+          ref={loaderRef}
+          isItemLoaded={isLoaded}
+          itemCount={hasNextPage ? count + 1 : count}
+          loadMoreItems={handleLoadGrants}
         >
-          {GrantRow}
-        </FixedSizeList>
-      )}
-    </InfiniteLoader>
+          {({ onItemsRendered, ref }) => (
+            <FixedSizeList
+              onItemsRendered={onItemsRendered}
+              height={Math.min(itemSize * (count + 1), height - 256)}
+              width='100%'
+              itemSize={itemSize}
+              itemCount={hasNextPage ? count : count + 1}
+              ref={ref}
+            >
+              {GrantRow}
+            </FixedSizeList>
+          )}
+        </InfiniteLoader>
+      </Collapse>
+      {isFetching && hasNextPage && <ProgressBar />}
+    </>
   );
 };
 

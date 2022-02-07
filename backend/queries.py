@@ -401,7 +401,7 @@ async def abstract(aioes, _id: str, terms: str):
                                         }
                                     }
                                 }
-                            for term in terms.split(',')]
+                            for term in terms]
                         },
                     }
                 }
@@ -416,9 +416,14 @@ async def abstract(aioes, _id: str, terms: str):
         highlight = hit['highlight']['abstract'][0]
         # this is an unfortunate limitation of ES highlight that requires merging
         # adjacent <em> spans manually
-        return re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
-    else:
-        return hit['_source']['abstract']
+        hit['_source']['abstract'] = re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
+
+    # return hit['_source']['abstract']
+    return Grant(
+        id=hit['_id'],
+        score=hit['_score'],
+        **hit['_source'],
+    )
 
  
 async def typeahead(aioes, prefix: str):
