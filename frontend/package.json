@@ -20,6 +20,7 @@
         "@types/redux-logger": "^3.0.9",
         "autosuggest-highlight": "^3.1.1",
         "awesome-debounce-promise": "^2.1.0",
+        "axios": "^0.25.0",
         "classnames": "^2.2.6",
         "d3": "7.0.1",
         "history": "^4.9.0",
@@ -45,7 +46,8 @@
     "scripts": {
         "start": "react-scripts start",
         "build": "react-scripts build",
-        "generateAndStart": "node ./scripts/generateAPI.mjs && yarn start",
+        "generate": "orval --config ../orval.config.js",
+        "generateAndStart": "orval --config ../orval.config.js && yarn start",
         "test": "react-scripts test",
         "eject": "react-scripts eject",
         "lint": "eslint . --ext .ts,.tsx"
@@ -73,6 +75,6 @@
         "eslint": "^7.32.0",
         "eslint-plugin-react": "^7.24.0",
         "node-fetch": "^2.6.1",
-        "openapi-typescript-codegen": "^0.18.1"
+        "orval": "^6.6.0"
     }
 }
