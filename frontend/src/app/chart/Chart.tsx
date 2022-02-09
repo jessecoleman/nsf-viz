@@ -118,7 +118,6 @@ const Chart = (props: ChartProps) => {
   // update data on filter changes
   useEffect(() => {
     if (data && vis) {
-      console.log(query.sort);
       if (isAgg(query.sort)) {
         vis.update(data.chartData, data.divDomain, query.sort);
       } else {

@@ -105,7 +105,6 @@ const DirectoryTree = () => {
   
   const handleExpandAll = () => {
     const roots = Object.keys(divisionTree).filter(key => divisionAggs?.find(div => div.key === key));
-    console.log(expanded, roots);
     if (expanded.length < roots.length) {
       setExpanded(roots);
     } else {
@@ -165,12 +164,6 @@ const DirectoryTree = () => {
   const isExpanded = (key: string) => expanded.includes(key);
   const isExpandedOrFiltered = (key: string) => isExpanded(key) || (divisionFilter && isDirFiltered(key));
   
-  console.log(divisionAggs?.[0].divisions
-    ?.filter(div2 => (
-      isFiltered(div2.key) 
-                        && divisionMap[div2.key]
-                        && divisionAggs?.[0].divisions.length > 1)));
-
   return (
     <Box
       display='flex'
