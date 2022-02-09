@@ -70,6 +70,7 @@ export const useInfiniteLoadGrants = () => {
 };
 
 export const useGrant = (index: number) => {
+  // TODO figure out how to load on first render
   const data = queryClient.getQueryData('grants') as { pages: Grant[][] };
   const page = data?.pages[Math.floor(index / 50)];
   return useMemo(() => (

@@ -44,11 +44,19 @@ class DivisionAggregate(BaseModel):
     key: str
     count: int
     amount: int
+    
 
+class DirectoryAggregate(BaseModel):
+    key: str
+    count: int
+    amount: int
+    divisions: List[DivisionAggregate]
+ 
 
 class YearDivisionAggregate(BaseModel):
     key: int
     count: int
+    amount: int
     divisions: List[DivisionAggregate]
    
 
@@ -63,9 +71,9 @@ class SearchRequest(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    per_year: List[YearDivisionAggregate]
-    overall: List[DivisionAggregate]
-    per_directory: List[DivisionAggregate]
+    bars: List[YearDivisionAggregate]
+    #timeline: List[DivisionAggregate]
+    divisions: List[DirectoryAggregate]
 
 
 class YearsResponse(BaseModel):

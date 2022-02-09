@@ -19,7 +19,7 @@ const ResponsiveContainer = styled('div')(({ theme }) => `
 
 const App = () => {
 
-  const [ navbarRef, dims ] = useMeasureChart<HTMLDivElement>();
+  const [ navbarRef, footerRef, dims ] = useMeasureChart<HTMLDivElement>();
 
   return (
     <Box
@@ -30,7 +30,7 @@ const App = () => {
       <ResponsiveContainer>
         <NavigationBar ref={navbarRef} />
         <Chart {...dims} />
-        <Footer />
+        <Footer ref={footerRef} />
         <Actions />
       </ResponsiveContainer>
       <GrantsDialog />

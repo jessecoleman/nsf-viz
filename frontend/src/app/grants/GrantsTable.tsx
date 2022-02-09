@@ -19,20 +19,16 @@ const GrantsTable = (props: GrantsTableProps) => {
 
   const [ , height ] = useWindowDimensions();
   const { loaderRef, count, hasNextPage, isFetching, isFetchingNextPage, isFetchedAfterMount, fetchNextPage } = useInfiniteLoadGrants();
-  console.log({ count, hasNextPage, isFetching, isFetchingNextPage });
 
-  const isLoaded = (idx: number) => !hasNextPage || idx < count;
-  const itemSize = 64;
+  const isLoaded = (idx: number) => !hasNextPage || (!isFetching && idx < count);
+  const ITEM_SIZE = 64;
 
-  const handleLoadGrants = (idx: number) => {
-    if (!isFetchingNextPage) {
-      console.log('fetching!!!!!!', idx);
-      return fetchNextPage({ pageParam: idx });
-    } else {
+  const handleLoadGrants = (idx: number) => (
+    !isFetchingNextPage
+      ? fetchNextPage({ pageParam: idx })
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      return new Promise(() => {});
-    }
-  };
+      : new Promise(() => {})
+  );
 
   return (
     <>
@@ -46,9 +42,9 @@ const GrantsTable = (props: GrantsTableProps) => {
           {({ onItemsRendered, ref }) => (
             <FixedSizeList
               onItemsRendered={onItemsRendered}
-              height={Math.min(itemSize * (count + 1), height - 256)}
+              height={Math.min(ITEM_SIZE * (count + 1), height - 256)}
               width='100%'
-              itemSize={itemSize}
+              itemSize={ITEM_SIZE}
               itemCount={hasNextPage ? count : count + 1}
               ref={ref}
             >

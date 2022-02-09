@@ -129,27 +129,21 @@ async def divisions(org: str):
 @app.get('/search', operation_id='search', response_model=SearchResponse)
 async def search(
     org: str,
-    sort: str,
-    direction: str,
     start: Optional[int] = None,
     end: Optional[int] = None,
     terms: List[str] = Query(None),
-    divisions: List[str] = Query(None),
     match: Optional[List[str]] = Query(None),
     intersection: Optional[bool] = False,
 ):
 
     return await Q.division_aggregates(
         aioes,
-        sort=sort,
-        direction=direction,
-        divisions=divisions,
-        intersection=intersection,
+        org=org,
         terms=terms,
         start=start,
         end=end,
         match=match,
-        org=org,
+        intersection=intersection,
     )
 
 

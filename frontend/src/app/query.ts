@@ -13,6 +13,11 @@ export const ArrayParam = withDefault(
   [],
 ) as QueryParamConfig<string[]>;
 
+export const DivisionsArrayParam = withDefault(
+  DelimitedArrayParam,
+  undefined,
+) as QueryParamConfig<string[] | undefined>;
+
 export const DefaultStringParam = withDefault(
   StringParam,
   undefined
@@ -80,5 +85,23 @@ export const useQuery = () => (
     'divisions': ArrayParam,
   })
 );
+
+export const useSortQuery = () => (
+  useQueryParams({
+    'sort': SortParam,
+    'direction': SortDirectionParam,
+  })
+);
+
+export const useDivisionsQuery = () => {
+  return useQueryParam('divisions', DivisionsArrayParam);
+  // const [ divisions, setDivisions ] = useQueryParam('divisions', DelimitedArrayParam);
+  // const { divisionMap } = useDirectory();
+  // if (divisions && divisions.every(d => d)) {
+  //   return [ new Set(divisions as string[]), setDivisions ];
+  // } else {
+  //   return [ new Set(Object.keys(divisionMap)), setDivisions ];
+  // }
+};
 
 export type QueryParams = ReturnType<typeof useQuery>[0];

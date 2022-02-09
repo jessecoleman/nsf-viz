@@ -1,4 +1,4 @@
-import { useGrantsDialogQuery, useQuery } from 'app/query';
+import { useDivisionsQuery, useGrantsDialogQuery, useSearchQuery } from 'app/query';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
@@ -7,7 +7,7 @@ import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { colorScales } from 'theme';
 import { useSearch } from 'api';
-import { isAgg, stableSort } from 'app/sort';
+import { isAgg } from 'app/sort';
 import { useYears } from 'api';
 
 let vis: BarChart;
@@ -40,8 +40,8 @@ const ChartContainer = styled.div(({ theme }) => `
   }
   #legend {
     position: absolute;
-    left: 75px;
-    top: 25px;
+    left: 96px;
+    top: 32px;
   }
   #tooltip {
     pointer-events: none;
@@ -62,7 +62,8 @@ type ChartProps = {
 const Chart = (props: ChartProps) => {
 
   const visRef = useRef<HTMLDivElement>(null);
-  const [ query, setQuery ] = useQuery();
+  const [ divisions ] = useDivisionsQuery();
+  const [ query, setQuery ] = useSearchQuery();
   const [ , setDialogQuery ] = useGrantsDialogQuery();
 
   // TODO reimplement this?
@@ -70,13 +71,15 @@ const Chart = (props: ChartProps) => {
   const { data } = useSearch(query, {
     query: {
       select: ({ data }) => ({
-        chartData: data.per_year.map(({ key, divisions }) => ({
+        chartData: data.bars.map(({ key, divisions }) => ({
           year: key,
-          aggs: Object.fromEntries(stableSort(divisions, query.sort, query.direction)
-            .map(({ key, ...aggs }) => [ key, aggs ])
-          )
+          aggs: Object.fromEntries(divisions.map(({ key, ...aggs }) => [ key, aggs ]))
         })),
-        divDomain: data.overall.map(d => d.key).filter(key => query.divisions.includes(key))
+        divDomain: data.divisions
+          .flatMap(d => d.divisions)
+          .sort((a, b) => (a[query.sort] - b[query.sort]) * (query.direction === 'asc' ? 1 : -1))
+          .map(d => d.key)
+          .filter(key => divisions == undefined || divisions.includes(key))
       }),
     }
   });
