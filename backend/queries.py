@@ -35,8 +35,8 @@ div_map = {d['name']: d['key'] for d in divisions}
 inv_div_map = {d['key']: d['name'] for d in divisions}
 
 
-# def convert(bucket, keys=['key1', 'key2']):
 def convert(bucket, keys=['cat1']):
+    # convert year bucket
     if 'key_as_string' in bucket:
         bucket['key'] = int(bucket.pop('key_as_string'))
             
@@ -149,7 +149,7 @@ def term_agg(agg_field: str, aggs: Dict[str, Any]):
         agg_field: {
             'terms': {
                 'field': agg_field,
-                'min_doc_count': 0,
+                # 'min_doc_count': 0,
                 'size': 100, # TODO: number of divisions
             },
             'aggs': aggs
@@ -206,13 +206,10 @@ def grants_sort(sort: str, order: str):
 async def division_aggregates(
         aioes: Elasticsearch,
         org: str,
-        sort: str,
-        direction: str,
         intersection: bool,
         start: Optional[int],
         end: Optional[int],
         match: Optional[List[str]],
-        divisions: List[str],
         terms: List[str] = None,
     ):
     
@@ -227,24 +224,18 @@ async def division_aggregates(
                 'must': [
                     terms_multi_match(terms, match, must_or_should),
                     org_match(org),
-                    # TODO should this be filtered client side?
-                    # divisions_match(divisions),
                 ]
             }
         },
         'aggs': {
-            **term_agg('cat1', grant_amount_agg),
-            **term_agg('cat2', grant_amount_agg), #term_agg('cat1', grant_amount_agg)),
-            **year_histogram({
+            **term_agg('cat2', {
+                **grant_amount_agg,
                 **term_agg('cat1', grant_amount_agg),
-            }),
+            }),   
+            **year_histogram(
+                term_agg('cat1', grant_amount_agg),
+            ),
         },
-        # TODO
-        # 'sort': [
-        #     {
-        #         sort: { 'order': direction }
-        #     }
-        # ]
     }
     
     if start is not None or end is not None:
@@ -264,18 +255,10 @@ async def division_aggregates(
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
     per_directory_buckets = hits['aggregations']['cat2']['buckets']
-    # TODO better way to merge these
-    # overall_buckets = hits['aggregations']['key1']['buckets']
-    # overall_buckets2 = hits['aggregations']['key2']['buckets']
-    overall_buckets = hits['aggregations']['cat1']['buckets']
-    # print(json.dumps(query, indent=2))
-    # print(json.dumps(per_directory_buckets, indent=2))
 
     return SearchResponse(
-        per_year=[convert(bucket) for bucket in per_year_buckets],
-        per_directory=[convert(bucket) for bucket in per_directory_buckets],
-        #overall=[convert(bucket) for bucket in overall_buckets2 + overall_buckets],
-        overall=[convert(bucket) for bucket in overall_buckets],
+        bars=[convert(bucket) for bucket in per_year_buckets],
+        divisions=[convert(bucket) for bucket in per_directory_buckets],
     )
  
 
