@@ -6,7 +6,6 @@ module.exports = {
         output: {
             target: './frontend/src/api.ts',
             client: 'react-query',
-            baseURL: 'http://localhost:8888'
         },
     }
 };
