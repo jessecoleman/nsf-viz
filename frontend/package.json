@@ -75,6 +75,6 @@
         "eslint": "^7.32.0",
         "eslint-plugin-react": "^7.24.0",
         "node-fetch": "^2.6.1",
-        "orval": "^6.6.0"
+        "orval": "6.5"
     }
 }
