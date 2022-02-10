@@ -24,7 +24,7 @@ const GrantsTable = (props: GrantsTableProps) => {
   const ITEM_SIZE = 64;
 
   const handleLoadGrants = async (idx: number) => {
-    if (isFetchingNextPage) {
+    if (!isFetchingNextPage) {
       await fetchNextPage({ pageParam: idx });
     }
   };
