@@ -35,7 +35,7 @@ export const DefaultBooleanParam = withDefault(
 
 const SortParam = withDefault(
   StringParam,
-  'name',
+  'count',
 ) as QueryParamConfig<SortableKeys>;
 
 const SortDirectionParam = withDefault(
