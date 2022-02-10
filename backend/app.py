@@ -175,12 +175,10 @@ async def typeahead(prefix: str):
 @app.get('/keywords/related', operation_id='loadRelated', response_model=List[str])
 def related(terms: List[str] = Query(None)):
 
-    terms = []
-    for term in terms:
-        # convert to ngram representation
-        term = term.lower().replace(' ', '_')
-        if word_vecs.key_to_index.get(term, False):
-            terms.append(term)
+    terms = [
+        term.lower().replace(' ', '_') for term in terms 
+        if word_vecs.key_to_index.get(term, False)
+    ]
 
     if len(terms) > 0:
         # convert back
