@@ -1,5 +1,7 @@
-import { IconButton, styled } from '@material-ui/core';
-import { useDrawer } from 'app/hooks';
+import { Icon, IconButton, styled } from '@material-ui/core';
+import { BarChart } from '@mui/icons-material';
+import { BooleanParam, useQueryParam } from 'use-query-params';
+import filter from '../images/filter-divisions.svg';
 
 
 const ResponsiveButton = styled(IconButton)(({ theme }) => `
@@ -8,13 +10,16 @@ const ResponsiveButton = styled(IconButton)(({ theme }) => `
   }
 `);
         
-const DrawerToggle = (props: { children: JSX.Element }) => {
+const DrawerToggle = () => {
 
-  const [ , handleToggle ] = useDrawer();
+  const [ drawerOpen, setDrawerOpen ] = useQueryParam('drawer', BooleanParam);
   
   return (
-    <ResponsiveButton onClick={handleToggle}>
-      {props.children}
+    <ResponsiveButton onClick={() => setDrawerOpen(!drawerOpen)}>
+      {drawerOpen 
+        ? <BarChart />
+        : <Icon color='inherit'><img src={filter} /></Icon>
+      }     
     </ResponsiveButton>
   );
 };

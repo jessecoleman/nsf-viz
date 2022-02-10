@@ -1,21 +1,7 @@
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAsync } from 'react-async-hook';
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
-import { useAppDispatch, useAppSelector } from './store';
-import { isDrawerOpen } from './selectors';
-import { toggleDrawerOpen } from './filterReducer';
 import { useQuery } from './query';
-
-export const useDrawer = (): [ boolean, () => void ] => {
-  const dispatch = useAppDispatch();
-  const drawerOpen = useAppSelector(isDrawerOpen);
-  
-  const handleToggle = () => {
-    dispatch(toggleDrawerOpen(!drawerOpen));
-  };
- 
-  return [ drawerOpen, handleToggle ];
-};
 
 export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] => {
   
@@ -40,26 +26,29 @@ type Dims = {
   height: number
 }
 
-export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, Dims ] => {
+export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObject<T>, Dims ] => {
   
-  const ref = useRef<T>(null);
+  const topRef = useRef<T>(null);
+  const bottomRef = useRef<T>(null);
   const [ dims, setBox ] = useState({ width: 0, height: 0 });
   const [ windowWidth, windowHeight ] = useWindowDimensions();
+  // resize when terms change since they change height of toolbar
   const [{ terms }] = useQuery();
 
   useEffect(() => {
-    if (ref.current) {
-      const bbox = ref.current.getBoundingClientRect();
-      if (parent && bbox.height) {
+    if (topRef.current && bottomRef.current) {
+      const bbox = topRef.current.getBoundingClientRect();
+      const bottom = topRef.current.getBoundingClientRect();
+      if (parent && bbox.height && bottom.height) {
         setBox({
           width: bbox.width,
-          height: windowHeight - bbox.height,
+          height: windowHeight - bbox.height - bottom.height,
         });
       }
     }
-  }, [ref.current, windowWidth, windowHeight, JSON.stringify(terms)]);
+  }, [topRef.current, windowWidth, windowHeight, JSON.stringify(terms)]);
  
-  return [ ref, dims ];
+  return [ topRef, bottomRef, dims ];
 };
 
 type ResultBox<T> = { v: T }

@@ -1,13 +1,15 @@
-import { useRef, useEffect, RefObject } from 'react';
+import { RefObject } from 'react';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
-import { useAppDispatch, useAppSelector } from 'app/store';
-import { getNumGrants, loadingGrants, noMoreGrants } from 'app/selectors';
 import { useWindowDimensions } from 'app/hooks';
-import { useQuery } from 'app/query';
-import { loadGrants } from 'app/actions';
 import GrantRow from './GrantRow';
+import { useInfiniteLoadGrants } from './useInfiniteLoadGrants';
+import { Collapse, LinearProgress, styled } from '@material-ui/core';
+
+const ProgressBar = styled(LinearProgress)`
+  margin-bottom: -4px;
+`;
 
 type GrantsTableProps = {
   widthRef: RefObject<HTMLDivElement>
@@ -15,61 +17,43 @@ type GrantsTableProps = {
 
 const GrantsTable = (props: GrantsTableProps) => {
 
-  const dispatch = useAppDispatch();
-  const [ query ] = useQuery();
   const [ , height ] = useWindowDimensions();
-  const hasMountedRef = useRef(false);
-  const grantsRef = useRef<InfiniteLoader>(null);
-  console.log(grantsRef);
-  const numGrants = useAppSelector(getNumGrants);
-  const loading = useAppSelector(loadingGrants);
-  const noMore = useAppSelector(noMoreGrants);
-  
-  // clear grants when sort direction changes
-  useEffect(() => {
-    if (hasMountedRef.current && grantsRef.current) {
-      grantsRef.current.resetloadMoreItemsCache();
-    }
-    hasMountedRef.current = true;
-  }, [ query.grantSort, query.grantDirection, hasMountedRef.current ]);
+  const { loaderRef, count, hasNextPage, isFetching, isFetchingNextPage, isFetchedAfterMount, fetchNextPage } = useInfiniteLoadGrants();
+
+  const isLoaded = (idx: number) => !hasNextPage || (!isFetching && idx < count);
+  const ITEM_SIZE = 64;
 
   const handleLoadGrants = async (idx: number) => {
-    if (!loading) {
-      await dispatch(loadGrants({
-        ...query,
-        order: query.direction,
-        order_by: (query.grantSort === 'title' || !query.grantSort) ? 'title.raw' : query.grantSort,
-        start: query.grantDialogYear ?? query.start,
-        end: query.grantDialogYear ?? query.end,
-        divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
-        idx
-      }));
+    if (!isFetchingNextPage) {
+      await fetchNextPage({ pageParam: idx });
     }
   };
 
-  const count = noMore ? numGrants : numGrants + 1;
-  const isLoaded = (idx: number) => noMore || idx < numGrants;
-
   return (
-    <InfiniteLoader
-      ref={grantsRef}
-      isItemLoaded={isLoaded}
-      itemCount={count}
-      loadMoreItems={handleLoadGrants}
-    >
-      {({ onItemsRendered, ref }) => (
-        <FixedSizeList
-          onItemsRendered={onItemsRendered}
-          height={height - 256}
-          width='100%'
-          itemSize={64}
-          itemCount={count}
-          ref={ref}
+    <>
+      <Collapse in={count > 0 && isFetchedAfterMount}>
+        <InfiniteLoader
+          ref={loaderRef}
+          isItemLoaded={isLoaded}
+          itemCount={hasNextPage ? count + 1 : count}
+          loadMoreItems={handleLoadGrants}
         >
-          {GrantRow}
-        </FixedSizeList>
-      )}
-    </InfiniteLoader>
+          {({ onItemsRendered, ref }) => (
+            <FixedSizeList
+              onItemsRendered={onItemsRendered}
+              height={Math.min(ITEM_SIZE * (count + 1), height - 256)}
+              width='100%'
+              itemSize={ITEM_SIZE}
+              itemCount={hasNextPage ? count : count + 1}
+              ref={ref}
+            >
+              {GrantRow}
+            </FixedSizeList>
+          )}
+        </InfiniteLoader>
+      </Collapse>
+      {isFetching && hasNextPage && <ProgressBar />}
+    </>
   );
 };
 

@@ -1,11 +1,9 @@
 import { CSSProperties } from 'react';
-import { loadAbstract } from 'app/actions';
-import { alpha, styled } from '@material-ui/core';
-import { useAppDispatch, useAppSelector } from 'app/store';
-import { getGrant } from 'app/selectors';
-import { Grant } from 'api/models/Grant';
+import { alpha, styled, Typography } from '@material-ui/core';
+import { Grant } from 'api';
 import { timeFormat, timeParse, format } from 'd3';
-import { useQuery } from 'app/query';
+import { useGrantIdQuery } from 'app/query';
+import { useGrant } from './useInfiniteLoadGrants';
 
 type Column = {
   id: keyof Grant
@@ -35,6 +33,15 @@ export const GrantListItem = styled('div')(({ theme }) => `
   }
 `);
 
+export const EndOfListItem = styled('div')(({ theme }) => `
+  padding-left: ${theme.spacing(3)};
+  padding-right: ${theme.spacing(1)};
+  // border-bottom: 1px solid ${theme.palette.grey[300]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`);
+
 type ColumnStyles = {
   column: string
 };
@@ -58,17 +65,19 @@ const GrantRow = (props: GrantRowProps) => {
 
   const { index, style } = props;
 
-  const [{ terms }] = useQuery();
-  const dispatch = useAppDispatch();
-  const grant = useAppSelector(state => getGrant(state, index));
-
-  if (!grant) return null;
+  const [ , setGrantId ] = useGrantIdQuery();
+  const grant = useGrant(index);
+  
+  if (grant === undefined) return (
+    <EndOfListItem style={style}>
+      <Typography color='grey'>
+        {index} grants loaded
+      </Typography>
+    </EndOfListItem>
+  );
 
   const setSelectedGrant = () => {
-    dispatch(loadAbstract({
-      id: grant.id,
-      terms: terms ?? [],
-    }));
+    setGrantId(grant.id);
   };
 
   return (

@@ -1,10 +1,18 @@
-import { Link, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@material-ui/core';
+import { Link, SpeedDial, SpeedDialAction, SpeedDialIcon, styled } from '@material-ui/core';
 import { GitHub, GridOn, InsertDriveFile } from '@mui/icons-material';
 import useGrantsDownload from 'app/grants/grantsDownload';
 
+const StyledAction = styled(SpeedDialAction)`
+  & .MuiLink-root {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
 const Actions = () => {
 
-  const handleDownloadGrants = useGrantsDownload();
+  const grantsUrl = useGrantsDownload();
 
   const actions = [
     // {
@@ -15,7 +23,7 @@ const Actions = () => {
     {
       name: 'Download Grant Data',
       icon: <InsertDriveFile />,
-      onClick: handleDownloadGrants,
+      href: grantsUrl
     },
     {
       name: 'View Source',
@@ -31,11 +39,10 @@ const Actions = () => {
       icon={<SpeedDialIcon />}
     >
       {actions.map((action) => (
-        <SpeedDialAction
+        <StyledAction
           key={action.name}
           icon={<Link href={action.href}>{action.icon}</Link>}
           tooltipTitle={action.name}
-          onClick={action.onClick}
         />
       ))}
     </SpeedDial>

@@ -1,5 +1,5 @@
-import { MouseEvent, ChangeEvent, useEffect, useState } from 'react';
-import { Flipper, Flipped } from 'react-flip-toolkit';
+import { MouseEvent, ChangeEvent } from 'react';
+import { Flipper } from 'react-flip-toolkit';
 import { styled } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles';
 
@@ -14,18 +14,13 @@ import {
   HighlightOff,
 } from '@mui/icons-material';
 
-import {
-  loadRelated,
-  loadTermCounts,
-  loadTypeahead,
-} from 'app/actions';
-import { useAppDispatch } from 'app/store';
 import { useDebouncedSearch } from 'app/hooks';
-import { ArrayParam } from 'app/query';
+import { ArrayParam, useQuery } from 'app/query';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
-import { clearTypeahead } from 'app/dataReducer';
+// import { clearTypeahead } from 'app/dataReducer';
 import { useQueryParam } from 'use-query-params';
+import { useLoadTermCounts } from 'api';
 
 const SearchContainer = styled('div')(({ theme }) => `
   min-width: 25em;
@@ -74,23 +69,20 @@ const exitThenFlipThenEnter = ({
 
 const TermsFilter = () => {
 
-  const dispatch = useAppDispatch();
   const { input, setInput, results } = useDebouncedSearch(input => (
-    dispatch(loadTypeahead(input))
+    console.log(input)
   ), 300);
 
   const [ terms, setTerms ] = useQueryParam('terms', ArrayParam);
+  const [{ org }] = useQuery();
   const selected = terms.find(term => term.match('~'));
-  const [ termCounts, setTermCounts ] = useState<number[]>([]);
 
-  useEffect(() => {
-    dispatch(loadRelated(terms));
-    dispatch(loadTermCounts(terms)).then(({ type, payload }) => {
-      if (type.endsWith('fulfilled')) {
-        setTermCounts(payload);
-      }
-    });
-  }, [JSON.stringify(terms)]);
+  const { data: counts } = useLoadTermCounts({ org, terms }, {
+    query: {
+      enabled: terms.length > 0,
+      select: ({ data }) => data
+    }
+  });
 
   const handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -113,16 +105,12 @@ const TermsFilter = () => {
     setTerms(terms.concat(chips));
   };
 
-  const handleDeleteChip = (idx: number) => () => {
-    const chip = terms[idx];
-    if (!chip) {
-      return;
-    }
-    setTerms(terms.filter(t => t !== chip));
+  const handleDeleteChip = (term: string) => () => {
+    setTerms(terms.filter(t => t !== term));
   };
   
   const handleClearInput = () => {
-    dispatch(clearTypeahead());
+    // dispatch(clearTypeahead());
   };
  
   const handleClearTerms = () => {
@@ -143,21 +131,21 @@ const TermsFilter = () => {
           <Search />
         </SearchIcon>
         <ChipContainer>
-          {terms.map((term, idx) => (
+          {terms.map(term => (
             <TermChip
               key={term}
               term={term.replaceAll('~', '')}
-              count={termCounts[idx]}
+              count={counts?.[term]}
               selected={term === selected}
               onClick={handleClickChip}
-              onDelete={handleDeleteChip(idx)}
+              onDelete={handleDeleteChip(term)}
             />
           ))}
           <TermsInput
             value={input}
             onChange={handleChangeInput}
             onAddChip={handleAddChip}
-            onDeleteLastChip={handleDeleteChip(terms.length - 1)}
+            onDeleteLastChip={handleDeleteChip(terms[terms.length - 1])}
             onClearInput={handleClearInput}
           />
         </ChipContainer>

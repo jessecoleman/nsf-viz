@@ -1,5 +1,5 @@
-import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParams, withDefault } from 'use-query-params';
-import { SortableKeys } from './selectors';
+import { BooleanParam, DelimitedArrayParam, NumberParam, QueryParamConfig, StringParam, useQueryParam, useQueryParams, withDefault } from 'use-query-params';
+import { SortableKeys } from 'app/sort';
 
 export type Organization = 'nsf' | 'nih';
 
@@ -13,6 +13,16 @@ export const ArrayParam = withDefault(
   [],
 ) as QueryParamConfig<string[]>;
 
+export const DivisionsArrayParam = withDefault(
+  DelimitedArrayParam,
+  undefined,
+) as QueryParamConfig<string[] | undefined>;
+
+export const DefaultStringParam = withDefault(
+  StringParam,
+  undefined
+) as QueryParamConfig<string | undefined>;
+
 export const DefaultNumberParam = withDefault(
   NumberParam,
   undefined
@@ -25,7 +35,7 @@ export const DefaultBooleanParam = withDefault(
 
 const SortParam = withDefault(
   StringParam,
-  'name',
+  'count',
 ) as QueryParamConfig<SortableKeys>;
 
 const SortDirectionParam = withDefault(
@@ -41,22 +51,57 @@ const MatchParam = withDefault(
 export const paramConfigMap = {
   'org': OrgParam,
   'terms': ArrayParam,
-  'divisions': ArrayParam,
   'start': DefaultNumberParam,
   'end': DefaultNumberParam,
   'intersection': DefaultBooleanParam,
   'match': MatchParam,
   'sort': SortParam,
   'direction': SortDirectionParam,
+};
+
+const grantParamConfig = {
   'grantDialogOpen': BooleanParam,
   'grantDialogYear': NumberParam,
   'grantDialogDivision': StringParam,
-  'grantSort': StringParam,
+  'grantSort': DefaultStringParam,
   'grantDirection': SortDirectionParam,
 };
 
-export const useQuery = () => (
+export const useSearchQuery = () => (
   useQueryParams(paramConfigMap)
 );
+
+export const useGrantsDialogQuery = () => (
+  useQueryParams(grantParamConfig)
+);
+
+export const useGrantIdQuery = () => (
+  useQueryParam('grantId', DefaultStringParam)
+);
+
+export const useQuery = () => (
+  useQueryParams({
+    ...paramConfigMap,
+    'divisions': ArrayParam,
+  })
+);
+
+export const useSortQuery = () => (
+  useQueryParams({
+    'sort': SortParam,
+    'direction': SortDirectionParam,
+  })
+);
+
+export const useDivisionsQuery = () => {
+  return useQueryParam('divisions', DivisionsArrayParam);
+  // const [ divisions, setDivisions ] = useQueryParam('divisions', DelimitedArrayParam);
+  // const { divisionMap } = useDirectory();
+  // if (divisions && divisions.every(d => d)) {
+  //   return [ new Set(divisions as string[]), setDivisions ];
+  // } else {
+  //   return [ new Set(Object.keys(divisionMap)), setDivisions ];
+  // }
+};
 
 export type QueryParams = ReturnType<typeof useQuery>[0];

@@ -7,7 +7,7 @@ import {
   styled,
 } from '@material-ui/core';
 import { UnfoldLess, UnfoldMore } from '@mui/icons-material';
-import { SortableKeys } from 'app/selectors';
+import { SortableKeys } from 'app/sort';
 import { getNextCheckboxState } from './checkFSM';
 import { Column, NumberColumn, Row } from './DivisionRow';
 
@@ -48,7 +48,7 @@ type EnhancedTableHeadProps = {
   checked: CheckboxState,
   allExpanded: boolean,
   onRequestSort: (key: SortableKeys) => void,
-  onSelectAllClick: (checked: CheckboxState) => void,
+  onSelectAll: (checked: CheckboxState) => void,
   onExpandAll: () => void,
 }
 
@@ -65,7 +65,7 @@ const DirectoryTableHead = (props: EnhancedTableHeadProps) => (
         <Checkbox
           checked={props.checked === 'checked'}
           indeterminate={props.checked === 'indeterminate'}
-          onChange={() => props.onSelectAllClick(getNextCheckboxState(props.checked))}
+          onChange={() => props.onSelectAll(getNextCheckboxState(props.checked))}
         />
       </Column>
       {columns.map(c => (

@@ -1,15 +1,14 @@
-import { getSortedDivisionAggs, getHighlightedDivision, getSelectedTerms, getStackedData, isAgg, isLoadingData, isYearsLoading, getYearData } from 'app/selectors';
-import { useAppDispatch, useAppSelector } from 'app/store';
-import { useQuery } from 'app/query';
+import { useDivisionsQuery, useGrantsDialogQuery, useSearchQuery } from 'app/query';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
-import { clearGrants } from 'app/dataReducer';
-import { loadData, loadYears } from 'app/actions';
 import { useEffect, useRef, useState } from 'react';
 import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { colorScales } from 'theme';
+import { useSearch } from 'api';
+import { isAgg } from 'app/sort';
+import { useYears } from 'api';
 
 let vis: BarChart;
 
@@ -41,8 +40,8 @@ const ChartContainer = styled.div(({ theme }) => `
   }
   #legend {
     position: absolute;
-    left: 75px;
-    top: 25px;
+    left: 96px;
+    top: 32px;
   }
   #tooltip {
     pointer-events: none;
@@ -63,30 +62,44 @@ type ChartProps = {
 const Chart = (props: ChartProps) => {
 
   const visRef = useRef<HTMLDivElement>(null);
-  const dispatch = useAppDispatch();
-  const [ query, setQuery ] = useQuery();
-  // const [ queryDivisions ] = useQueryParam('divisions', DelimitedArrayParam);
+  const [ divisions ] = useDivisionsQuery();
+  const [ query, setQuery ] = useSearchQuery();
+  const [ , setDialogQuery ] = useGrantsDialogQuery();
 
   // TODO reimplement this?
   // const { counts, amounts } = useAppSelector(getLegendFilters);
-  // const yearRange = useAppSelector(getYearRange);
-  const data = useAppSelector(state => getStackedData(state, query));
-  const yearData = useAppSelector(getYearData);
-  const divisions = Object.values(useAppSelector(state => getSortedDivisionAggs(state, query)));
-  // TODO why are colors not persistent
-  const divDomain = divisions.map(d => d.key)
-    .filter(key => query.divisions?.includes(key));
+  const { data } = useSearch(query, {
+    query: {
+      select: ({ data }) => ({
+        chartData: data.bars.map(({ key, divisions }) => ({
+          year: key,
+          aggs: Object.fromEntries(divisions.map(({ key, ...aggs }) => [ key, aggs ]))
+        })),
+        divDomain: data.divisions
+          .flatMap(d => d.divisions)
+          .sort((a, b) => (a[query.sort] - b[query.sort]) * (query.direction === 'asc' ? 1 : -1))
+          .map(d => d.key)
+          .filter(key => divisions == undefined || divisions.includes(key))
+      }),
+    }
+  });
+  
+  const { data: yearData } = useYears(query, {
+    query: {
+      select: ({ data }) => (
+        data.per_year.map(agg => ({ ...agg, year: agg.key }))
+      )
+    }
+  });
 
-  const highlightedDivision = useAppSelector(getHighlightedDivision);
-  const selectedTerms = useAppSelector(getSelectedTerms);
-  const loading = useAppSelector(isLoadingData);
-  const yearLoading = useAppSelector(isYearsLoading);
+  // const highlightedDivision = useAppSelector(getHighlightedDivision);
   const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
 
   // update colors globally with new domain
-  useEffect(() => {
-    Object.values(colorScales).forEach(s => s.domain(divisions.map(d => d.key)));
-  }, [vis]);
+  // TODO why are colors not persistent
+  //   useEffect(() => {
+  //     Object.values(colorScales).forEach(s => s.domain(divisions.map(d => d.key)));
+  //   }, [vis]);
 
   // mount chart on first load
   useEffect(() => {
@@ -104,48 +117,38 @@ const Chart = (props: ChartProps) => {
   
   // update data on filter changes
   useEffect(() => {
-    if (vis && !loading) {
+    if (data && vis) {
       if (isAgg(query.sort)) {
-        vis.update(data, divDomain, query.sort);
+        vis.update(data.chartData, data.divDomain, query.sort);
       } else {
-        vis.update(data, divDomain);
+        vis.update(data.chartData, data.divDomain);
       }
       if (query.start && query.end) {
         vis.timeline.setYearRange(query.start, query.end);
       }
     }
-  }, [vis, loading, query.sort, JSON.stringify(query.divisions)]);
+  }, [vis, query.sort, data]);
   
   // update timeline on year change
   useEffect(() => {
-    if (vis && !yearLoading) {
+    if (yearData && vis) {
       if (isAgg(query.sort)) {
         vis.timeline.update(yearData, query.sort);
       } else {
         vis.timeline.update(yearData);
       }
     }
-  }, [vis, yearLoading, query.sort]);
+  }, [vis, query.sort, yearData]);
   
   // update bar styles on highlight
-  useEffect(() => {
-    vis?.highlightGroup(highlightedDivision);
-  }, [highlightedDivision]);
+  // useEffect(() => {
+  //   vis?.highlightGroup(highlightedDivision);
+  // }, [highlightedDivision]);
 
   // update chart on window resize
   useEffect(() => {
     if (props.height) vis.measure(props.width, props.height);
   }, [props.width, props.height]);
-
-  // query backend on query change
-  useEffect(() => {
-    console.log('loading');
-    dispatch(loadData(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.org, query.intersection, query.start, query.end ])]);
-
-  useEffect(() => {
-    dispatch(loadYears(query));
-  }, [JSON.stringify([selectedTerms.length ? selectedTerms : query.terms, query.org, query.intersection ])]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {
     setTooltipProps({ dataKey, year });
@@ -161,8 +164,7 @@ const Chart = (props: ChartProps) => {
   };
 
   const handleBarClick = (key: string, year: number) => {
-    dispatch(clearGrants());
-    setQuery({
+    setDialogQuery({
       grantDialogOpen: true,
       grantDialogYear: year,
       grantDialogDivision: key,

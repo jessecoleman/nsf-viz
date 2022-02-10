@@ -35,8 +35,8 @@ div_map = {d['name']: d['key'] for d in divisions}
 inv_div_map = {d['key']: d['name'] for d in divisions}
 
 
-# def convert(bucket, keys=['key1', 'key2']):
 def convert(bucket, keys=['cat1']):
+    # convert year bucket
     if 'key_as_string' in bucket:
         bucket['key'] = int(bucket.pop('key_as_string'))
             
@@ -56,12 +56,16 @@ def convert(bucket, keys=['cat1']):
     return bucket
 
 
-def terms_multi_match(terms: List[str], match: List[str], must_or_should: Optional[str] = None):
+def terms_multi_match(
+    terms: List[str],
+    match: List[str],
+    must_or_should: Optional[str] = None
+):
     if terms is None or len(terms) == 0:
         return {
             'match_all': {}
         }
-
+        
     query = {
         'bool': {
             must_or_should: [{
@@ -84,6 +88,18 @@ def org_match(org: str):
     return {
         'match': {
             'agency': org
+        }
+    }
+    
+
+def divisions_match(divisions: List[str]):
+    return {
+        'bool': {
+            'should': [{
+                'match': {
+                    'cat1': division
+                }
+            } for division in divisions]
         }
     }
 
@@ -128,16 +144,15 @@ grant_amount_agg = {
     }
 }
 
-
-def term_agg(agg_field: str):
+def term_agg(agg_field: str, aggs: Dict[str, Any]):
     return {
         agg_field: {
             'terms': {
                 'field': agg_field,
-                'min_doc_count': 0,
+                # 'min_doc_count': 0,
                 'size': 100, # TODO: number of divisions
             },
-            'aggs': grant_amount_agg
+            'aggs': aggs
         }
     }
 
@@ -147,12 +162,13 @@ async def year_aggregates(
     org: str,
     intersection: bool,
     terms: List[str] = None,
+    divisions: List[str] = None,
     match = ('title', 'abstract'),
     sort = False
 ):
     must_or_should = 'must' if intersection else 'should'
 
-    if len(match) == 0:
+    if not match or len(match) == 0:
         match = ('title', 'abstract')
 
     query = {
@@ -160,7 +176,8 @@ async def year_aggregates(
             'bool': {
                 'must': [
                     terms_multi_match(terms, match, must_or_should),
-                    org_match(org)
+                    org_match(org),
+                    # divisions_match(divisions)
                 ],
             }
         },
@@ -172,6 +189,18 @@ async def year_aggregates(
     return YearsResponse(
         per_year=[convert(bucket) for bucket in per_year_buckets]
     )
+    
+
+def grants_sort(sort: str, order: str):
+    if sort == 'title' or sort is None:
+        sort = 'title.raw'
+    return [
+        {
+            sort: {
+                'order': order
+            }
+        }
+    ]
 
 
 async def division_aggregates(
@@ -180,14 +209,13 @@ async def division_aggregates(
         intersection: bool,
         start: Optional[int],
         end: Optional[int],
-        match: List[str],
+        match: Optional[List[str]],
         terms: List[str] = None,
-        sort = False
     ):
     
     must_or_should = 'must' if intersection else 'should'
 
-    if len(match) == 0:
+    if not match or len(match) == 0:
         match = ('title', 'abstract')
 
     query = {
@@ -200,12 +228,14 @@ async def division_aggregates(
             }
         },
         'aggs': {
-            **term_agg('cat1'),
-            **term_agg('cat2'),
-            **year_histogram({
-                **term_agg('cat1'),
-            }),
-        }
+            **term_agg('cat2', {
+                **grant_amount_agg,
+                **term_agg('cat1', grant_amount_agg),
+            }),   
+            **year_histogram(
+                term_agg('cat1', grant_amount_agg),
+            ),
+        },
     }
     
     if start is not None or end is not None:
@@ -225,29 +255,35 @@ async def division_aggregates(
     hits = await aioes.search(index=INDEX, body=query)
     per_year_buckets = hits['aggregations']['years']['buckets']
     per_directory_buckets = hits['aggregations']['cat2']['buckets']
-    # TODO better way to merge these
-    # overall_buckets = hits['aggregations']['key1']['buckets']
-    # overall_buckets2 = hits['aggregations']['key2']['buckets']
-    overall_buckets = hits['aggregations']['cat1']['buckets']
 
     return SearchResponse(
-        per_year=[convert(bucket) for bucket in per_year_buckets],
-        per_directory=[convert(bucket) for bucket in per_directory_buckets],
-        #overall=[convert(bucket) for bucket in overall_buckets2 + overall_buckets],
-        overall=[convert(bucket) for bucket in overall_buckets],
+        bars=[convert(bucket) for bucket in per_year_buckets],
+        divisions=[convert(bucket) for bucket in per_directory_buckets],
     )
  
 
-async def term_freqs(aioes: Elasticsearch, terms: List[str], match: List[str]):
+async def term_freqs(
+    aioes: Elasticsearch,
+    org: str,
+    terms: List[str],
+    match: List[str]
+):
 
     queries = [{
         'query': {
-            'multi_match': {
-                'fields': match,
-                'query': term,
-                'type': 'phrase',
+            'bool': {
+                'must': [
+                    {
+                        'multi_match': {
+                            'fields': match,
+                            'query': term,
+                            'type': 'phrase',
+                        }
+                    },
+                    org_match(org)
+                ]
             }
-        },
+        }
     } for term in terms]
     
     return await asyncio.gather(*(
@@ -260,13 +296,13 @@ async def grants(aioes,
         idx: int,
         org: str,
         intersection: bool,
-        order_by: str,
-        order: str,
         divisions: List[str],
         match: List[str],
         terms: List[str],
         start: Optional[int],
         end: Optional[int],
+        sort: Optional[str] = 'title',
+        order: Optional[str] = 'desc',
         limit: int = 50,
         include_abstract: bool = False,
     ):
@@ -298,13 +334,7 @@ async def grants(aioes,
                 'must': must_query
             }
         },
-        'sort': [
-            {
-                order_by: {
-                    'order': order
-                }
-            }
-        ],
+        'sort': grants_sort(sort, order),
         'track_scores': True
     }
     
@@ -354,7 +384,7 @@ async def abstract(aioes, _id: str, terms: str):
                                         }
                                     }
                                 }
-                            for term in terms.split(',')]
+                            for term in terms]
                         },
                     }
                 }
@@ -369,9 +399,14 @@ async def abstract(aioes, _id: str, terms: str):
         highlight = hit['highlight']['abstract'][0]
         # this is an unfortunate limitation of ES highlight that requires merging
         # adjacent <em> spans manually
-        return re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
-    else:
-        return hit['_source']['abstract']
+        hit['_source']['abstract'] = re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
+
+    # return hit['_source']['abstract']
+    return Grant(
+        id=hit['_id'],
+        score=hit['_score'],
+        **hit['_source'],
+    )
 
  
 async def typeahead(aioes, prefix: str):

@@ -1,9 +1,10 @@
+from __future__ import division
 import csv
 import io
 import os
 from pathlib import Path
-from typing import List, Union
-from fastapi import FastAPI
+from typing import Dict, List, Optional, Union
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
@@ -21,7 +22,6 @@ from models import (
     Division,
     Grant,
     GrantsRequest,
-    SearchRequest,
     SearchResponse,
     YearsResponse
 )
@@ -126,47 +126,59 @@ async def divisions(org: str):
     return FileResponse(f'assets/{org}_directory.json')
 
 
-@app.post('/search', operation_id='search', response_model=SearchResponse)
-async def search(request: SearchRequest):
+@app.get('/search', operation_id='search', response_model=SearchResponse)
+async def search(
+    org: str,
+    start: Optional[int] = None,
+    end: Optional[int] = None,
+    terms: List[str] = Query(None),
+    match: Optional[List[str]] = Query(None),
+    intersection: Optional[bool] = False,
+):
 
     return await Q.division_aggregates(
         aioes,
-        intersection=request.intersection,
-        terms=request.terms,
-        start=request.start,
-        end=request.end,
-        match=request.match,
-        org=request.org,
+        org=org,
+        terms=terms,
+        start=start,
+        end=end,
+        match=match,
+        intersection=intersection,
     )
 
 
-@app.post('/years', operation_id='years', response_model=YearsResponse)
-async def years(request: SearchRequest):
+@app.get('/years', operation_id='years', response_model=YearsResponse)
+async def years(
+    org: str,
+    terms: List[str] = Query(None),
+    divisions: List[str] = Query(None),
+    match: Optional[List[str]] = Query(None),
+    intersection: Optional[bool] = False,
+):
 
     return await Q.year_aggregates(
         aioes,
-        intersection=request.intersection,
-        terms=request.terms,
-        match=request.match,
-        org=request.org,
+        intersection=intersection,
+        terms=terms,
+        divisions=divisions,
+        match=match,
+        org=org,
     )
 
 
-@app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead')
+@app.get('/keywords/typeahead/{prefix}', operation_id='loadTypeahead', response_model=List[str])
 async def typeahead(prefix: str):
 
     return await Q.typeahead(aioes, prefix)
 
 
-@app.get('/keywords/related/{keywords}', operation_id='loadRelated')
-def related(keywords: str):
+@app.get('/keywords/related', operation_id='loadRelated', response_model=List[str])
+def related(terms: List[str] = Query(None)):
 
-    terms = []
-    for term in keywords.split(','):
-        # convert to ngram representation
-        term = term.lower().replace(' ', '_')
-        if word_vecs.key_to_index.get(term, False):
-            terms.append(term)
+    terms = [
+        term.lower().replace(' ', '_') for term in terms 
+        if word_vecs.key_to_index.get(term, False)
+    ]
 
     if len(terms) > 0:
         # convert back
@@ -175,54 +187,86 @@ def related(keywords: str):
         return []
 
 
-@app.get('/keywords/count/{terms}', operation_id='countTerm')
-async def count_term(terms: str):
+@app.get('/keywords/count', operation_id='loadTermCounts', response_model=Dict[str, int])
+async def count_terms(
+    org: str,
+    match: List[str] = Query(['title', 'abstract']),
+    terms: List[str] = Query(None)
+):
 
-    counts = await Q.term_freqs(aioes, terms.split(','), ['title', 'abstract'])
-    return [c['count'] for c in counts]
+    counts = await Q.term_freqs(
+        aioes, 
+        org=org,
+        terms=terms,
+        match=match
+    )
+
+    return dict(zip(terms, [c['count'] for c in counts]))
 
 
-@app.post('/grants', operation_id='loadGrants', response_model=List[Grant])
-async def grant_data(request: GrantsRequest):
+@app.get('/grants', operation_id='loadGrants', response_model=List[Grant])
+async def grant_data(
+    idx: int,
+    org: str,
+    start: Optional[int] = None,
+    end: Optional[int] = None,
+    divisions: List[str] = Query(None),
+    match: List[str] = Query(['title', 'abstract']),
+    terms: List[str] = Query(None),
+    sort: Optional[str] = 'title',
+    order: Optional[str] = 'desc',
+    intersection: Optional[bool] = False,
+):
 
-    try:
-        grants = Q.grants(
-            aioes,
-            idx=request.idx,
-            org=request.org,
-            intersection=request.intersection,
-            order_by=request.order_by,
-            order=request.order,
-            divisions=request.divisions,
-            match=request.match,
-            terms=request.terms,
-            start=request.start,
-            end=request.end,
-        )
+    grants = Q.grants(
+        aioes,
+        idx=idx,
+        org=org,
+        intersection=intersection,
+        sort=sort,
+        order=order,
+        divisions=divisions,
+        match=match,
+        terms=terms,
+        start=start,
+        end=end,
+    )
 
-        return [grant async for grant in grants]
+    response = [grant async for grant in grants]
 
-    except IndexError:
+    if len(response) == 0:
         raise HTTPException(404, detail='index out of bounds')
+    
+    return response
 
 
-@app.post('/grants/download', operation_id='downloadGrants')
-async def grant_data(request: GrantsRequest):
+@app.get('/grants/download', operation_id='downloadGrants')
+async def grant_download(
+    org: str,
+    start: Optional[int] = None,
+    end: Optional[int] = None,
+    divisions: List[str] = Query(None),
+    match: List[str] = Query(['title', 'abstract']),
+    terms: List[str] = Query(None),
+    sort: Optional[str] = 'title',
+    order: Optional[str] = 'desc',
+    intersection: Optional[bool] = False,
+):
 
     try:
         grants = Q.grants(
             aioes,
             idx=0,
             limit=10000,
-            org=request.org,
-            intersection=request.intersection,
-            order_by=request.order_by,
-            order=request.order,
-            divisions=request.divisions,
-            match=request.match,
-            terms=request.terms,
-            start=request.start,
-            end=request.end,
+            org=org,
+            intersection=intersection,
+            sort=sort,
+            order=order,
+            divisions=divisions,
+            match=match,
+            terms=terms,
+            start=start,
+            end=end,
             include_abstract=True,
         )
 
@@ -255,9 +299,8 @@ async def grant_data(request: GrantsRequest):
         raise HTTPException(404, detail='index out of bounds')
         
 
-@app.get('/abstract/{_id}/')
-@app.get('/abstract/{_id}/{terms}', operation_id='loadAbstract', response_model=str)
-async def get_abstract(_id, terms=""):
+@app.get('/abstract/{_id}', operation_id='loadAbstract', response_model=Grant)
+async def get_abstract(_id, terms: List[str] = Query([])):
     logger.debug(f"terms: {terms}")
     return await Q.abstract(aioes, _id, terms)
 

@@ -1,12 +1,11 @@
 module.exports = {
     grants: {
         input: {
-            target: './backend/api.json',
+            target: './api.json',
         },
         output: {
-            target: './frontend/src/api.ts',
+            target: './src/api.ts',
             client: 'react-query',
-            baseURL: 'http://localhost:8888'
         },
     }
 };

@@ -2,8 +2,8 @@ import { FocusEvent, forwardRef, KeyboardEvent, useRef, useState } from 'react';
 import { Flipper } from 'react-flip-toolkit';
 import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
 import TermsList from './TermsList';
-import { useAppSelector } from 'app/store';
-import { getRelated, getTerms, getTypeahead } from 'app/selectors';
+import { useLoadRelated, useLoadTypeahead } from 'api';
+import { useQuery } from 'app/query';
 
 const ChipInput = styled(InputBase)(({ theme }) => `
   color: 'inherit';
@@ -50,9 +50,18 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [ focused, setFocused ] = useState(false);
   const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
-  const terms = useAppSelector(getTerms);
-  const typeahead = useAppSelector(getTypeahead);
-  const related = useAppSelector(getRelated);
+  const [{ terms }] = useQuery();
+  // TODO add debounce
+  const { data: typeahead } = useLoadTypeahead(props.value, {
+    query: {
+      enabled: props.value.length > 0
+    }
+  });
+  const { data: related } = useLoadRelated({ terms }, {
+    query: {
+      enabled: terms.length > 0
+    }
+  });
 
   const handleFocus = (e: FocusEvent) => {
     setFocused(true);
@@ -109,21 +118,21 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
           {({ TransitionProps }) => (
             <Fade {...TransitionProps} timeout={350}>
               <Dropdown>
-                <Flipper flipKey={JSON.stringify([typeahead, related])}>
+                <Flipper flipKey={JSON.stringify([typeahead?.data, related])}>
                   <List>
                     {props.value
                       ? <TermsList
                         input={props.value}
                         header='autocomplete'
-                        filter={terms.map(t => t.term)}
-                        terms={typeahead}
+                        filter={terms}
+                        terms={typeahead?.data ?? []}
                         onAddChip={onAddChip}
                       />
                       : <TermsList
                         input={props.value}
                         header='related terms'
-                        filter={terms.map(t => t.term)}
-                        terms={related}
+                        filter={terms}
+                        terms={related?.data ?? []}
                         onAddChip={onAddChip}
                       />
                     }

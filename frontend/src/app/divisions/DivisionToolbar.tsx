@@ -1,6 +1,6 @@
 import { ChangeEvent } from 'react';
 import { Box, Input, InputAdornment, ListItemIcon, MenuItem, Select, SelectChangeEvent, styled } from '@material-ui/core';
-import { Close, FilterList } from '@mui/icons-material';
+import { FilterList } from '@mui/icons-material';
 
 import DrawerToggle from 'app/nav/DrawerToggle';
 import nih from '../images/nih-logo.svg';
@@ -18,6 +18,7 @@ const Toolbar = styled('div')(({ theme }) => `
 `);
 
 const StyledSelect = styled(Select)(({ theme }) => `
+  flex-grow: 1;
   & .MuiSelect-select {
     display: flex;
     align-items: center;
@@ -53,19 +54,24 @@ const orgs = [
 
 const DivisionToolbar = (props: DivisionToolbarProps) => (
   <Toolbar>
-    <StyledSelect
-      value={props.org}
-      onChange={props.onChangeOrg}
-    >
-      {orgs.map(o => (
-        <MenuItem key={o.abbr} value={o.abbr}>
-          <ListItemIcon>
-            <Logo src={o.src} />
-          </ListItemIcon>
-          {o.title}
-        </MenuItem>
-      ))}
-    </StyledSelect>
+    <Box display='flex' flexDirection='row' alignItems='center'>
+      <StyledSelect
+        value={props.org}
+        onChange={props.onChangeOrg}
+      >
+        {orgs.map(o => (
+          <MenuItem key={o.abbr} value={o.abbr}>
+            <ListItemIcon>
+              <Logo src={o.src} />
+            </ListItemIcon>
+            {o.title}
+          </MenuItem>
+        ))}
+      </StyledSelect>
+      <Actions>
+        <DrawerToggle />
+      </Actions>
+    </Box>
     <Input
       placeholder='filter divisions'
       value={props.filter}
@@ -76,12 +82,6 @@ const DivisionToolbar = (props: DivisionToolbarProps) => (
         </InputAdornment>
       }
     />
-    <Box flexGrow={1} />
-    <Actions>
-      <DrawerToggle>
-        <Close />
-      </DrawerToggle>
-    </Actions>
   </Toolbar>
 );
 

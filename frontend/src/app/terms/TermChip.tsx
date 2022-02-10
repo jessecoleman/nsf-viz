@@ -82,7 +82,7 @@ const TermChip = (props: TermChipProps) => (
       label={
         <ChipContent>
           <span>
-            {props.count
+            {props.count !== undefined
               ? format('.2s')(props.count)
               : <CircularProgress size='1.25em' color='secondary' />
             }

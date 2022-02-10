@@ -1,25 +1,24 @@
-import { useQuery } from 'app/query';
-import { DefaultService as Service } from '../../api/index';
+import Axios from 'axios';
+import { useGrantsDialogQuery, useQuery } from 'app/query';
+import { stringifyUrl } from 'query-string';
 
 const useGrantsDownload = () => {
   const [ query ] = useQuery();
+  const [ dialog ] = useGrantsDialogQuery();
 
-  return async () => {
-    const data = await Service.downloadGrants({
+  const url = stringifyUrl({
+    url: `${Axios.defaults.baseURL}/grants/download`,
+    query: {
       ...query,
-      order: query.grantDirection,
-      order_by: query.grantSort === 'title' ? 'title.raw' : query.grantSort ?? 'title.raw',
-      start: query.grantDialogYear ?? query.start,
-      end: query.grantDialogYear ?? query.end,
-      divisions: query.grantDialogDivision ? [query.grantDialogDivision] : query.divisions,
-      idx: 0,
-    });
-    const blob = new Blob([data]);
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = 'grants.csv';
-    link.click();
-  };
+      order: dialog.grantDirection,
+      sort: dialog.grantSort,
+      start: dialog.grantDialogYear ?? query.start,
+      end: dialog.grantDialogYear ?? query.end,
+      divisions: dialog.grantDialogDivision ? [dialog.grantDialogDivision] : query.divisions,
+    }
+  });
+  
+  return url;
 };
 
 export default useGrantsDownload;
