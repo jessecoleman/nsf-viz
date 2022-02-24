@@ -73,6 +73,7 @@ class Grant(Document):
     cat2_raw = Keyword()
     cat3 = Keyword()
     cat3_raw = Keyword()
+    external_url = Keyword()
 
 
 def format_date(date_str: str) -> str:
@@ -126,6 +127,7 @@ def get_data(data_source: Iterable) -> Generator:
                 cat1=mapped_abbrev,
                 cat2=nsf_directory_inv.get(mapped_abbrev, mapped_abbrev),
                 agency=r["agency"],
+                external_url=r.get("external_url")
             )
             yield g.to_dict(True)
         except KeyError:
