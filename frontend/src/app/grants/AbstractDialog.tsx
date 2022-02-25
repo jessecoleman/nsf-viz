@@ -1,4 +1,5 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
+import LaunchIcon from '@mui/icons-material/Launch';
 import { useLoadAbstract } from 'api';
 import { useGrantIdQuery, useQuery } from 'app/query';
 import * as d3 from 'd3';
@@ -51,7 +52,12 @@ const AbstractDialog = () => {
       {grant && (
         <>
           <DialogTitle>
-            <Title variant='h5'>{grant.title}</Title>
+            <Title variant='h5'>
+              {grant.title}
+              {grant.external_url && (
+                <a href={grant.external_url} target="_blank" rel="noreferrer"><LaunchIcon /></a>
+              )}
+            </Title>
             <Subtitle variant='h6'>{grant.cat1_raw}</Subtitle>
             <Subtitle variant='h6'>{timeConvert(grant.date)}</Subtitle>
             <Subtitle variant='h6'>{d3.format('$,')(grant.amount)}</Subtitle>
