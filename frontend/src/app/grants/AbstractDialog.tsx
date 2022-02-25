@@ -54,9 +54,9 @@ const AbstractDialog = () => {
           <DialogTitle>
             <Title variant='h5'>
               {grant.title}
-              {grant.external_url ? (
+              {grant.external_url && (
                 <a href={grant.external_url} target="_blank" rel="noreferrer"><LaunchIcon /></a>
-              ) : null}
+              )}
             </Title>
             <Subtitle variant='h6'>{grant.cat1_raw}</Subtitle>
             <Subtitle variant='h6'>{timeConvert(grant.date)}</Subtitle>
