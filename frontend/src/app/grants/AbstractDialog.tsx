@@ -61,6 +61,12 @@ const AbstractDialog = () => {
             <Subtitle variant='h6'>{grant.cat1_raw}</Subtitle>
             <Subtitle variant='h6'>{timeConvert(grant.date)}</Subtitle>
             <Subtitle variant='h6'>{d3.format('$,')(grant.amount)}</Subtitle>
+            {grant.recipient_org && (
+              <Subtitle variant='body2'>Recipient Organization: {grant.recipient_org}</Subtitle>
+            )}
+            {grant.investigators && (
+              <Subtitle variant='body2'>Principal Investigator(s): {grant.investigators}</Subtitle>
+            )}
           </DialogTitle>
           <DialogContent>
             <Collapse in={!!grant.abstract}>

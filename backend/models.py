@@ -97,6 +97,8 @@ class Grant(BaseModel):
     cat3: Optional[str]
     cat3_raw: Optional[str]
     external_url: Optional[str]
+    investigators: Optional[str]
+    recipient_org: Optional[str]
 
 
 class Order(str, Enum):
