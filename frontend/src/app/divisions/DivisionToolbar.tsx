@@ -48,7 +48,7 @@ type DivisionToolbarProps = {
 
 const orgs = [
   { title: 'National Science Foundation', abbr: 'nsf', src: nsf },
-  { title: 'National Institute of Health', abbr: 'nih', src: nih },
+  { title: 'National Institutes of Health', abbr: 'nih', src: nih },
   { title: 'Department of Defense', abbr: 'dod', src: dod}
 ];
 

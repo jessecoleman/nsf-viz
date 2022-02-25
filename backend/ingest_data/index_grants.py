@@ -23,7 +23,12 @@ import logging
 root_logger = logging.getLogger()
 logger = root_logger.getChild(__name__)
 
-from parse_abbrevs import abbrevs_flat, normalize, nsf_mapped_reversed, nsf_directory_inv
+from parse_abbrevs import (
+    abbrevs_flat,
+    normalize,
+    nsf_mapped_reversed,
+    nsf_directory_inv,
+)
 
 host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
 es = connections.create_connection(hosts=[host], timeout=20)
@@ -74,6 +79,8 @@ class Grant(Document):
     cat3 = Keyword()
     cat3_raw = Keyword()
     external_url = Keyword()
+    investigators = Keyword()
+    recipient_org = Keyword()
 
 
 def format_date(date_str: str) -> str:
@@ -127,7 +134,9 @@ def get_data(data_source: Iterable) -> Generator:
                 cat1=mapped_abbrev,
                 cat2=nsf_directory_inv.get(mapped_abbrev, mapped_abbrev),
                 agency=r["agency"],
-                external_url=r.get("external_url")
+                external_url=r.get("external_url"),
+                investigators=r.get("investigators"),
+                recipient_org=r.get("recipient_org"),
             )
             yield g.to_dict(True)
         except KeyError:
