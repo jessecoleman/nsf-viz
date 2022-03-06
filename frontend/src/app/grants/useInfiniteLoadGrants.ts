@@ -12,7 +12,6 @@ export const useInfiniteLoadGrants = () => {
   const loaderRef = useRef<InfiniteLoader>(null);
 
   const loadMoreGrants = async ({ pageParam = 0 }) => {
-    console.log('loading!!');
     const { data } = await loadGrants({
       ...query,
       order: dialog.grantDirection,
@@ -41,14 +40,12 @@ export const useInfiniteLoadGrants = () => {
       pages: [],
       pageParams: undefined,
     }));
-    console.log('fetching after clear');
     rest.fetchNextPage();
   };
 
   // clear grants when any params change
   useEffect(() => {
     if (hasMountedRef.current && loaderRef.current) {
-      console.log('clearing!!');
       clearGrants();
     }
     hasMountedRef.current = true;

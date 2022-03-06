@@ -99,6 +99,7 @@ class Grant(BaseModel):
     external_url: Optional[str]
     investigators: Optional[str]
     recipient_org: Optional[str]
+    # related_terms: Optional[List[str]]
 
 
 class Order(str, Enum):
@@ -116,12 +117,16 @@ class GrantField(str, Enum):
     abstract = 'abstract'
 
 
-class GrantsRequest(SearchRequest):
-    idx: int
-    order: str #Order,
-    order_by: Optional[str] = 'title'
-    
-
 class Term(BaseModel):
     term: str
+    stem: str
+    forms: List[str]
+    
+
+class TermTopic(BaseModel):
+    term: str
     count: int
+
+
+class Topic(BaseModel):
+    terms: List[TermTopic]

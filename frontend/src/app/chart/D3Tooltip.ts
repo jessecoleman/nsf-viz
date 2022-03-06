@@ -27,6 +27,7 @@ export const transitionTooltip = (key: string, { chart, bar, bandwidth, padding 
   // compute left edge coordinate
   const chartRightEdge = chart.x + chart.width;
   const tipRightEdge = bar.x + bar.width + tipBbox.width;
+  // determine tooltip justification
   const tipSide = tipRightEdge < chartRightEdge ? 'left' : 'right';
   const tipLeft = bar.x - chart.x + (
     tipSide === 'left'
@@ -49,8 +50,8 @@ export const transitionTooltip = (key: string, { chart, bar, bandwidth, padding 
   }, 50);
 };
   
+// transition tooltip out
 export const removeTooltip = () => {
-  // transition tooltip out
   tooltipDebounce(() => {
     d3.select('#tooltip')
       .transition()

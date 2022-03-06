@@ -1,9 +1,8 @@
 import os
-import json
 import csv
 import dateutil.parser
 from pathlib import Path
-from typing import Generator, Iterable, List, Mapping, Optional, Type, Union
+from typing import Generator, Iterable, Union
 from elasticsearch_dsl import (
     Document,
     Date,
@@ -40,13 +39,23 @@ es_index.settings(
     number_of_replicas=2,
 )
 
-english_stop = token_filter("english_stop", type="stop", stopwords="_english_")
-
-english_possessive_stemmer = token_filter(
-    "english_stemmer", type="stemmer", language="english"
+english_stop = token_filter(
+    "english_stop",
+    type="stop",
+    stopwords="_english_"
 )
 
-english_stemmer = token_filter("english_stemmer", type="stemmer", language="english")
+english_possessive_stemmer = token_filter(
+    "english_stemmer",
+    type="stemmer",
+    language="english"
+)
+
+english_stemmer = token_filter(
+    "english_stemmer",
+    type="stemmer",
+    language="english"
+)
 
 aggressive_analyzer = analyzer(
     "aggressive_analyze",
@@ -131,6 +140,7 @@ def get_data(data_source: Iterable) -> Generator:
                 # date=r['date'],
                 date=format_date(r["date"]),
                 cat1_raw=cat1_raw,
+                # may make more sense to swap cat1/cat2 here
                 cat1=mapped_abbrev,
                 cat2=nsf_directory_inv.get(mapped_abbrev, mapped_abbrev),
                 agency=r["agency"],
@@ -139,6 +149,7 @@ def get_data(data_source: Iterable) -> Generator:
                 recipient_org=r.get("recipient_org"),
             )
             yield g.to_dict(True)
+
         except KeyError:
             logger.debug(f"KeyError encountered for line {i}. skipping...")
             continue

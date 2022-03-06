@@ -23,7 +23,7 @@ export const Row = styled(Box)<RowStyles>(({ theme, tooltip, checkable, selected
   border-top: ${tooltip ? `1px solid ${theme.palette.grey[200]}` : 'none'};
   background-color: ${selected
     ? theme.palette.action.selected
-    : 'default'};
+    : 'white'};
   //&:hover {
   //  background-color: ${nohover ? theme.palette.common.white : theme.palette.action.hover};
   //}

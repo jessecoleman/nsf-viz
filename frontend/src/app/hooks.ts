@@ -1,6 +1,4 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
-import { useAsync } from 'react-async-hook';
-import AwesomeDebouncePromise from 'awesome-debounce-promise';
+import { useState, useEffect, useRef, RefObject, useMemo } from 'react';
 import { useQuery } from './query';
 
 export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] => {
@@ -30,23 +28,28 @@ export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObj
   
   const topRef = useRef<T>(null);
   const bottomRef = useRef<T>(null);
-  const [ dims, setBox ] = useState({ width: 0, height: 0 });
   const [ windowWidth, windowHeight ] = useWindowDimensions();
   // resize when terms change since they change height of toolbar
   const [{ terms }] = useQuery();
+  const [ prevTerms, setPrevTerms ] = useState(terms);
 
   useEffect(() => {
+    setPrevTerms(terms);
+  }, [terms]);
+
+  const dims = useMemo(() => {
     if (topRef.current && bottomRef.current) {
-      const bbox = topRef.current.getBoundingClientRect();
-      const bottom = topRef.current.getBoundingClientRect();
-      if (parent && bbox.height && bottom.height) {
-        setBox({
-          width: bbox.width,
-          height: windowHeight - bbox.height - bottom.height,
-        });
+      const top = topRef.current.getBoundingClientRect();
+      const bottom = bottomRef.current.getBoundingClientRect();
+      if (parent && top.height && bottom.height) {
+        return {
+          width: top.width,
+          height: windowHeight - top.height - bottom.height,
+        };
       }
     }
-  }, [topRef.current, windowWidth, windowHeight, JSON.stringify(terms)]);
+    return { width: 0, height: 0 };
+  }, [topRef.current, windowWidth, windowHeight, JSON.stringify(prevTerms)]);
  
   return [ topRef, bottomRef, dims ];
 };
@@ -82,39 +85,16 @@ export const useWindowDimensions = () => {
   return windowDimensions;
 };
 
-export const useDebouncedCallback = <T extends (...args: unknown[]) => void>(
-  callback: T,
-  timeout: number
-) => {
-  return useConstant(() =>
-    AwesomeDebouncePromise<T>(callback, timeout)
-  );
-};
+export const useDebounce = <T>(value: T, delay?: number): T => {
 
-export const useDebouncedSearch = (
-  searchFunction: (input: string) => void,
-  timeout: number
-) => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  // Handle the input text state
-  const [ input, setInput ] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay || 500);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
 
-  // Debounce the original search async function
-  const debouncedSearchFunction = useConstant(() =>
-    AwesomeDebouncePromise(searchFunction, timeout)
-  );
-
-  // The async callback is run each time the text changes,
-  // but as the search function is debounced, it does not
-  // fire a new request on each keystroke
-  const results = useAsync(async () => (
-    input.length === 0 ? [] : debouncedSearchFunction(input)
-  ), [debouncedSearchFunction, input]);
-
-  // Return everything needed for the hook consumer
-  return {
-    input,
-    setInput,
-    results,
-  };
+  return debouncedValue;
 };

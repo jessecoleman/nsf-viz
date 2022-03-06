@@ -15,6 +15,8 @@ import { forwardRef } from 'react';
 const StyledToolbar = styled(Toolbar)(({ theme }) => `
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: end;
   padding-top: ${theme.spacing(1)};
   padding-bottom: ${theme.spacing(1)};
   ${theme.breakpoints.up('md')} {
@@ -30,7 +32,7 @@ const Logo = styled('img')(({ theme }) => `
 
 const TitleBar = styled(Box)(({ theme }) => `
   width: 100%;
-  // height: 4em;
+  height: 3em;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -69,7 +71,7 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => (
           Grant Explorer
         </Title>
       </TitleBar>
-      <Box flexGrow={1} />
+      <Box flexGrow={3} />
       <TermsFilter />
     </StyledToolbar>
   </AppBar>

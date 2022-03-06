@@ -68,7 +68,7 @@ const DirectoryEntry = (props: DirectoryProps) => {
   return (
     <Flipped flipId={nodeId}>
       <div>
-        <Tooltip title={desc ?? ''}>
+        <Tooltip title={desc ?? ''} disableInteractive>
           <DirectoryRoot
             nodeId={nodeId}
             expandIcon={<KeyboardArrowRight />}

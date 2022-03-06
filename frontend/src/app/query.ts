@@ -75,6 +75,10 @@ export const useGrantsDialogQuery = () => (
   useQueryParams(grantParamConfig)
 );
 
+export const useTermsQuery = () => (
+  useQueryParam('terms', ArrayParam)
+);
+
 export const useGrantIdQuery = () => (
   useQueryParam('grantId', DefaultStringParam)
 );

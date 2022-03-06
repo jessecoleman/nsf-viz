@@ -147,7 +147,11 @@ const Chart = (props: ChartProps) => {
 
   // update chart on window resize
   useEffect(() => {
-    if (props.height) vis.measure(props.width, props.height);
+    if (props.height) {
+      vis.animationDur = vis.timeline.animationDur = 0;
+      vis.measure(props.width, props.height);
+      vis.animationDur = vis.timeline.animationDur = 1000;
+    }
   }, [props.width, props.height]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {
