@@ -35,8 +35,8 @@ def pipeline(csvfname, outdir='.', no_model=False):
         assert outdir.exists()
 
     logger.info(f"Building elasticsearch index from csv file: {csvfname}")
-    #data_source = data_source_csv(csvfname)
-    #build_index(data_source=data_source)
+    data_source = data_source_csv(csvfname)
+    build_index(data_source=data_source)
 
     if no_model is True:
         logger.info("skipping model training")
@@ -53,71 +53,71 @@ def pipeline(csvfname, outdir='.', no_model=False):
         topics_file = outdir.joinpath("topics.json")
 
         logger.info(f"getting data for model and saving to {preprocessed_file}")
-        #data_source = bm.data_source_elasticsearch()
-        #bm.get_data(
-        #    output_file=preprocessed_file,
-        #    data_source=data_source,
-        #    process='ngram'
-        #)
-
-        #logger.info(f"building n-gram models and saving to {bigrams_model_file}, {trigrams_model_file}")
-        #bm.build_ngram_model(
-        #    input_file=preprocessed_file,
-        #    bigrams_model_file=bigrams_model_file,
-        #    trigrams_model_file=trigrams_model_file,
-        #)
-
-        #logger.info(f"generating n-gram data and saving to {ngram_file}")
-        #bm.generate_ngrams(
-        #    input_file=preprocessed_file,
-        #    bigrams_model_file=bigrams_model_file,
-        #    trigrams_model_file=trigrams_model_file,
-        #    stems_file=stems_file,
-        #    stem_groups_file=stem_groups_file,
-        #    ngram_file=ngram_file,
-        #)
-
-        ## run ngram output through preprocessor again, this time with 'w2v' process
-        #data_source = bm.data_source_ngrams(ngram_file)
-        #bm.get_data(
-        #    output_file=preprocessed_ngrams_file,
-        #    data_source=data_source,
-        #    process='w2v'
-        #)
-
-        #logger.info(f"training model (saving to {model_file})")
-        #bm.train_w2v_model(
-        #    data_file=ngram_file,
-        #    model_file=model_file
-        #)
-
-        logger.info(f"training LDA model (saving to {model_file})")
-        bm.train_lda_model(
-            input_file=preprocessed_ngrams_file,
-            model_file='../assets/lda.bin'
+        data_source = bm.data_source_elasticsearch()
+        bm.get_data(
+            output_file=preprocessed_file,
+            data_source=data_source,
+            process='ngram'
         )
 
-        #bm.cluster_vectors(
+        logger.info(f"building n-gram models and saving to {bigrams_model_file}, {trigrams_model_file}")
+        bm.build_ngram_model(
+            input_file=preprocessed_file,
+            bigrams_model_file=bigrams_model_file,
+            trigrams_model_file=trigrams_model_file,
+        )
+
+        logger.info(f"generating n-gram data and saving to {ngram_file}")
+        bm.generate_ngrams(
+            input_file=preprocessed_file,
+            bigrams_model_file=bigrams_model_file,
+            trigrams_model_file=trigrams_model_file,
+            stems_file=stems_file,
+            stem_groups_file=stem_groups_file,
+            ngram_file=ngram_file,
+        )
+
+        # run ngram output through preprocessor again, this time with 'w2v' process
+        data_source = bm.data_source_ngrams(ngram_file)
+        bm.get_data(
+            output_file=preprocessed_ngrams_file,
+            data_source=data_source,
+            process='w2v'
+        )
+
+        logger.info(f"training model (saving to {model_file})")
+        bm.train_w2v_model(
+            data_file=ngram_file,
+            model_file=model_file
+        )
+
+        logger.info(f"training LDA model (saving to {model_file})")
+        #bm.train_lda_model(
         #    input_file=preprocessed_ngrams_file,
-        #    model_file=model_file,
-        #    stem_groups_file=stem_groups_file,
-        #    output_file=topics_file,
+        #    model_file='../assets/lda.bin'
         #)
 
-        #logger.info(f"getting counts and saving to: {terms_file}")
-        #bm.get_phrase_weights(
-        #    data_file=ngram_file,
-        #    model_file=model_file,
-        #    terms_file=terms_file,
-        #    plot=True
-        #)
+        bm.cluster_vectors(
+            input_file=preprocessed_ngrams_file,
+            model_file=model_file,
+            stem_groups_file=stem_groups_file,
+            output_file=topics_file,
+        )
 
-        #logger.info(f"Building elasticsearch suggest index from terms file ({terms_file})")
-        #build_index_suggester(
-        #    terms_file=terms_file,
-        #    stems_file=stems_file,
-        #    stem_groups_file=stem_groups_file,
-        #)
+        logger.info(f"getting counts and saving to: {terms_file}")
+        bm.get_phrase_weights(
+            data_file=ngram_file,
+            model_file=model_file,
+            terms_file=terms_file,
+            plot=True
+        )
+
+        logger.info(f"Building elasticsearch suggest index from terms file ({terms_file})")
+        build_index_suggester(
+            terms_file=terms_file,
+            stems_file=stems_file,
+            stem_groups_file=stem_groups_file,
+        )
 
 
 def main(args):
