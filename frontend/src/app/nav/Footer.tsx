@@ -21,8 +21,9 @@ const Footer = forwardRef((props, ref) => (
     <img src={mooreLogo} />
     <img src={dataLabLogo} />
     <Typography>
-    Developed by Jesse Chamberlin, Jason Portenoy, Jevin West at the University of Washington DataLab<br />
-    with sponsorship from the Moore Foundation 
+      {'Developed by Jesse "Cole" Chamberlin, Jason Portenoy, Jevin West at the University of Washington DataLab'}
+      <br />
+      {'with sponsorship from the Moore Foundation'}
     </Typography>
   </StyledFooter>
 ));
