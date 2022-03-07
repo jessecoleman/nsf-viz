@@ -1,7 +1,7 @@
 import { List, ListItem, ListItemIcon, ListItemText, ListSubheader, styled } from '@material-ui/core';
 import { AddCircle } from '@mui/icons-material';
 import Highlight from 'app/Highlight';
-import { Flipped } from 'react-flip-toolkit';
+import { Flipped, Flipper } from 'react-flip-toolkit';
 import anime from 'animejs';
 import { Term } from 'api';
 
@@ -61,6 +61,20 @@ const animateOut = (el, i, onComplete) => {
   });
 };
 
+const exitThenFlipAndEnter = ({
+  hideEnteringElements,
+  animateEnteringElements,
+  animateExitingElements,
+  animateFlippedElements
+}) => {
+  hideEnteringElements();
+  animateExitingElements()
+    .then(() => {
+      animateFlippedElements();
+      animateEnteringElements();
+    });
+};
+
 type TermsListProps = {
   input: string
   header: string
@@ -70,38 +84,47 @@ type TermsListProps = {
 }
 
 const TermsList = (props: TermsListProps) => (
-  <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
-    {props.terms
-      ?.map(t => (
-        <Flipped
-          key={t.term}
-          flipId={`${t.term}-suggest`}
-          onAppear={animateIn}
-          onExit={animateOut}
-        >
-          <div>
-            <StyledListItem
-              key={t.term}
-              dense
-              onClick={() => props.onAddChip(t.term)}
-            >
-              <ListItemText>
-                <Highlight
-                  value={t.term}
-                  query={props.input}
-                />
-                <span className='forms'>
-                  {t.forms.join(', ')}
-                </span>
-              </ListItemText>
-              <ListItemIcon>
-                <AddCircle />
-              </ListItemIcon>
-            </StyledListItem>
-          </div>
-        </Flipped>
-      ))}
-  </List>
+  <Flipped flipId='terms-list'>
+    <div>
+      <Flipper
+        flipKey={JSON.stringify([props.terms])}
+        handleEnterUpdateDelete={exitThenFlipAndEnter}
+      >
+        <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
+          {props.terms
+            ?.map(t => (
+              <Flipped
+                key={t.term}
+                flipId={`${t.term}-suggest`}
+                onAppear={animateIn}
+                onExit={animateOut}
+              >
+                <div>
+                  <StyledListItem
+                    key={t.term}
+                    dense
+                    onClick={() => props.onAddChip(t.term)}
+                  >
+                    <ListItemText>
+                      <Highlight
+                        value={t.term}
+                        query={props.input}
+                      />
+                      <span className='forms'>
+                        {t.forms.join(', ')}
+                      </span>
+                    </ListItemText>
+                    <ListItemIcon>
+                      <AddCircle />
+                    </ListItemIcon>
+                  </StyledListItem>
+                </div>
+              </Flipped>
+            ))}
+        </List>
+      </Flipper>
+    </div>
+  </Flipped>
 );
 
 export default TermsList;

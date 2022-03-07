@@ -1,5 +1,6 @@
 import { MouseEvent, FocusEvent, forwardRef, KeyboardEvent, useRef, useState } from 'react';
 import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, Paper, Popper, styled } from '@material-ui/core';
+import { Flipped } from 'react-flip-toolkit';
 import { useQuery } from 'app/query';
 
 const InputContainer = styled(Box)(({ theme }) => `
@@ -15,7 +16,7 @@ const ChipInput = styled(InputBase)(({ theme }) => `
     // transition: ${theme.transitions.create('width')};
     width: 100%;
     padding-left: ${theme.spacing(1)};
-    padding-bottom: ${theme.spacing(1)};
+    padding-bottom: ${theme.spacing(1.5)};
     ${theme.breakpoints.up('sm')} {
       width: 10ch;
       // &:focus {
@@ -111,14 +112,19 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
   return (
     <ClickAwayListener onClickAway={handleClickAway}>
       <InputContainer onClick={handleClickFocus}>
-        <ChipInput
-          ref={ref}
-          placeholder='keywords'
-          inputRef={inputRef}
-          {...inputProps}
-          onFocus={handleFocus}
-          onKeyDown={handleKeyDown}
-        />
+        <Flipped flipId='chip-input'>
+          {flipProps => (
+            <ChipInput
+              componentsProps={{ root: flipProps as any }}
+              ref={ref}
+              placeholder='keywords'
+              inputRef={inputRef}
+              {...inputProps}
+              onFocus={handleFocus}
+              onKeyDown={handleKeyDown}
+            />
+          )}
+        </Flipped>
         <Popper
           open={focused}
           anchorEl={anchorEl}

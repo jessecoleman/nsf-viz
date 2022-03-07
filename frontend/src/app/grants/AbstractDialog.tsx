@@ -1,7 +1,7 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
 import LaunchIcon from '@mui/icons-material/Launch';
 import { useLoadAbstract } from 'api';
-import { useGrantIdQuery, useQuery, useTermsQuery } from 'app/query';
+import { useGrantIdQuery, useTermsQuery } from 'app/query';
 import * as d3 from 'd3';
 import { MouseEvent } from 'react';
 
@@ -54,6 +54,7 @@ const AbstractDialog = () => {
 
   const timeConvert = (date: string) => (
     d3.timeFormat('%b %e, %Y')(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       d3.timeParse('%Y-%m-%d')(date)!
     )
   );

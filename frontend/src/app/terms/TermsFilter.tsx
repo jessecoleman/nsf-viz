@@ -1,8 +1,9 @@
 import { MouseEvent, ChangeEvent, useState } from 'react';
-import { Flipper } from 'react-flip-toolkit';
+import { Flipper, Flipped } from 'react-flip-toolkit';
 import { alpha, styled } from '@material-ui/core/styles';
 
 import {
+  Box,
   IconButton,
   Tooltip,
 } from '@material-ui/core';
@@ -30,9 +31,8 @@ const SearchContainer = styled('div')(({ theme }) => `
   min-width: 25em;
   flex-shrink: 1;
   // width: 100%;
-  max-height: 12em;
-  overflow-x: hidden;
-  overflow-y: auto;
+  // max-height: 12em;
+  overflow: hidden;
   display: flex;
   align-items: start;
   color: ${theme.palette.common.white};
@@ -172,46 +172,47 @@ const TermsFilter = () => {
       flipKey={JSON.stringify(terms)}
       handleEnterUpdateDelete={exitThenFlipAndEnter}
     >
-      <SearchContainer>
-        <ChipContainer>
-          <SearchIcon>
-            <Search />
-          </SearchIcon>
-          {terms.length > 0 && (
-            <Tooltip title='sort terms'>
-              <IconButton
-                color='inherit'
-                onClick={handleSortTerms}
-              >
-                {sort === 'count'
-                  ? <Sort />
-                  : <SortByAlpha />
-                }
-              </IconButton>
-            </Tooltip>
-          )}
-          {terms.map(term => (
-            <TermChip
-              key={term}
-              term={term.replaceAll('~', '')}
-              count={counts?.[term.replaceAll('~', '')]}
-              selected={term === selected}
-              onClick={handleClickChip}
-              onDelete={handleDeleteChip(term)}
-            />
-          ))}
-          <TermsInput
-            value={input}
-            onChange={handleChangeInput}
-            onAddChip={handleAddChip}
-            onDeleteLastChip={handleDeleteChip(terms[terms.length - 1])}
-            onClearInput={handleClearInput}
-            suggestions={(
-              <Flipper
-                flipKey={JSON.stringify([typeahead, related])}
-                handleEnterUpdateDelete={exitThenFlipAndEnter}
-              >
-                {input
+      <Flipped flipId='search-container'>
+        <SearchContainer>
+          <Flipped inverseFlipId='search-container'>
+            <ChipContainer>
+              <Flipped flipId='search-controls'>
+                <Box display='flex' flexDirection='row'>
+                  <SearchIcon>
+                    <Search />
+                  </SearchIcon>
+                  {terms.length > 0 && (
+                    <Tooltip title='sort terms'>
+                      <IconButton
+                        color='inherit'
+                        onClick={handleSortTerms}
+                      >
+                        {sort === 'count'
+                          ? <Sort />
+                          : <SortByAlpha />
+                        }
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
+              </Flipped>
+              {terms.map(term => (
+                <TermChip
+                  key={term}
+                  term={term.replaceAll('~', '')}
+                  count={counts?.[term.replaceAll('~', '')]}
+                  selected={term === selected}
+                  onClick={handleClickChip}
+                  onDelete={handleDeleteChip(term)}
+                />
+              ))}
+              <TermsInput
+                value={input}
+                onChange={handleChangeInput}
+                onAddChip={handleAddChip}
+                onDeleteLastChip={handleDeleteChip(terms[terms.length - 1])}
+                onClearInput={handleClearInput}
+                suggestions={input
                   ? <TermsList
                     input={input}
                     header='autocomplete'
@@ -229,22 +230,24 @@ const TermsFilter = () => {
                     />
                     : <TermsPreset />
                 }
-              </Flipper>
-            )}
-          />
-        </ChipContainer>
-        <Tooltip title={selected ? 'clear selection' : 'clear all terms'}>
-          <IconButton
-            color='inherit'
-            onClick={handleClearTerms}
-          >
-            {selected
-              ? <HighlightOff />
-              : <ClearAll />
-            }
-          </IconButton>
-        </Tooltip>
-      </SearchContainer>
+              />
+            </ChipContainer>
+          </Flipped>
+          <Flipped flipId='search-clear'>
+            <Tooltip title={selected ? 'clear selection' : 'clear all terms'}>
+              <IconButton
+                color='inherit'
+                onClick={handleClearTerms}
+              >
+                {selected
+                  ? <HighlightOff />
+                  : <ClearAll />
+                }
+              </IconButton>
+            </Tooltip>
+          </Flipped>
+        </SearchContainer>
+      </Flipped>
     </Flipper>
   );
 };

@@ -48,9 +48,10 @@ const ChipContent = styled('span')(({ theme }) => `
   }
 `);
 
-const animateIn = (e: HTMLElement) => {
+const animateIn = (e: HTMLElement, i: number) => {
   e.style.transform = 'translate(50%)';
   return animate(e, {
+    // delay: i * 15,
     opacity: 100,
     transform: 'translate(0%)',
   });
