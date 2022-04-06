@@ -17,10 +17,16 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => `
   flex-direction: column;
   flex-wrap: wrap;
   justify-content: end;
-  padding-top: ${theme.spacing(1)};
-  padding-bottom: ${theme.spacing(1)};
+  padding: 0;
+  &:last-child {
+    flex-grow: 1;
+  }
   ${theme.breakpoints.up('md')} {
+    padding: ${theme.spacing(1)};
     flex-direction: row;
+    &:last-child {
+      flex-grow: initial;
+    }
   }
 `);
 

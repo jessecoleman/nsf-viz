@@ -24,9 +24,9 @@ export const Row = styled(Box)<RowStyles>(({ theme, tooltip, checkable, selected
   background-color: ${selected
     ? theme.palette.action.selected
     : 'white'};
-  //&:hover {
-  //  background-color: ${nohover ? theme.palette.common.white : theme.palette.action.hover};
-  //}
+  &:hover {
+    background-color: ${nohover ? theme.palette.common.white : theme.palette.action.hover};
+  }
 `);
 
 type ColumnStyles = {

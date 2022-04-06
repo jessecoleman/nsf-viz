@@ -55,6 +55,10 @@ const SearchContainer = styled('div')(({ theme }) => `
     flex-grow: 1;
     display: flex;
   }
+  ${theme.breakpoints.down('sm')} {
+    border-radius: 0;
+    width: 100%;
+  }
 `);
 
 const ChipContainer = styled('div')(({ theme }) => `
