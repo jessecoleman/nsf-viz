@@ -327,7 +327,7 @@ async def grants(aioes,
                                 'term': {
                                     'cat1': div,
                                 }
-                            } for div in divisions]
+                            } for div in (divisions or [])]
                         },
                     },
                     org_match(org)

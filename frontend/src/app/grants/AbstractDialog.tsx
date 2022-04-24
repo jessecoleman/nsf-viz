@@ -1,7 +1,7 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
 import LaunchIcon from '@mui/icons-material/Launch';
 import { useLoadAbstract } from 'api';
-import { useGrantIdQuery, useTermsQuery } from 'app/query';
+import { useBeta, useGrantIdQuery, useTermsQuery } from 'app/query';
 import * as d3 from 'd3';
 import { MouseEvent } from 'react';
 
@@ -38,9 +38,10 @@ const Abstract = styled(Typography)(({ theme }) => `
 
 const AbstractDialog = () => {
 
+  const [ beta ] = useBeta();
   const [ terms, setTerms ] = useTermsQuery();
   const [ grantId, setGrantId ] = useGrantIdQuery();
-  const { data: grant, isLoading } = useLoadAbstract(grantId, { terms }, {
+  const { data: grant, isLoading } = useLoadAbstract(grantId, { terms, beta }, {
     query: {
       keepPreviousData: true,
       enabled: grantId !== undefined,

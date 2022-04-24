@@ -108,4 +108,7 @@ export const useDivisionsQuery = () => {
   // }
 };
 
+
+export const useBeta = () => useQueryParam('beta', DefaultBooleanParam);
+
 export type QueryParams = ReturnType<typeof useQuery>[0];

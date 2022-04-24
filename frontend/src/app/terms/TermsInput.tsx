@@ -41,7 +41,7 @@ const Dropdown = styled(Paper)<{ topics: boolean }>(({ theme, topics }) => `
 
 type TermsInputProps = {
   value: string
-  suggestions: React.ReactElement
+  suggestions: React.ReactElement | null
   onAddChip: (chips: string) => void
   onDeleteLastChip: () => void
   onClearInput: () => void

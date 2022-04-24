@@ -76,11 +76,12 @@ const exitThenFlipAndEnter = ({
 };
 
 type TermsListProps = {
-  input: string
-  header: string
-  filter: string[]
-  terms: Term[] | undefined
-  onAddChip: (term: string) => void
+  beta?: boolean,
+  input: string,
+  header: string,
+  filter: string[],
+  terms: Term[] | undefined,
+  onAddChip: (term: string) => void,
 }
 
 const TermsList = (props: TermsListProps) => (
@@ -110,9 +111,11 @@ const TermsList = (props: TermsListProps) => (
                         value={t.term}
                         query={props.input}
                       />
-                      <span className='forms'>
-                        {t.forms.join(', ')}
-                      </span>
+                      {props.beta &&
+                        <span className='forms'>
+                          {t.forms.join(', ')}
+                        </span>
+                      }
                     </ListItemText>
                     <ListItemIcon>
                       <AddCircle />

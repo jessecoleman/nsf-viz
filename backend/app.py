@@ -341,24 +341,26 @@ async def grant_download(
         
 
 @app.get('/abstract/{_id}', operation_id='loadAbstract', response_model=Grant)
-async def get_abstract(_id, terms: List[str] = Query([])):
+async def get_abstract(_id, terms: List[str] = Query([]), beta: bool = None):
     logger.debug(f"terms: {terms}")
     grant = await Q.abstract(aioes, _id, terms)
 
-    most_related = analyze.get_related(
-        grant.abstract,
-        terms,
-        phrases,
-        word_vecs
-    )
-    counts = await count_terms(
-        org='nsf',
-        terms=most_related,
-        match=['title', 'abstract']
-    )
+    if beta:
+        most_related = analyze.get_related(
+            grant.abstract,
+            terms,
+            phrases,
+            word_vecs
+        )
+        # counts = await count_terms(
+        #     org='nsf',
+        #     terms=most_related,
+        #     match=['title', 'abstract']
+        # )
 
-    grant2 = await Q.abstract(aioes, _id, terms + most_related)
-    grant.abstract = merge_abstracts(grant.abstract, grant2.abstract)
+        grant2 = await Q.abstract(aioes, _id, terms + most_related)
+        grant.abstract = merge_abstracts(grant.abstract, grant2.abstract)
+
     return grant
 
 

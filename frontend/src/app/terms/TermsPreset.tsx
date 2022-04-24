@@ -1,6 +1,6 @@
 import { Box, Button, LinearProgress, List, ListItem, ListSubheader } from '@material-ui/core';
 import { styled } from '@material-ui/system';
-import { Shuffle } from '@mui/icons-material';
+import { Science, Shuffle } from '@mui/icons-material';
 import { useTermsQuery } from 'app/query';
 import { useGetTopics } from '../../api';
 import TermChip from './TermChip';
@@ -49,6 +49,7 @@ const TermsPreset = () => {
   return (
     <StyledList>
       <ListSubheader>
+        <Science />
         Start searching a topic
         <Box flexGrow={1} />
         <Button

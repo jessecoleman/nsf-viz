@@ -1,7 +1,7 @@
-import { Link, SpeedDial, SpeedDialAction, SpeedDialIcon, styled, Tooltip } from '@material-ui/core';
-import { Download, GitHub, GridOn, InsertDriveFile } from '@mui/icons-material';
+import { Link, SpeedDial, SpeedDialAction, styled, Tooltip } from '@material-ui/core';
+import { Download, GitHub, Science, InsertDriveFile } from '@mui/icons-material';
 import useGrantsDownload from 'app/grants/grantsDownload';
-import { useGrantsDialogQuery } from 'app/query';
+import { useBeta, useGrantsDialogQuery } from 'app/query';
 import { MouseEvent } from 'react';
 
 const StyledAction = styled(SpeedDialAction)`
@@ -14,6 +14,7 @@ const StyledAction = styled(SpeedDialAction)`
 
 const Actions = () => {
 
+  const [ beta, setBeta ] = useBeta();
   const grantsUrl = useGrantsDownload();
   const [ , setDialogQuery ] = useGrantsDialogQuery();
 
@@ -26,17 +27,24 @@ const Actions = () => {
     {
       name: 'Download Grant Data',
       icon: <Download />,
-      href: grantsUrl
+      href: grantsUrl,
+      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation()
     },
     {
       name: 'View Source',
       icon: <GitHub />,
-      href: 'https://github.com/jessecoleman/nsf-viz'
+      href: 'https://github.com/jessecoleman/nsf-viz',
+      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation()
+    },
+    {
+      name: (beta ? 'Disable' : 'Enable') + ' Beta Features',
+      icon: <Science htmlColor={beta ? 'red' : 'green'} />,
+      handleClick: (e: MouseEvent<HTMLElement>) => { e.stopPropagation(); setBeta(!beta); }
     }
   ];
   
   const handleOpenGrants = (e: MouseEvent) => {
-    console.log(e.target, e.currentTarget.classList);
+    // console.log(e.target, e.currentTarget.classList);
     if (e.currentTarget.classList.contains('MuiSpeedDial-root')) {
       setDialogQuery({ grantDialogOpen: true });
     }
@@ -53,11 +61,9 @@ const Actions = () => {
         {actions.map((action) => (
           <StyledAction
             key={action.name}
+            onClick={action.handleClick}
             icon={(
-              <Link
-                onClick={e => e.stopPropogation()}
-                href={action.href}
-              >
+              <Link href={action.href}>
                 {action.icon}
               </Link>
             )}

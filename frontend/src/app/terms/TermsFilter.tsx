@@ -17,7 +17,7 @@ import {
 } from '@mui/icons-material';
 
 import { useDebounce } from 'app/hooks';
-import { ArrayParam, useQuery } from 'app/query';
+import { ArrayParam, useBeta, useQuery } from 'app/query';
 import TermChip from './TermChip';
 import TermsInput from './TermsInput';
 import TermsPreset from './TermsPreset';
@@ -95,6 +95,7 @@ const exitThenFlipAndEnter = ({
 const TermsFilter = () => {
 
   const [ input, setInput ] = useState('');
+  const [ beta ] = useBeta();
   const debouncedInput = useDebounce(input, 300);
 
   const [ terms, setTerms ] = useQueryParam('terms', ArrayParam);
@@ -218,6 +219,7 @@ const TermsFilter = () => {
                 onClearInput={handleClearInput}
                 suggestions={input
                   ? <TermsList
+                    beta={beta}
                     input={input}
                     header='autocomplete'
                     filter={terms}
@@ -226,13 +228,17 @@ const TermsFilter = () => {
                   />
                   : terms.length
                     ? <TermsList
+                      beta={beta}
                       input={input}
                       header='related terms'
                       filter={terms}
                       terms={related}
                       onAddChip={handleAddChip}
                     />
-                    : <TermsPreset />
+                    : beta
+                      ? <TermsPreset />
+                      : null
+
                 }
               />
             </ChipContainer>
