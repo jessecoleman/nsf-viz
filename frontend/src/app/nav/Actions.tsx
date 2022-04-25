@@ -1,6 +1,8 @@
-import { Link, SpeedDial, SpeedDialAction, SpeedDialIcon, styled } from '@material-ui/core';
-import { GitHub, GridOn, InsertDriveFile } from '@mui/icons-material';
+import { Link, SpeedDial, SpeedDialAction, styled, Tooltip } from '@material-ui/core';
+import { Download, GitHub, Science, InsertDriveFile } from '@mui/icons-material';
 import useGrantsDownload from 'app/grants/grantsDownload';
+import { useBeta, useGrantsDialogQuery } from 'app/query';
+import { MouseEvent } from 'react';
 
 const StyledAction = styled(SpeedDialAction)`
   & .MuiLink-root {
@@ -12,7 +14,9 @@ const StyledAction = styled(SpeedDialAction)`
 
 const Actions = () => {
 
+  const [ beta, setBeta ] = useBeta();
   const grantsUrl = useGrantsDownload();
+  const [ , setDialogQuery ] = useGrantsDialogQuery();
 
   const actions = [
     // {
@@ -22,30 +26,52 @@ const Actions = () => {
     // },
     {
       name: 'Download Grant Data',
-      icon: <InsertDriveFile />,
-      href: grantsUrl
+      icon: <Download />,
+      href: grantsUrl,
+      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation()
     },
     {
       name: 'View Source',
       icon: <GitHub />,
-      href: 'https://github.com/jessecoleman/nsf-viz'
+      href: 'https://github.com/jessecoleman/nsf-viz',
+      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation()
+    },
+    {
+      name: (beta ? 'Disable' : 'Enable') + ' Beta Features',
+      icon: <Science htmlColor={beta ? 'red' : 'green'} />,
+      handleClick: (e: MouseEvent<HTMLElement>) => { e.stopPropagation(); setBeta(!beta); }
     }
   ];
+  
+  const handleOpenGrants = (e: MouseEvent) => {
+    // console.log(e.target, e.currentTarget.classList);
+    if (e.currentTarget.classList.contains('MuiSpeedDial-root')) {
+      setDialogQuery({ grantDialogOpen: true });
+    }
+  };
  
   return (
-    <SpeedDial
-      ariaLabel='external links'
-      sx={{ position: 'absolute', bottom: 16, right: 16 }}
-      icon={<SpeedDialIcon />}
-    >
-      {actions.map((action) => (
-        <StyledAction
-          key={action.name}
-          icon={<Link href={action.href}>{action.icon}</Link>}
-          tooltipTitle={action.name}
-        />
-      ))}
-    </SpeedDial>
+    <Tooltip title='View Grants' placement='left-end'>
+      <SpeedDial
+        ariaLabel='external links'
+        sx={{ position: 'absolute', bottom: 16, right: 16 }}
+        icon={<InsertDriveFile />}
+        onClick={handleOpenGrants}
+      >
+        {actions.map((action) => (
+          <StyledAction
+            key={action.name}
+            onClick={action.handleClick}
+            icon={(
+              <Link href={action.href}>
+                {action.icon}
+              </Link>
+            )}
+            tooltipTitle={action.name}
+          />
+        ))}
+      </SpeedDial>
+    </Tooltip>
   );
 };
 

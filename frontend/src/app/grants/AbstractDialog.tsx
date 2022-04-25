@@ -1,8 +1,9 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, styled, Typography } from '@material-ui/core';
 import LaunchIcon from '@mui/icons-material/Launch';
 import { useLoadAbstract } from 'api';
-import { useGrantIdQuery, useQuery } from 'app/query';
+import { useBeta, useGrantIdQuery, useTermsQuery } from 'app/query';
 import * as d3 from 'd3';
+import { MouseEvent } from 'react';
 
 const Title = styled(Typography)(({ theme }) => `
     color: ${theme.palette.text.primary};
@@ -21,14 +22,28 @@ const Abstract = styled(Typography)(({ theme }) => `
     padding: ${theme.spacing(0.25, 1)};
     border-radius: ${theme.spacing(2)};
   }
+  & i {
+    display: inline-block;
+    box-sizing: border-box;
+    font-style: normal;
+    padding: ${theme.spacing(0.25, 1)};
+    border: 1px solid ${theme.palette.grey[500]};
+    border-radius: ${theme.spacing(2)};
+    &:hover {
+      cursor: pointer;
+      background-color: ${theme.palette.grey[300]};
+    }
+  }
 `);
 
 const AbstractDialog = () => {
 
-  const [{ terms }] = useQuery();
+  const [ beta ] = useBeta();
+  const [ terms, setTerms ] = useTermsQuery();
   const [ grantId, setGrantId ] = useGrantIdQuery();
-  const { data: grant, isLoading } = useLoadAbstract(grantId, { terms }, {
+  const { data: grant, isLoading } = useLoadAbstract(grantId, { terms, beta }, {
     query: {
+      keepPreviousData: true,
       enabled: grantId !== undefined,
       select: (d) => d.data
     }
@@ -40,9 +55,18 @@ const AbstractDialog = () => {
 
   const timeConvert = (date: string) => (
     d3.timeFormat('%b %e, %Y')(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       d3.timeParse('%Y-%m-%d')(date)!
     )
   );
+  
+  const handleClick = (e: MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.nodeName.toLowerCase() === 'i') {
+      setTerms(terms.concat([target.innerText]));
+
+    }
+  };
 
   return (
     <Dialog
@@ -70,9 +94,10 @@ const AbstractDialog = () => {
           </DialogTitle>
           <DialogContent>
             <Collapse in={!!grant.abstract}>
-              <Abstract dangerouslySetInnerHTML={{
-                __html: grant.abstract ?? ''
-              }} />
+              <Abstract
+                onClick={handleClick}
+                dangerouslySetInnerHTML={{ __html: grant.abstract ?? '' }}
+              />
             </Collapse>
           </DialogContent>
           <DialogActions>

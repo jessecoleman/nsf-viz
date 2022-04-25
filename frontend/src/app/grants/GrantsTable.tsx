@@ -31,26 +31,28 @@ const GrantsTable = (props: GrantsTableProps) => {
 
   return (
     <>
-      <Collapse in={count > 0 && isFetchedAfterMount}>
-        <InfiniteLoader
-          ref={loaderRef}
-          isItemLoaded={isLoaded}
-          itemCount={hasNextPage ? count + 1 : count}
-          loadMoreItems={handleLoadGrants}
-        >
-          {({ onItemsRendered, ref }) => (
-            <FixedSizeList
-              onItemsRendered={onItemsRendered}
-              height={Math.min(ITEM_SIZE * (count + 1), height - 256)}
-              width='100%'
-              itemSize={ITEM_SIZE}
-              itemCount={hasNextPage ? count : count + 1}
-              ref={ref}
-            >
-              {GrantRow}
-            </FixedSizeList>
-          )}
-        </InfiniteLoader>
+      <Collapse in={isFetchedAfterMount}>
+        <div className='scrollbox'>
+          <InfiniteLoader
+            ref={loaderRef}
+            isItemLoaded={isLoaded}
+            itemCount={hasNextPage ? count + 1 : count}
+            loadMoreItems={handleLoadGrants}
+          >
+            {({ onItemsRendered, ref }) => (
+              <FixedSizeList
+                onItemsRendered={onItemsRendered}
+                height={Math.min(ITEM_SIZE * (count + 1), height - 256)}
+                width='100%'
+                itemSize={ITEM_SIZE}
+                itemCount={hasNextPage ? count : count + 1}
+                ref={ref}
+              >
+                {GrantRow}
+              </FixedSizeList>
+            )}
+          </InfiniteLoader>
+        </div>
       </Collapse>
       {isFetching && hasNextPage && <ProgressBar />}
     </>

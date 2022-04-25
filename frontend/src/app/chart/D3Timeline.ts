@@ -73,7 +73,7 @@ export default class D3Timeline {
           .duration(this.animationDur / 2)
           .call(target.move, this.yearRange.map(this.getBrushBounds));
       });
-
+      
     this.gb = this.chart.append('g').raise();
 
     this.xAxis = this.chart.append('g')
@@ -179,6 +179,9 @@ export default class D3Timeline {
 
   redraw = () => {
 
+    d3.select('.selection')
+      .attr('stroke', '#777')
+      .attr('stroke-width', '2px');
     this.updateAxes();
     this.updateBrush();
 

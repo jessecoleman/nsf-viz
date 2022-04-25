@@ -15,10 +15,18 @@ import { forwardRef } from 'react';
 const StyledToolbar = styled(Toolbar)(({ theme }) => `
   display: flex;
   flex-direction: column;
-  padding-top: ${theme.spacing(1)};
-  padding-bottom: ${theme.spacing(1)};
+  flex-wrap: wrap;
+  justify-content: end;
+  padding: 0;
+  &:last-child {
+    flex-grow: 1;
+  }
   ${theme.breakpoints.up('md')} {
+    padding: ${theme.spacing(1)};
     flex-direction: row;
+    &:last-child {
+      flex-grow: initial;
+    }
   }
 `);
 
@@ -30,7 +38,7 @@ const Logo = styled('img')(({ theme }) => `
 
 const TitleBar = styled(Box)(({ theme }) => `
   width: 100%;
-  // height: 4em;
+  height: 3em;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -69,7 +77,7 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => (
           Grant Explorer
         </Title>
       </TitleBar>
-      <Box flexGrow={1} />
+      <Box flexGrow={3} />
       <TermsFilter />
     </StyledToolbar>
   </AppBar>

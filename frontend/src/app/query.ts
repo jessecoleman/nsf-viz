@@ -75,6 +75,10 @@ export const useGrantsDialogQuery = () => (
   useQueryParams(grantParamConfig)
 );
 
+export const useTermsQuery = () => (
+  useQueryParam('terms', ArrayParam)
+);
+
 export const useGrantIdQuery = () => (
   useQueryParam('grantId', DefaultStringParam)
 );
@@ -103,5 +107,8 @@ export const useDivisionsQuery = () => {
   //   return [ new Set(Object.keys(divisionMap)), setDivisions ];
   // }
 };
+
+
+export const useBeta = () => useQueryParam('beta', DefaultBooleanParam);
 
 export type QueryParams = ReturnType<typeof useQuery>[0];

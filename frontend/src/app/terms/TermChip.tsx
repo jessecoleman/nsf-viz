@@ -48,12 +48,14 @@ const ChipContent = styled('span')(({ theme }) => `
   }
 `);
 
-const animateIn = (e: HTMLElement) => (
-  animate(e, {
+const animateIn = (e: HTMLElement, i: number) => {
+  e.style.transform = 'translate(50%)';
+  return animate(e, {
+    // delay: i * 15,
     opacity: 100,
-    // transform: 'scale(100%)'
-  })
-);
+    transform: 'translate(0%)',
+  });
+};
 
 const animateOut = (e: HTMLElement) => (
   animate(e, {
@@ -72,7 +74,7 @@ export type TermChipProps = {
 
 const TermChip = (props: TermChipProps) => (
   <Flipped
-    // onAppear={animateIn}
+    onAppear={animateIn}
     // onExit={animateOut}
     flipId={props.term}
   >
@@ -83,7 +85,7 @@ const TermChip = (props: TermChipProps) => (
         <ChipContent>
           <span>
             {props.count !== undefined
-              ? format('.2s')(props.count)
+              ? format('.2s')(props.count).replace('.0', '')
               : <CircularProgress size='1.25em' color='secondary' />
             }
           </span>
