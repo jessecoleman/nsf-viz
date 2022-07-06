@@ -30,11 +30,11 @@ services:
             # be generated in Docker, so specify it as a persistent Docker named volume:
             # https://stackoverflow.com/a/38601156
             - docker_openapi:/usr/local/src/app/frontend/src/api
-        environment: 
+        environment:
             - ELASTICSEARCH_HOST=elasticsearch
         # ports:
         #     - 3000:3000
-        depends_on: 
+        depends_on:
             - backend
     proxy:
         build: ./proxy
@@ -45,18 +45,37 @@ services:
             - backend
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
-        volumes: 
+        restart: always
+        volumes:
             - ./elasticsearch_data:/usr/share/elasticsearch/data
             - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-        environment: 
+        environment:
             - discovery.type=single-node
             # - cluster.routing.allocation.disk.threshold_enabled=false
-        ports: 
+        ports:
             - 127.0.0.1:9200:9200
             - 127.0.0.1:9300:9300
         # deploy:
         #     resources:
         #         limits:
         #             memory: 1G
+        # networks:
+        #     - elastic
+
+    kibana:
+        image: docker.elastic.co/kibana/kibana:7.14.0
+        ports:
+            - 127.0.0.1:5601:5601
+        environment:
+            - ELASTICSEARCH_URL=http://elasticsearch:9200
+        depends_on:
+            - elasticsearch
+        # networks:
+        #     - elastic
+
 volumes:
     docker_openapi:
+
+# networks:
+#     elastic:
+#         driver: bridge
