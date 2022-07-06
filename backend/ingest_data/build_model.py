@@ -23,7 +23,6 @@ from gensim.parsing.preprocessing import (
     strip_short,
     stem_text
 )
-import mysql.connector
 
 
 # keep connector words for ngram analysis
@@ -50,19 +49,6 @@ W2V_FILTERS = [
     strip_short,
     stem_text
 ]
-
-
-def data_source_mysql() -> List:
-    db = mysql.connector.connect(host="localhost",
-            database="nsf",
-            user="nsf",
-            password="!DLnsf333")
-    
-    cursor = db.cursor()
-    
-    cursor.execute("select AwardTitle, AbstractNarration from Award")
-  
-    return cursor.fetchall()
 
 
 def data_source_csv(fpath: Union[str, Path]) -> Generator:
@@ -108,17 +94,13 @@ def data_source_elasticsearch() -> Generator:
 
 def get_data(
     output_file: str,
-    data_source: Union[Iterable, str] = 'mysql',
+    data_source: Iterable,
     truncate=None,
     process='ngram',
 ):
     output_file = Path(output_file).resolve()
     assert output_file.parent.exists()
 
-    # TODO make this consistent with other calling sites?
-    if data_source == 'mysql':
-        data_source = data_source_mysql()
-        
     if process == 'ngram':
         filters = NGRAM_FILTERS
     elif process == 'w2v':
@@ -433,9 +415,7 @@ def cluster_vectors(
 
 def dispatch(args):
     if args.cmd == 'data':
-        if args.data_source.lower() == 'mysql':
-            data_source = data_source_mysql()
-        elif args.data_source.endswith('.csv'):
+        if args.data_source.endswith('.csv'):
             data_source = data_source_csv(args.data_source)
         elif args.data_source.lower().startswith('elastic') or args.data_source.lower() == 'es':
             data_source = data_source_elasticsearch()
@@ -468,7 +448,7 @@ if __name__ == '__main__':
 
     parser_00_data = subparsers.add_parser('data')
     parser_00_data.add_argument('output', nargs='?', default=intermediate_file)
-    parser_00_data.add_argument("--data-source", default='mysql', help="Source for data (default: mysql database)")
+    parser_00_data.add_argument("--data-source", required=True, help="Source for data. Valid arguments include a path to a CSV file, or \"elasticsearch\"")
 
     parser_01_build = subparsers.add_parser('build')
     parser_01_build.add_argument('intermediate_file', nargs='?', default=intermediate_file)
