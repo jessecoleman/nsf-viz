@@ -7,6 +7,7 @@ import nih from '../images/nih-logo.svg';
 import nsf from '../images/nsf-logo.svg';
 import dod from '../images/dod-logo.svg';
 import { Organization } from 'app/query';
+import { useWizardRef } from 'app/wizard/wizard';
 
 const Toolbar = styled('div')(({ theme }) => `
   display: flex;
@@ -52,37 +53,48 @@ const orgs = [
   { title: 'Department of Defense', abbr: 'dod', src: dod}
 ];
 
-const DivisionToolbar = (props: DivisionToolbarProps) => (
-  <Toolbar>
-    <Box display='flex' flexDirection='row' alignItems='center'>
-      <StyledSelect
-        value={props.org}
-        onChange={props.onChangeOrg}
+const DivisionToolbar = (props: DivisionToolbarProps) => {
+
+  const { ref: organizationsRef } = useWizardRef<HTMLDivElement>('filterOrganizations');
+  const { ref: divisionsRef } = useWizardRef<HTMLInputElement>('filterDivisions');
+  return (
+    <Toolbar>
+      <Box
+        ref={organizationsRef}
+        display='flex'
+        flexDirection='row'
+        alignItems='center'
       >
-        {orgs.map(o => (
-          <MenuItem key={o.abbr} value={o.abbr}>
-            <ListItemIcon>
-              <Logo src={o.src} />
-            </ListItemIcon>
-            {o.title}
-          </MenuItem>
-        ))}
-      </StyledSelect>
-      <Actions>
-        <DrawerToggle />
-      </Actions>
-    </Box>
-    <Input
-      placeholder='filter divisions'
-      value={props.filter}
-      onChange={props.onChangeFilter}
-      startAdornment={
-        <InputAdornment position='start'>
-          <FilterList />
-        </InputAdornment>
-      }
-    />
-  </Toolbar>
-);
+        <StyledSelect
+          value={props.org}
+          onChange={props.onChangeOrg}
+        >
+          {orgs.map(o => (
+            <MenuItem key={o.abbr} value={o.abbr}>
+              <ListItemIcon>
+                <Logo src={o.src} />
+              </ListItemIcon>
+              {o.title}
+            </MenuItem>
+          ))}
+        </StyledSelect>
+        <Actions>
+          <DrawerToggle />
+        </Actions>
+      </Box>
+      <Input
+        ref={divisionsRef}
+        placeholder='filter divisions'
+        value={props.filter}
+        onChange={props.onChangeFilter}
+        startAdornment={
+          <InputAdornment position='start'>
+            <FilterList />
+          </InputAdornment>
+        }
+      />
+    </Toolbar>
+  );
+};
 
 export default DivisionToolbar;

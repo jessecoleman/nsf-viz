@@ -1,8 +1,9 @@
 import { FormControlLabel, styled, Radio, RadioGroup, Menu, IconButton, ListItem, ListItemIcon } from '@material-ui/core';
-import { AttachFile, AttachMoney, InsertDriveFile, Settings } from '@mui/icons-material';
+import { AttachMoney, InsertDriveFile, Settings } from '@mui/icons-material';
 import { useQuery } from 'app/query';
 import { SortableKeys } from 'app/sort';
-import { ChangeEvent, useState, MouseEvent } from 'react';
+import { useWizardRef } from 'app/wizard/wizard';
+import { ChangeEvent, useState } from 'react';
 
 
 const StyledMenu = styled(Menu)(({ theme }) => `
@@ -51,8 +52,9 @@ const radio = [
 const ChartLegend = () => {
   
   const [ query, setQuery ] = useQuery();
-  const [ anchor, setAnchor ] = useState<HTMLElement | null>(null);
-
+  const [ open, setOpen ] = useState<boolean>(false);
+  const { ref: togglesRef, active } = useWizardRef<HTMLButtonElement>('chartToggles');
+  
   const handleChangeAgg = (e: ChangeEvent) => {
     const { value } = e.currentTarget as HTMLInputElement;
     setQuery({ sort: value as SortableKeys });
@@ -65,21 +67,22 @@ const ChartLegend = () => {
     });
   };
 
-  const handleToggle = (e: MouseEvent) => {
-    setAnchor(anchor ? null : e.currentTarget as HTMLElement);
+  const handleToggle = () => {
+    setOpen(open => !open);
   };
 
   return (
     <>
       <IconButton
         id='legend'
+        ref={togglesRef}
         onClick={handleToggle}
       >
         <Settings />
       </IconButton>
       <StyledMenu
-        open={!!anchor}  
-        anchorEl={anchor}
+        open={open || active}
+        anchorEl={togglesRef.current}
         onClose={handleToggle}
         anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
       >
