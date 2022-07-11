@@ -53,7 +53,8 @@ const ChartLegend = () => {
   
   const [ query, setQuery ] = useQuery();
   const [ open, setOpen ] = useState<boolean>(false);
-  const { ref: togglesRef, active } = useWizardRef<HTMLButtonElement>('chartToggles');
+  const { ref: togglesRef, active: chartTogglesActive } = useWizardRef<HTMLButtonElement>('chartToggles');
+  const { ref: anyAllRef, active: anyAllActive } = useWizardRef<HTMLButtonElement>('anyAllSetting');
   
   const handleChangeAgg = (e: ChangeEvent) => {
     const { value } = e.currentTarget as HTMLInputElement;
@@ -81,7 +82,7 @@ const ChartLegend = () => {
         <Settings />
       </IconButton>
       <StyledMenu
-        open={open || active}
+        open={open || chartTogglesActive || anyAllActive}
         anchorEl={togglesRef.current}
         onClose={handleToggle}
         anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
@@ -115,6 +116,7 @@ const ChartLegend = () => {
             aria-label='intersection toggle'
             name='intersection'
             value={query.intersection ? 'all' : 'any'}
+            ref={anyAllRef}
           >
             {radio.map(r => (
               <FormControlLabel 

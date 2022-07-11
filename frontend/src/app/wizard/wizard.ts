@@ -11,11 +11,13 @@ type Step = {
 }
 
 const stepOrder = [
+  'hello',
   'filterTerms',
   'clearTerms',
   'filterOrganizations',
   'filterDivisions',
   'chartToggles',
+  'anyAllSetting',
   'filterYears',
   'overflowMenu',
 ] as const;
@@ -23,46 +25,59 @@ const stepOrder = [
 type Steps = Record<typeof stepOrder[number], Step>;
 
 const steps: Steps = {
+  hello: {
+    anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
+    transformOrigin: { vertical: 'top', horizontal: 'center' },
+    title: 'Welcome!',
+    description: 'Welcome to Grant Explorer!'
+  },
   filterTerms: {
     anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
     transformOrigin: { vertical: 'top', horizontal: 'center' },
-    title: 'search terms',
-    description: 'enter keywords here that you want to filter by'
+    title: 'Search Terms',
+    description: 'Enter keywords here to filter by'
   },
   clearTerms: {
     anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
     transformOrigin: { vertical: 'top', horizontal: 'right' },
-    title: 'clear all keywords',
+    title: 'Clear All Keywords',
+    description: 'Clear all keywords and start your search again',
   },
   filterOrganizations: {
     anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
     transformOrigin: { vertical: 'top', horizontal: 'center' },
-    title: 'switch organization',
-    description: 'switch between NSF, NIH, and DOD datasets'
+    title: 'Switch Organization',
+    description: 'Switch between different funding agencies'
   },
   filterDivisions: {
     anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
     transformOrigin: { vertical: 'top', horizontal: 'center' },
-    title: 'filter by division',
-    description: 'select subset of divisions to view'
+    title: 'Filter By Division',
+    description: 'Select subset of divisions to view'
   },
   chartToggles: {
-    anchorOrigin: { vertical: 'top', horizontal: 'left' },
+    anchorOrigin: { vertical: 'bottom', horizontal: 'right' },
     // transformOrigin: { vertical: 'top', horizontal: 'left' },
-    title: 'toggle chart settings',
-    description: 'view aggregates by $ amount or count, etc'
+    title: 'Toggle Chart Settings',
+    description: 'View aggregates by $ amount or count'
+  },
+  anyAllSetting: {
+    anchorOrigin: { vertical: 'bottom', horizontal: 'right' },
+    // transformOrigin: { vertical: 'top', horizontal: 'left' },
+    title: 'Keywords: Any vs. All',
+    description: 'Select whether included grants should contain *any* of the included keywords, or *all* of them'
   },
   filterYears: {
     anchorOrigin: { vertical: 'top', horizontal: 'center' },
     transformOrigin: { vertical: 'bottom', horizontal: 'center' },
-    title: 'filter by year range',
-    description: 'drag the gray box to adjust range'
+    title: 'Filter By Year Range',
+    description: 'Drag the box to adjust the date range'
   },
   overflowMenu: {
     anchorOrigin: { vertical: 'top', horizontal: 'left' },
     transformOrigin: { vertical: 'center', horizontal: 'right' },
-    title: 'extras',
-    description: 'see detailed grant data and external links',
+    title: 'Extras',
+    description: 'See detailed grant data and external links',
   }
 };
 

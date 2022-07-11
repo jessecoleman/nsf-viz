@@ -23,7 +23,6 @@ const Overlay = styled(Box)(({ theme }) => `
 const StyledMenu = styled(Menu)(({ theme }) => `
   margin: ${theme.spacing(4)};
   z-index: 2000;
-  max-width: 18em;
   & .MuiMenu-list {
     padding: ${theme.spacing(1)};
   }
@@ -54,7 +53,7 @@ const WizardTooltip = () => {
   if (!step || !ref?.current) return null;
 
   const bbox = ref.current.getBoundingClientRect();
-  
+
   return (
     <>
       <Overlay id='test'>
@@ -71,6 +70,16 @@ const WizardTooltip = () => {
         anchorEl={ref.current}
         anchorOrigin={step.anchorOrigin}
         transformOrigin={step.transformOrigin}
+        autoFocus={true}
+        onKeyDown={(e) => {  // this doesn't work for the steps that interact with an element (like chartToggles) because the focus is stolen from the WizardTooltip
+          if ((e.key === 'Enter' || e.key === 'ArrowRight' || e.key === ' ') && navigateForward) {
+            navigateForward();
+          } else if ((e.key === 'Backspace' || e.key === 'ArrowLeft') && navigateBack) {
+            navigateBack();
+          } else if (e.key === 'Escape') {
+            cancelWizard();
+          }
+        }}
       >
         <DialogTitle>
           {step.title}
@@ -82,19 +91,21 @@ const WizardTooltip = () => {
         }
         <StyledActions>
           <Button
-            disabled={!navigateBack}
-            onClick={navigateBack}
-            startIcon={<NavigateBefore />}
-          >
-            prev
-          </Button>
-          <Button
             color='error'
             onClick={cancelWizard}
             startIcon={<Close />}
           >
-            {navigateForward ? 'skip' : 'end'}
+            {navigateBack ? 'end' : 'skip tutorial'}
           </Button>
+          {navigateBack && (
+            <Button
+              disabled={!navigateBack}
+              onClick={navigateBack}
+              startIcon={<NavigateBefore />}
+            >
+              prev
+            </Button>
+          )}
           <Button
             disabled={!navigateForward}
             onClick={navigateForward}

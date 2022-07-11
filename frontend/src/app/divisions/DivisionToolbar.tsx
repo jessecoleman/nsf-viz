@@ -55,7 +55,7 @@ const orgs = [
 
 const DivisionToolbar = (props: DivisionToolbarProps) => {
 
-  const { ref: organizationsRef } = useWizardRef<HTMLDivElement>('filterOrganizations');
+  const { ref: organizationsRef, active: organizationsActive } = useWizardRef<HTMLDivElement>('filterOrganizations');
   const { ref: divisionsRef } = useWizardRef<HTMLInputElement>('filterDivisions');
   return (
     <Toolbar>
@@ -68,6 +68,7 @@ const DivisionToolbar = (props: DivisionToolbarProps) => {
         <StyledSelect
           value={props.org}
           onChange={props.onChangeOrg}
+          open={organizationsActive}
         >
           {orgs.map(o => (
             <MenuItem key={o.abbr} value={o.abbr}>

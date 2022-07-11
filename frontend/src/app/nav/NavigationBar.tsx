@@ -11,6 +11,7 @@ import TermsFilter from 'app/terms/TermsFilter';
 import grantExplorer from 'app/images/grant-explorer.svg';
 import DrawerToggle from './DrawerToggle';
 import { forwardRef } from 'react';
+import { useWizardRef } from 'app/wizard/wizard';
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => `
   display: flex;
@@ -67,10 +68,12 @@ const Title = styled(Typography)(({ theme }) => `
   }
 `);
 
-const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => (
+const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => {
+    const { ref: titleBarRef } = useWizardRef<HTMLDivElement>('hello');
+  return (
   <AppBar position='static' ref={ref}>
     <StyledToolbar>
-      <TitleBar>
+      <TitleBar ref={titleBarRef}>
         <DrawerToggle />
         <Logo src={grantExplorer} alt='national science foundation logo' />
         <Title variant='h6' noWrap>
@@ -81,6 +84,7 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => (
       <TermsFilter />
     </StyledToolbar>
   </AppBar>
-));
+  );
+});
 
 export default SearchAppBar;
