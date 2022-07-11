@@ -1,6 +1,6 @@
 import { PopoverOrigin } from '@material-ui/core';
 import { useTutorial } from 'app/query';
-import { RefObject, useEffect, useRef } from 'react';
+import { RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { NumberParam, useQueryParam } from 'use-query-params';
 
 type Step = {
@@ -86,31 +86,64 @@ const refs: any[] = [];
 export const useWizard = () => {
   
   const [ stepIdx, setStepIdx ] = useTutorial();
+
+  const navigateForward = useCallback(() => {
+    setStepIdx(idx => idx != undefined && idx < stepOrder.length - 1
+      ? idx + 1
+      : undefined
+    );
+  }, [setStepIdx]);
+
+  const navigateBack = useCallback(() => {
+    setStepIdx(idx => Math.max((idx ?? 0) - 1, 0));
+  }, [setStepIdx]);
+
+  const cancelWizard = useCallback(() => {
+    setStepIdx(undefined);
+    localStorage.setItem('tutorialViewed', 'true');
+  }, [setStepIdx]);
+ 
+  const tutorialNav = useCallback((e: KeyboardEvent) => {
+    switch(e.key) {
+      case 'Enter':
+      case 'ArrowRight':
+      case ' ':
+        navigateForward();
+        break;
+      case 'Backspace':
+      case 'ArrowLeft':
+        navigateBack();
+        break;
+      case 'Escape':
+        cancelWizard();
+        break;
+    }
+  }, [navigateForward, navigateBack, cancelWizard]);
+
   // startup tutorial check
   useEffect(() => {
     const tutorialViewed = localStorage.getItem('tutorialViewed') === 'true';
     setStepIdx(tutorialViewed ? undefined : 0);
+    // clean up listener on unmount
+    return () => {
+      window.removeEventListener('keydown', tutorialNav);
+    };
+
   }, []);
   
-  const step: Step | undefined = Object.values(steps)[stepIdx ?? -1];
-
-  const navigateForward = () => {
-    if (stepIdx != undefined) {
-      setStepIdx(Math.min(stepIdx + 1, stepOrder.length));
-    }
-  };
-
-  const navigateBack = () => {
-    if (stepIdx != undefined) {
-      setStepIdx(Math.max(stepIdx - 1, 0));
-    }
-  };
-
-  const cancelWizard = () => {
-    setStepIdx(undefined);
-    localStorage.setItem('tutorialViewed', 'true');
-  };
+  const prevStepIdx = useRef(stepIdx);
   
+  useEffect(() => {
+    if (stepIdx == undefined) {
+      window.removeEventListener('keydown', tutorialNav);
+    } else if (prevStepIdx.current == undefined) {
+      window.addEventListener('keydown', tutorialNav);
+    }
+    prevStepIdx.current = stepIdx;
+  }, [stepIdx, tutorialNav]);
+  
+  const step: Step | undefined = Object.values(steps)[stepIdx ?? -1];
+ 
   return {
     navigateBack: stepIdx != undefined && stepIdx > 0 ? navigateBack : undefined,
     navigateForward: stepIdx != undefined && stepIdx + 1 < stepOrder.length ? navigateForward : undefined,
