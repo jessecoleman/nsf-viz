@@ -7,6 +7,7 @@ import { useMeasureChart } from 'app/hooks';
 import Actions from 'app/nav/Actions';
 import GrantsDialog from 'app/grants/GrantsDialog';
 import WizardTooltip from 'app/wizard/WizardTooltip';
+import About from 'app/wizard/About';
 
 const ResponsiveContainer = styled('div')(({ theme }) => `
   overflow: clip;
@@ -36,6 +37,7 @@ const App = () => {
       </ResponsiveContainer>
       <GrantsDialog />
       <WizardTooltip />
+      <About />
     </Box>
   );
 };
