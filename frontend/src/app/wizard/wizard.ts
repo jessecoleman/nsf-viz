@@ -107,7 +107,7 @@ export const useWizard = () => {
     switch(e.key) {
       case 'Enter':
       case 'ArrowRight':
-      case ' ':
+      case ' ':  // spacebar
         navigateForward();
         break;
       case 'Backspace':
@@ -115,6 +115,7 @@ export const useWizard = () => {
         navigateBack();
         break;
       case 'Escape':
+      case 'q':
         cancelWizard();
         break;
     }
