@@ -24,7 +24,7 @@ const About = () => {
         <h3>Who funded the tool?</h3>
         <p>The <a href="https://www.moore.org/" target="_blank" rel="noreferrer">Moore Foundation</a> funded the development of the tool.</p>
         <h3>Will the data be updated and will new functionality be added?</h3>
-        <p>The NSF, NIH, and DoD grant data will be updated as it becomes available. We plan to expand to other federal agencies that make their grant data openly available. New functionality depends on time availability on our side but also need from users. If you would like us to add something new to the tool, please email us [email address].</p>
+        <p>The NSF, NIH, and DoD grant data will be updated as it becomes available. We plan to expand to other federal agencies that make their grant data openly available. New functionality depends on time availability on our side but also need from users. If you would like us to add something new to the tool, please <a href="mailto:jevinw@uw.edu?subject=GrantExplorer">email us</a>.</p>
         <h3>When was the data last updated?</h3>
         <p>
           <ul>
@@ -34,7 +34,7 @@ const About = () => {
           </ul>
         </p>
         <h3>Who can I contact about the tool?</h3>
-        <p>Please feel free to email us [email address] if you have any questions or requests.</p>
+        <p>Please feel free to <a href="mailto:jevinw@uw.edu?subject=GrantExplorer">email us</a> if you have any questions or requests.</p>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setAboutOpen(false)}><Close />Close</Button>
