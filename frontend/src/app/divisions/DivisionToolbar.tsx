@@ -1,4 +1,4 @@
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { Box, Input, InputAdornment, ListItemIcon, MenuItem, Select, SelectChangeEvent, styled } from '@material-ui/core';
 import { FilterList } from '@mui/icons-material';
 
@@ -57,6 +57,7 @@ const DivisionToolbar = (props: DivisionToolbarProps) => {
 
   const { ref: organizationsRef, active: organizationsActive } = useWizardRef<HTMLDivElement>('filterOrganizations');
   const { ref: divisionsRef } = useWizardRef<HTMLInputElement>('filterDivisions');
+  const [ open, setOpen ] = useState(false);
   return (
     <Toolbar>
       <Box
@@ -68,7 +69,9 @@ const DivisionToolbar = (props: DivisionToolbarProps) => {
         <StyledSelect
           value={props.org}
           onChange={props.onChangeOrg}
-          open={organizationsActive}
+          onOpen={() => setOpen(true)}
+          onClose={() => setOpen(false)}
+          open={organizationsActive || open}
         >
           {orgs.map(o => (
             <MenuItem key={o.abbr} value={o.abbr}>
