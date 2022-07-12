@@ -1,4 +1,4 @@
-import { styled, Box, Typography } from '@material-ui/core';
+import { styled, Box, Link, Typography } from '@material-ui/core';
 import { forwardRef } from 'react';
 import mooreLogo from '../images/moore-foundation-logo.svg';
 import dataLabLogo from '../images/datalab-logo.svg';
@@ -28,9 +28,9 @@ const Footer = forwardRef((props, ref) => (
       <img src={dataLabLogo} />
     </div>
     <Typography>
-      {'Developed by Jesse "Cole" Chamberlin, Jason Portenoy, Jevin West at the University of Washington DataLab'}
+      Developed by Jesse &quot;Cole&quot; Chamberlin, Jason Portenoy, Jevin West at the <Link href='https://datalab.ischool.uw.edu/'>University of Washington DataLab</Link>
       <br />
-      {'with sponsorship from the Moore Foundation'}
+      with sponsorship from the <Link href='https://www.moore.org/'>Moore Foundation</Link>
     </Typography>
   </StyledFooter>
 ));

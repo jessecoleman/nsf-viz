@@ -28,14 +28,13 @@ const steps: Steps = {
   hello: {
     anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
     transformOrigin: { vertical: 'top', horizontal: 'center' },
-    title: 'Welcome!',
-    description: 'Welcome to Grant Explorer!'
+    title: 'Welcome to GrantExplorer!',
   },
   filterTerms: {
     anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
     transformOrigin: { vertical: 'top', horizontal: 'center' },
     title: 'Search Terms',
-    description: 'Enter keywords here to filter by'
+    description: 'Enter keywords. The search bar will suggest related terms sorted by relevancy'
   },
   clearTerms: {
     anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
