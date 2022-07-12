@@ -26,6 +26,7 @@ import { useQueryParam } from 'use-query-params';
 import { useLoadTermCounts, useLoadRelated, useLoadTypeahead } from 'api';
 import TermsList from './TermsList';
 import { queryClient } from 'app/queryClient';
+import { useWizardRef } from 'app/wizard/wizard';
 
 const SearchContainer = styled('div')(({ theme }) => `
   min-width: 25em;
@@ -97,6 +98,8 @@ const TermsFilter = () => {
   const [ input, setInput ] = useState('');
   const [ beta ] = useBeta();
   const debouncedInput = useDebounce(input, 300);
+  const { ref: filterTermsRef } = useWizardRef<HTMLDivElement>('filterTerms');
+  const { ref: clearTermsRef } = useWizardRef<HTMLButtonElement>('clearTerms');
 
   const [ terms, setTerms ] = useQueryParam('terms', ArrayParam);
   const [ sort, setSort ] = useState<'alpha' | 'count' | undefined>();
@@ -178,7 +181,7 @@ const TermsFilter = () => {
       handleEnterUpdateDelete={exitThenFlipAndEnter}
     >
       <Flipped flipId='search-container'>
-        <SearchContainer>
+        <SearchContainer ref={filterTermsRef}>
           <Flipped inverseFlipId='search-container'>
             <ChipContainer>
               <Flipped flipId='search-controls'>
@@ -246,6 +249,7 @@ const TermsFilter = () => {
           <Flipped flipId='search-clear'>
             <Tooltip title={selected ? 'clear selection' : 'clear all terms'}>
               <IconButton
+                ref={clearTermsRef}
                 color='inherit'
                 onClick={handleClearTerms}
               >
