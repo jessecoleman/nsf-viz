@@ -9,7 +9,7 @@ const StyledFooter = styled(Box)(({ theme }) => `
   font-size: 1.2em;
   img {
     padding: 0.5em;
-    max-height: 4em;
+    max-height: 3em;
   }
   p { 
     padding: 12px;
@@ -24,13 +24,15 @@ const StyledFooter = styled(Box)(({ theme }) => `
 const Footer = forwardRef((props, ref) => (
   <StyledFooter ref={ref}>
     <div>
-      <img src={mooreLogo} />
-      <img src={dataLabLogo} />
+      <Link href='https://www.moore.org/' target='_blank' rel='noopener'><img src={mooreLogo} /></Link>
+    </div>
+    <div>
+      <Link href='https://datalab.ischool.uw.edu/' target='_blank' rel='noopener'><img src={dataLabLogo} /></Link>
     </div>
     <Typography>
-      Developed by Jesse &quot;Cole&quot; Chamberlin, Jason Portenoy, Jevin West at the <Link href='https://datalab.ischool.uw.edu/'>University of Washington DataLab</Link>
+      Developed by Jesse &quot;Cole&quot; Chamberlin, Jason Portenoy, Jevin West at the <Link href='https://datalab.ischool.uw.edu/' target='_blank' rel='noopener'>University of Washington DataLab</Link>
       <br />
-      with sponsorship from the <Link href='https://www.moore.org/'>Moore Foundation</Link>
+      with sponsorship from the <Link href='https://www.moore.org/' target='_blank' rel='noopener'>Moore Foundation</Link>
     </Typography>
   </StyledFooter>
 ));

@@ -83,7 +83,7 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => {
       <StyledToolbar>
         <TitleBar ref={titleBarRef}>
           <DrawerToggle />
-          <Logo src={grantExplorer} alt='national science foundation logo' />
+          <Logo src={grantExplorer} alt='GrantExplorer logo' />
           <Title variant='h6' noWrap>
           GrantExplorer
             <Tooltip title='about'>
