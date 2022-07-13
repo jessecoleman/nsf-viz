@@ -26,10 +26,10 @@ const About = () => {
         <h3>How do I use it?</h3>
         <p><Link onClick={openTutorial} style={{cursor: 'pointer'}}>Click here to view the tutorial.</Link></p>
         <h3>Who created the tool?</h3>
-        <p>The tool was born following a conversation between Chris Mentzel and Adam Jones at the <Link href="https://www.moore.org/" target="_blank" rel="noreferrer">Moore Foundation</Link> and <Link href="https://jevinwest.org/" target="_blank" rel="noreferrer">Jevin West</Link> at the University of Washington. There seemed to be no tool for easily exploring what terms are being funded, how those terms are changing, and what new terms are emerging. We are still working on adding new features, but the current version allows one to explore some aspects of these questions. This is important to philanthropists wanting to complement rather than replicate federal research funding. It also allows funders to track the growth of emergent terms in grant data. The tool itself was built by Jesse &quot;Cole&quot; Chamberlin and <Link href="https://www.jasport.org/" target="_blank" rel="noreferrer">Jason Portenoy</Link>, both former students at the DataLab (Information School, University of Washington). Cole developed the language model and frontend and Jason aggregated and engineered the data backend.</p>
+        <p>The tool was born following a conversation between Chris Mentzel and Adam Jones at the <Link href="https://www.moore.org/">Moore Foundation</Link> and <Link href="https://jevinwest.org/">Jevin West</Link> at the University of Washington. There seemed to be no tool for easily exploring what terms are being funded, how those terms are changing, and what new terms are emerging. We are still working on adding new features, but the current version allows one to explore some aspects of these questions. This is important to philanthropists wanting to complement rather than replicate federal research funding. It also allows funders to track the growth of emergent terms in grant data. The tool itself was built by <Link href='https://www.linkedin.com/in/chamb-jc'>Jesse &quot;Cole&quot; Chamberlin</Link> and <Link href="https://www.jasport.org/">Jason Portenoy</Link>, both former students at the DataLab (Information School, University of Washington). Cole developed the language model and frontend and Jason aggregated and engineered the data backend.</p>
         <h3>Is it really free?</h3>
         <p>Yes, it is free. There is no cost and no freemium model. Our data and tools are openly available with this open source license [open source license]. The only thing we ask is that you cite the project if you use it in publications or elsewhere:</p>
-        <p><strong>Chamberlin, Cole and Portenoy, Jason and West, Jevin. (2022) <i>GrantExplorer.org.</i> DataLab, Information School, University of Washington.</strong></p>
+        <p><strong>Chamberlin, Jesse and Portenoy, Jason and West, Jevin. (2022) <i>GrantExplorer.org.</i> DataLab, Information School, University of Washington.</strong></p>
         <h3>Who funded the tool?</h3>
         <p>The <Link href="https://www.moore.org/" target="_blank" rel="noreferrer">Moore Foundation</Link> funded the development of the tool.</p>
         <h3>Will the data be updated and will new functionality be added?</h3>
@@ -41,6 +41,10 @@ const About = () => {
             <li>NIH: Oct, 2021 (R01 grants only)</li>
             <li>DoD: Jan, 2022</li>
           </ul>
+        </p>
+        <h3>Want to test the beta features?</h3>
+        <p>
+          Feel free to try out some beta features (that may be a little buggy). Just click on the green flask icon to the lower right. That will enable topic recommenders and other &quot;new&quot;, experimental features.
         </p>
         <h3>Who can I contact about the tool?</h3>
         <p>Please feel free to <Link href="mailto:jevinw@uw.edu?subject=GrantExplorer">email us</Link> if you have any questions or requests.</p>

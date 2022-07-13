@@ -69,21 +69,21 @@ const Title = styled(Typography)(({ theme }) => `
 `);
 
 const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => {
-    const { ref: titleBarRef } = useWizardRef<HTMLDivElement>('hello');
+  const { ref: titleBarRef } = useWizardRef<HTMLDivElement>('hello');
   return (
-  <AppBar position='static' ref={ref}>
-    <StyledToolbar>
-      <TitleBar ref={titleBarRef}>
-        <DrawerToggle />
-        <Logo src={grantExplorer} alt='national science foundation logo' />
-        <Title variant='h6' noWrap>
-          Grant Explorer
-        </Title>
-      </TitleBar>
-      <Box flexGrow={3} />
-      <TermsFilter />
-    </StyledToolbar>
-  </AppBar>
+    <AppBar position='static' ref={ref}>
+      <StyledToolbar>
+        <TitleBar ref={titleBarRef}>
+          <DrawerToggle />
+          <Logo src={grantExplorer} alt='national science foundation logo' />
+          <Title variant='h6' noWrap>
+          GrantExplorer
+          </Title>
+        </TitleBar>
+        <Box flexGrow={3} />
+        <TermsFilter />
+      </StyledToolbar>
+    </AppBar>
   );
 });
 
