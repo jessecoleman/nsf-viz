@@ -1,9 +1,11 @@
 import { 
   AppBar,
   Toolbar,
+  Tooltip,
   Typography,
   Box,
-  styled
+  styled,
+  IconButton
 } from '@material-ui/core';
 
 import TermsFilter from 'app/terms/TermsFilter';
@@ -12,6 +14,8 @@ import grantExplorer from 'app/images/grant-explorer.svg';
 import DrawerToggle from './DrawerToggle';
 import { forwardRef } from 'react';
 import { useWizardRef } from 'app/wizard/wizard';
+import { Info } from '@mui/icons-material';
+import { useAbout } from 'app/query';
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => `
   display: flex;
@@ -70,6 +74,10 @@ const Title = styled(Typography)(({ theme }) => `
 
 const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => {
   const { ref: titleBarRef } = useWizardRef<HTMLDivElement>('hello');
+  const [ , setAboutOpen ] = useAbout();
+  const handleClickAbout = () => {
+    setAboutOpen(true);
+  };
   return (
     <AppBar position='static' ref={ref}>
       <StyledToolbar>
@@ -78,6 +86,9 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => {
           <Logo src={grantExplorer} alt='national science foundation logo' />
           <Title variant='h6' noWrap>
           GrantExplorer
+            <Tooltip title='about'>
+              <IconButton onClick={handleClickAbout}><Info htmlColor='white' /></IconButton>
+            </Tooltip>
           </Title>
         </TitleBar>
         <Box flexGrow={3} />
