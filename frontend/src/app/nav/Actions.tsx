@@ -1,7 +1,7 @@
 import { Link, SpeedDial, SpeedDialAction, styled, Tooltip } from '@material-ui/core';
-import { Download, GitHub, Science, InsertDriveFile, Help } from '@mui/icons-material';
+import { Download, GitHub, Science, InsertDriveFile, Help, Info } from '@mui/icons-material';
 import useGrantsDownload from 'app/grants/grantsDownload';
-import { useBeta, useGrantsDialogQuery, useTutorial } from 'app/query';
+import { useAbout, useBeta, useGrantsDialogQuery, useTutorial } from 'app/query';
 import { useWizardRef } from 'app/wizard/wizard';
 import { MouseEvent, useState } from 'react';
 
@@ -21,6 +21,7 @@ const Actions = () => {
   const [ , setDialogQuery ] = useGrantsDialogQuery();
   const { ref: overflowMenuRef, active } = useWizardRef<HTMLDivElement>('overflowMenu');
   const [ open, setOpen ] = useState(false);
+  const [ , setAboutOpen ] = useAbout();
 
   const actions = [
     // {
@@ -41,7 +42,15 @@ const Actions = () => {
       handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation()
     },
     {
-      name: 'Redo Tutorial',
+      name: 'About Grant Explorer',
+      icon: <Info />,
+      handleClick: (e: MouseEvent<HTMLElement>) => {
+        e.stopPropagation();
+        setAboutOpen(true);
+      }
+    },
+    {
+      name: 'View Tutorial',
       icon: <Help />,
       handleClick: (e: MouseEvent<HTMLElement>) => {
         e.stopPropagation();
