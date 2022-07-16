@@ -70,16 +70,7 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
     # csv schema is: 'idx,AwardTitle,AbstractNarration,AwardAmount,AwardEffectiveDate,DivisionCode,DivisionLongName'
     fpath = Path(fpath)
     with fpath.open() as f:
-        reader = csv.reader(f)
-        for i, row in enumerate(reader):
-            if i == 0:
-                # header row
-                continue
-
-            yield [
-                row[1],  # title
-                row[2],  # abstract
-            ]
+        yield from csv.DictReader(f)
 
 
 def data_source_ngrams(fpath: Union[str, Path]) -> Generator:
@@ -87,7 +78,7 @@ def data_source_ngrams(fpath: Union[str, Path]) -> Generator:
     with fpath.open() as f:
         for row in f.readlines():
             # pretend everything is a title for W2V
-            yield [row, None]
+            yield {'title': row}
 
 
 def data_source_elasticsearch() -> Generator:
@@ -100,10 +91,7 @@ def data_source_elasticsearch() -> Generator:
 
     search = Search(using=client, index=index)
     for doc in search.scan():
-        yield [
-            doc.title,
-            doc.abstract,
-        ]
+        yield doc.to_dict()
 
 
 def get_data(
@@ -127,10 +115,10 @@ def get_data(
         filters = []
 
     with open(output_file, 'w') as out:
-        for i, (title, abstract) in enumerate(tqdm(data_source)):
-            out.write(' '.join(preprocess_string(title, filters)) + '\n')
-            if abstract:
-                out.write(' '.join(preprocess_string(abstract, filters)) + '\n')
+        for i, doc in enumerate(tqdm(data_source)):
+            out.write(' '.join(preprocess_string(doc['title'], filters)) + '\n')
+            if doc.get('abstract'):
+                out.write(' '.join(preprocess_string(doc['abstract'], filters)) + '\n')
             
             if truncate and i > truncate:
                 break
@@ -262,7 +250,7 @@ def get_phrase_weights(
     data_file: str,
     model_file: str,
     terms_file: str,
-    plot=False
+    plot=False,
 ):
     '''
     generates terms.txt with following format:
@@ -420,10 +408,9 @@ def cluster_vectors(
         clusters[v].append((most_common_form, counter[term]))
         
     top_per_cluster = []
-    for cluster in clusters.values():
+    for key, cluster in clusters.items():
         s = sorted(cluster, key=lambda x: x[1], reverse=True)[:50]
-        print('\n')
-        print('\n')
+        print(f'\nCluster: {key}')
         print('\n'.join(f'{t[0]}: {t[1]}' for t in s[:15]))
         top_per_cluster.append(s)
         

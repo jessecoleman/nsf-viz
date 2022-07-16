@@ -19,7 +19,6 @@ from elasticsearch_dsl.analysis import token_filter
 from tqdm import tqdm
 import mysql.connector as conn
 from gen_keys import normalize
-import urllib.parse
 
 
 host = os.environ.get('ELASTICSEARCH_HOST', 'localhost')
@@ -87,27 +86,12 @@ def data_source_csv(fpath: Union[str, Path]) -> Generator:
     # csv schema is: 'idx,AwardTitle,AbstractNarration,AwardAmount,AwardEffectiveDate,DivisionCode,DivisionLongName'
     fpath = Path(fpath)
     with fpath.open() as f:
-        reader = csv.reader(f)
-        for i, row in enumerate(reader):
-            if i == 0:
-                # header row
-                continue
-
-            yield [
-                row[1],  # title
-                row[2],  # abstract
-                row[3],  # amount
-                row[4],  # date
-                row[6],  # division name
-            ]
+        yield from csv.DictReader(f)
 
 
 def get_data(data_source: Iterable):
     
-    #with open('../assets/nsf_divisions.json') as div_file:
-    #    divs = json.load(div_file)
-    #    div_map = {d['name'].lower(): d['key'] for d in divs}
-
+    # mapping file that reconciles variations in spelling of divisions
     with open('./associated.json') as div_file:
         divs = json.load(div_file)
         div_map = {normalize(key): (d['parent'], d['abbr']) for key, d in divs.items()}
@@ -117,7 +101,7 @@ def get_data(data_source: Iterable):
     missing = Counter()
     count = defaultdict(Counter)
 
-    for i, (title, abstract, amount, date, div) in enumerate(tqdm(data_source)):
+    for title, abstract, amount, date, div in tqdm(data_source):
 
         normed = normalize(div)
         count[normed][div] += 1

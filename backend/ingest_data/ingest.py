@@ -4,12 +4,10 @@ DESCRIPTION = (
     """Ingest data into elasticsearch from a CSV, and train the similarity model"""
 )
 
-import sys, os, time
+import sys, os
 from pathlib import Path
 from datetime import datetime
 from timeit import default_timer as timer
-
-from numpy import tri
 
 try:
     from humanfriendly import format_timespan
@@ -57,7 +55,7 @@ def pipeline(csvfname, outdir='.', no_model=False):
         bm.get_data(
             output_file=preprocessed_file,
             data_source=data_source,
-            process='ngram'
+            process='ngram',
         )
 
         logger.info(f"building n-gram models and saving to {bigrams_model_file}, {trigrams_model_file}")
@@ -91,7 +89,7 @@ def pipeline(csvfname, outdir='.', no_model=False):
             model_file=model_file
         )
 
-        logger.info(f"training LDA model (saving to {model_file})")
+        #logger.info(f"training LDA model (saving to {model_file})")
         #bm.train_lda_model(
         #    input_file=preprocessed_ngrams_file,
         #    model_file='../assets/lda.bin'
