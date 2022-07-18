@@ -1,4 +1,6 @@
-from audioop import reverse
+"""
+NLP functions for term similarity features of app
+"""
 from gensim.models import KeyedVectors
 from gensim.models import Phrases
 from typing import List

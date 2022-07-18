@@ -1,11 +1,13 @@
+"""
+entrypoint for backend API layer
+"""
 from __future__ import division
 import csv
 import os
 from pathlib import Path
 import random
 import re
-from typing import Dict, List, Optional, Tuple, Union
-from urllib import response
+from typing import Dict, List, Optional, Union
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
