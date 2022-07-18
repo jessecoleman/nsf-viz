@@ -3,6 +3,7 @@ import { Selection } from './D3utils';
 import D3Timeline, { BrushCallback } from './D3Timeline';
 import { colorScales } from 'theme';
 import { removeTooltip, transitionTooltip } from './D3Tooltip';
+import { MutableRefObject } from 'react';
 
 export type AggFields = {
   count: number
@@ -29,6 +30,7 @@ type ChartCallback = (key: string, year: number) => void
 type ChartProps = {
   dimensions: Dimensions
   containerEl: HTMLDivElement
+  timelineRef?: MutableRefObject<SVGGElement | null>;
   onTooltipEnter?: ChartCallback
   onTooltipLeave?: ChartCallback
   onBarClick?: ChartCallback
@@ -125,6 +127,10 @@ export default class BarChart {
       onBrushEnded: props.onBrushEnded,
       tickFormat: this.tickFormat,
     });
+    
+    if (props.timelineRef) {
+      props.timelineRef.current = this.timeline.chart.node();
+    }
       
     const defs = this.svg.append('defs');
     

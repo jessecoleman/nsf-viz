@@ -41,7 +41,7 @@ export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObj
     if (topRef.current && bottomRef.current) {
       const top = topRef.current.getBoundingClientRect();
       const bottom = bottomRef.current.getBoundingClientRect();
-      if (parent && top.height && bottom.height) {
+      if (top.height && bottom.height) {
         return {
           width: top.width,
           height: windowHeight - top.height - bottom.height,
@@ -49,7 +49,7 @@ export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObj
       }
     }
     return { width: 0, height: 0 };
-  }, [topRef.current, windowWidth, windowHeight, JSON.stringify(prevTerms)]);
+  }, [topRef.current, bottomRef.current, windowWidth, windowHeight, JSON.stringify(prevTerms)]);
  
   return [ topRef, bottomRef, dims ];
 };
@@ -77,7 +77,7 @@ export const useWindowDimensions = () => {
     const handleResize = () => {
       setWindowDimensions(getWindowDimensions());
     };
-
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);

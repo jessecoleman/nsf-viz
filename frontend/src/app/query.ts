@@ -111,4 +111,8 @@ export const useDivisionsQuery = () => {
 
 export const useBeta = () => useQueryParam('beta', DefaultBooleanParam);
 
+export const useTutorial = () => useQueryParam('tutorial', DefaultNumberParam);
+
+export const useAbout = () => useQueryParam('about', DefaultBooleanParam);
+
 export type QueryParams = ReturnType<typeof useQuery>[0];

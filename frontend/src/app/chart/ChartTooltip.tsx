@@ -1,11 +1,10 @@
-// import FlipMove from 'react-flip-move';
-import { LinearProgress, Paper, styled } from '@material-ui/core';
+import { Paper, styled } from '@material-ui/core';
 import DivisionRow, { CellData } from 'app/divisions/DivisionRow';
 import { useMeasure } from 'app/hooks';
 import { useDivisionsQuery, useQuery } from 'app/query';
 import { colorScales } from '../../theme';
 import { Flipper, Flipped } from 'react-flip-toolkit';
-import { useLoadDirectory, useSearch } from 'api';
+import { useSearch } from 'api';
 import { stableSort } from 'app/sort';
 import { useDirectory } from 'app/divisions/useDirectory';
 

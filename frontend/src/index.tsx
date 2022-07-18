@@ -12,7 +12,7 @@ import { queryClient } from 'app/queryClient';
 
 ReactDOM.render(
   <Router>
-    <QueryParamProvider ReactRouterRoute={Route}>
+    <QueryParamProvider ReactRouterRoute={Route as any}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <App />

@@ -1,12 +1,14 @@
+"""
+Elasticsearch DSL queries for aggregating by term/division/year
+"""
 import os
 import asyncio
 from models import Grant, SearchResponse, Term, YearsResponse
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
-from elasticsearch_dsl import query
 
 from gensim.models.phrases import Phraser
 
@@ -29,8 +31,6 @@ def get_divisions() -> List[Dict]:
             })
     return divisions
 
-# with open('assets/divisions.json') as div_file:
-#     divisions = json.load(div_file)
 divisions = get_divisions()
 div_map = {d['name']: d['key'] for d in divisions}
 inv_div_map = {d['key']: d['name'] for d in divisions}
@@ -151,7 +151,7 @@ def term_agg(agg_field: str, aggs: Dict[str, Any]):
             'terms': {
                 'field': agg_field,
                 # 'min_doc_count': 0,
-                'size': 100, # TODO: number of divisions
+                'size': 100, # has to be greater than total # divisions or it truncates
             },
             'aggs': aggs
         }
