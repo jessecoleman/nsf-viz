@@ -67,11 +67,12 @@ export default class BarChart {
   offsets: Record<string, number> = {};
   domainUpdated = false;
   years: number[] = [];
-  agg: keyof AggFields = 'count';
+  agg: keyof AggFields = 'amount';
   color: d3.ScaleOrdinal<string, string> = colorScales[this.agg];
   prev?: Layout;
   xAxis: Selection<SVGGElement>;
   yAxis: Selection<SVGGElement>;
+  yLabel: Selection<SVGTextElement>;
   gridLines: Selection<SVGGElement>;
   onTooltipEnter?: ChartCallback
   onTooltipLeave?: ChartCallback
@@ -115,6 +116,14 @@ export default class BarChart {
     this.yAxis = this.chart.append('g')
       .attr('class', 'axis axis-y');
     
+    this.yLabel = this.chart.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 0)
+      .attr('x', -(this.chartHeight / 2))
+      .attr('dy', '-3em')
+      .style('text-anchor', 'middle')
+      .attr('class', 'label label-y')
+      .text(this.agg === 'count' ? 'number of grants' : 'award amount');
       
     this.timeline = new D3Timeline({
       svg: this.svg,
@@ -483,7 +492,13 @@ export default class BarChart {
     this.yAxis.transition()
       .duration(this.animationDur)
       .call(this.getYAxis());
-      
+
+    this.yLabel.transition()
+      .duration(this.animationDur)
+      .attr('y', 0)
+      .attr('x', -(this.chartHeight / 2))
+      .text(this.agg === 'count' ? 'number of grants' : 'award amount');
+
     this.gridLines.transition()
       .duration(this.animationDur)
       .call(this.getGridLines());
