@@ -89,7 +89,6 @@ const DirectoryEntry = (props: DirectoryProps) => {
                   value: props[field],
                   fill: colorScales[field](nodeId)
                 }))}
-                // tabIndex={-1}
               />
             }
             {...other}

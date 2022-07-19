@@ -11,6 +11,7 @@
         "@mui/icons-material": "^5.0.0",
         "@mui/lab": "^5.0.0-alpha.66",
         "@mui/material": "^5.0.0",
+        "@mui/styles": "^5.9.1",
         "@types/animejs": "^3.1.4",
         "@types/d3": "^7.0.0",
         "@types/jest": "24.0.12",
@@ -67,12 +68,14 @@
         ]
     },
     "devDependencies": {
+        "@trivago/prettier-plugin-sort-imports": "^3.3.0",
         "@types/autosuggest-highlight": "^3.1.1",
         "@typescript-eslint/eslint-plugin": "^4.29.0",
         "@typescript-eslint/parser": "^4.29.0",
         "eslint": "^7.32.0",
         "eslint-plugin-react": "^7.24.0",
         "node-fetch": "^2.6.7",
-        "orval": "6.5"
+        "orval": "6.5",
+        "prettier": "^2.7.1"
     }
 }

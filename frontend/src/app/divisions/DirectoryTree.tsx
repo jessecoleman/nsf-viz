@@ -1,36 +1,25 @@
-import { MouseEvent } from 'react';
+import { ChangeEvent, MouseEvent, useState } from 'react';
 import { Flipper } from 'react-flip-toolkit';
 import match from 'autosuggest-highlight/match';
-import { Box, LinearProgress, SelectChangeEvent, styled } from '@material-ui/core';
+import { ArrowDropDown, ArrowRight } from '@mui/icons-material';
+import { Box, LinearProgress, SelectChangeEvent, SortDirection, styled } from '@material-ui/core';
 import { TreeView } from '@material-ui/lab';
 
 import { SortableKeys } from 'app/sort';
 import { useMeasure } from 'app/hooks';
 import { Organization, useDivisionsQuery, useSearchQuery } from 'app/query';
-import { SortDirection } from '@material-ui/core';
 import { colorScales } from 'theme';
-import { ChangeEvent, useState } from 'react';
 import Highlight from 'app/Highlight';
 import DivisionToolbar from './DivisionToolbar';
-import { ArrowDropDown, ArrowRight } from '@mui/icons-material';
 import DirectoryEntry from './Entry';
 import DirectoryTableHead, { CheckboxState } from './DirectoryTableHead';
-import { DivisionAggregate } from 'api';
-import { useSearch } from 'api';
+import { DivisionAggregate, useSearch } from 'api';
 import { useDirectory } from './useDirectory';
 
 const ScrollableDiv = styled('div')`
   overflow-y: scroll;
   height: 100%;
 `;
-
-// const DivisionChip = styled('span')`
-//   background-color: lightgrey;
-//   text-transform: uppercase;
-//   border-radius: 16px;
-//   margin-left: 4px;
-//   padding: 2px 8px;
-// `;
 
 const DirectoryTree = () => {
 
@@ -186,7 +175,9 @@ const DirectoryTree = () => {
         onRequestSort={handleRequestSort}
       />
       <ScrollableDiv>
-        <Flipper flipKey={JSON.stringify([divisionFilter, query.terms, query.direction, query.sort])}>
+        <Flipper
+          flipKey={JSON.stringify([divisionFilter, query.terms, query.direction, query.sort])}
+        >
           {!divisionAggs || isLoading 
             ? <LinearProgress />
             : <TreeView
@@ -240,17 +231,6 @@ const DirectoryTree = () => {
                         />
                       ))
                     }
-                    {/*divisionTree[div.key].length > div.divisions.length && (
-                      <ListItem sx={{ paddingLeft: 7, borderBottom: '1px solid lightgrey' }}>
-                        no hits in {' '}
-                        {divisionTree[div.key]
-                          .filter(key => !div.divisions.find(d => d.key === key))
-                          .map(key => key.toUpperCase())
-                          .join(', ')
-                          //.map(key => <DivisionChip key={key}>{key}</DivisionChip>)
-                        }
-                      </ListItem>
-                      )*/}
                   </DirectoryEntry>
                 ))}
             </TreeView>

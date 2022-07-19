@@ -1,13 +1,12 @@
+import { useEffect, useRef, useState } from 'react';
 import { useDivisionsQuery, useGrantsDialogQuery, useSearchQuery } from 'app/query';
 
 import ChartTooltip, { TooltipProps } from './ChartTooltip';
 import ChartLegend from './ChartLegend';
-import { useEffect, useRef, useState } from 'react';
 import BarChart from './D3Chart';
 import styled from '@emotion/styled';
-import { useSearch } from 'api';
+import { useSearch, useYears } from 'api';
 import { isAgg } from 'app/sort';
-import { useYears } from 'api';
 import { useWizardRef } from 'app/wizard/wizard';
 
 let vis: BarChart;
