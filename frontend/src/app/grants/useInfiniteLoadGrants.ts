@@ -1,13 +1,15 @@
-import { Grant, loadGrants } from 'api';
-import { useGrantsDialogQuery, useQuery } from 'app/query';
-import { queryClient } from 'app/queryClient';
 import { useEffect, useMemo, useRef } from 'react';
 import { useInfiniteQuery } from 'react-query';
 import InfiniteLoader from 'react-window-infinite-loader';
 
+import { Grant, loadGrants } from 'api';
+
+import { useGrantsDialogQuery, useQuery } from 'app/query';
+import { queryClient } from 'app/queryClient';
+
 export const useInfiniteLoadGrants = () => {
-  const [ query ] = useQuery();
-  const [ dialog ] = useGrantsDialogQuery();
+  const [query] = useQuery();
+  const [dialog] = useGrantsDialogQuery();
   const hasMountedRef = useRef(false);
   const loaderRef = useRef<InfiniteLoader>(null);
 
@@ -18,22 +20,27 @@ export const useInfiniteLoadGrants = () => {
       sort: dialog.grantSort,
       start: dialog.grantDialogYear ?? query.start,
       end: dialog.grantDialogYear ?? query.end,
-      divisions: dialog.grantDialogDivision ? [dialog.grantDialogDivision] : query.divisions,
+      divisions: dialog.grantDialogDivision
+        ? [dialog.grantDialogDivision]
+        : query.divisions,
       idx: pageParam,
     });
     return data;
   };
 
-  const { data, isError, ...rest } = useInfiniteQuery('grants', loadMoreGrants, {
-    getNextPageParam: (lastPage, pages) => (
-      pages.length === 0 
-        ? 0
-        : lastPage?.length === 50
+  const { data, isError, ...rest } = useInfiniteQuery(
+    'grants',
+    loadMoreGrants,
+    {
+      getNextPageParam: (lastPage, pages) =>
+        pages.length === 0
+          ? 0
+          : lastPage?.length === 50
           ? pages.length * 50
-          : undefined
-    )
-  });
-  
+          : undefined,
+    }
+  );
+
   const clearGrants = () => {
     loaderRef.current?.resetloadMoreItemsCache();
     queryClient.setQueryData('grants', () => ({
@@ -49,13 +56,10 @@ export const useInfiniteLoadGrants = () => {
       clearGrants();
     }
     hasMountedRef.current = true;
-  }, [
-    JSON.stringify(dialog),
-    JSON.stringify(query),
-    hasMountedRef.current,
-  ]);
+  }, [JSON.stringify(dialog), JSON.stringify(query), hasMountedRef.current]);
 
-  const count = (data?.pages?.reduce((count, page) => count += page.length, 0)) ?? 0;
+  const count =
+    data?.pages?.reduce((count, page) => (count += page.length), 0) ?? 0;
   return {
     loaderRef,
     noMore: isError,
@@ -70,7 +74,5 @@ export const useGrant = (index: number) => {
   // TODO figure out how to load on first render
   const data = queryClient.getQueryData('grants') as { pages: Grant[][] };
   const page = data?.pages[Math.floor(index / 50)];
-  return useMemo(() => (
-    page?.[index % 50]
-  ), [page, index]);
+  return useMemo(() => page?.[index % 50], [page, index]);
 };

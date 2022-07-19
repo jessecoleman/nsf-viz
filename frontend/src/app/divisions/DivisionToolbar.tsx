@@ -1,24 +1,38 @@
 import { ChangeEvent, useState } from 'react';
-import { Box, Input, InputAdornment, ListItemIcon, MenuItem, Select, SelectChangeEvent, styled } from '@material-ui/core';
+
 import { FilterList } from '@mui/icons-material';
+import {
+  Box,
+  Input,
+  InputAdornment,
+  ListItemIcon,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  styled,
+} from '@mui/material';
 
 import DrawerToggle from 'app/nav/DrawerToggle';
-import nih from '../images/nih-logo.svg';
-import nsf from '../images/nsf-logo.svg';
-import dod from '../images/dod-logo.svg';
 import { Organization } from 'app/query';
 import { useWizardRef } from 'app/wizard/wizard';
 
-const Toolbar = styled('div')(({ theme }) => `
+import dod from '../images/dod-logo.svg';
+import nih from '../images/nih-logo.svg';
+import nsf from '../images/nsf-logo.svg';
+
+const Toolbar = styled('div')(
+  ({ theme }) => `
   display: flex;
   flex-direction: column;
   padding: ${theme.spacing(2)};
   & .MuiInput-root {
     padding-top: ${theme.spacing(2)}
   }
-`);
+`
+);
 
-const StyledSelect = styled(Select)(({ theme }) => `
+const StyledSelect = styled(Select)(
+  ({ theme }) => `
   flex-grow: 1;
   & .MuiSelect-select {
     display: flex;
@@ -26,11 +40,14 @@ const StyledSelect = styled(Select)(({ theme }) => `
     font-size: 1.2em;
     padding: ${theme.spacing(1.5)};
   }
-`) as unknown as typeof Select; // bleck!
-  
-const Actions = styled('div')(({ theme }) => `
+`
+) as unknown as typeof Select; // bleck!
+
+const Actions = styled('div')(
+  ({ theme }) => `
   color: ${theme.palette.text.secondary};
-`);
+`
+);
 
 const Logo = styled('img')`
   width: 2em;
@@ -40,24 +57,25 @@ const Logo = styled('img')`
 `;
 
 type DivisionToolbarProps = {
-  org: Organization
-  filter: string
-  numSelected: number
-  onChangeOrg: (e: SelectChangeEvent<Organization>) => void
-  onChangeFilter: (e: ChangeEvent<HTMLInputElement>) => void
-}
+  org: Organization;
+  filter: string;
+  numSelected: number;
+  onChangeOrg: (e: SelectChangeEvent<Organization>) => void;
+  onChangeFilter: (e: ChangeEvent<HTMLInputElement>) => void;
+};
 
 const orgs = [
   { title: 'National Science Foundation', abbr: 'nsf', src: nsf },
   { title: 'National Institutes of Health', abbr: 'nih', src: nih },
-  { title: 'Department of Defense', abbr: 'dod', src: dod}
+  { title: 'Department of Defense', abbr: 'dod', src: dod },
 ];
 
 const DivisionToolbar = (props: DivisionToolbarProps) => {
-
-  const { ref: organizationsRef, active: organizationsActive } = useWizardRef<HTMLDivElement>('filterOrganizations');
-  const { ref: divisionsRef } = useWizardRef<HTMLInputElement>('filterDivisions');
-  const [ open, setOpen ] = useState(false);
+  const { ref: organizationsRef, active: organizationsActive } =
+    useWizardRef<HTMLDivElement>('filterOrganizations');
+  const { ref: divisionsRef } =
+    useWizardRef<HTMLInputElement>('filterDivisions');
+  const [open, setOpen] = useState(false);
   return (
     <Toolbar>
       <Box
@@ -73,7 +91,7 @@ const DivisionToolbar = (props: DivisionToolbarProps) => {
           onClose={() => setOpen(false)}
           open={organizationsActive || open}
         >
-          {orgs.map(o => (
+          {orgs.map((o) => (
             <MenuItem key={o.abbr} value={o.abbr}>
               <ListItemIcon>
                 <Logo src={o.src} />

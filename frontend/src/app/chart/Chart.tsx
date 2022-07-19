@@ -1,17 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { useDivisionsQuery, useGrantsDialogQuery, useSearchQuery } from 'app/query';
 
-import ChartTooltip, { TooltipProps } from './ChartTooltip';
-import ChartLegend from './ChartLegend';
-import BarChart from './D3Chart';
 import styled from '@emotion/styled';
 import { useSearch, useYears } from 'api';
+
+import {
+  useDivisionsQuery,
+  useGrantsDialogQuery,
+  useSearchQuery,
+} from 'app/query';
 import { isAgg } from 'app/sort';
 import { useWizardRef } from 'app/wizard/wizard';
 
+import ChartLegend from './ChartLegend';
+import ChartTooltip, { TooltipProps } from './ChartTooltip';
+import BarChart from './D3Chart';
+
 let vis: BarChart;
 
-const ChartContainer = styled.div(({ theme }) => `
+const ChartContainer = styled.div(
+  ({ theme }) => `
   flex-grow: 1;
   position: relative;
   .axis {
@@ -51,20 +58,22 @@ const ChartContainer = styled.div(({ theme }) => `
       visibility: initial;
     } 
   }
-`);
+`
+);
 
 type ChartProps = {
-  width: number
-  height: number
-}
+  width: number;
+  height: number;
+};
 
 const Chart = (props: ChartProps) => {
-
   const visRef = useRef<HTMLDivElement>(null);
-  const { ref: timelineRef, active } = useWizardRef<SVGGElement | null>('filterYears');
-  const [ divisions ] = useDivisionsQuery();
-  const [ query, setQuery ] = useSearchQuery();
-  const [ , setDialogQuery ] = useGrantsDialogQuery();
+  const { ref: timelineRef, active } = useWizardRef<SVGGElement | null>(
+    'filterYears'
+  );
+  const [divisions] = useDivisionsQuery();
+  const [query, setQuery] = useSearchQuery();
+  const [, setDialogQuery] = useGrantsDialogQuery();
 
   // TODO reimplement this?
   // const { counts, amounts } = useAppSelector(getLegendFilters);
@@ -73,27 +82,32 @@ const Chart = (props: ChartProps) => {
       select: ({ data }) => ({
         chartData: data.bars.map(({ key, divisions }) => ({
           year: key,
-          aggs: Object.fromEntries(divisions.map(({ key, ...aggs }) => [ key, aggs ]))
+          aggs: Object.fromEntries(
+            divisions.map(({ key, ...aggs }) => [key, aggs])
+          ),
         })),
         divDomain: data.divisions
-          .flatMap(d => d.divisions)
-          .sort((a, b) => (a[query.sort] - b[query.sort]) * (query.direction === 'asc' ? 1 : -1))
-          .map(d => d.key)
-          .filter(key => divisions == undefined || divisions.includes(key))
+          .flatMap((d) => d.divisions)
+          .sort(
+            (a, b) =>
+              (a[query.sort] - b[query.sort]) *
+              (query.direction === 'asc' ? 1 : -1)
+          )
+          .map((d) => d.key)
+          .filter((key) => divisions == undefined || divisions.includes(key)),
       }),
-    }
+    },
   });
-  
+
   const { data: yearData } = useYears(query, {
     query: {
-      select: ({ data }) => (
-        data.per_year.map(agg => ({ ...agg, year: agg.key }))
-      )
-    }
+      select: ({ data }) =>
+        data.per_year.map((agg) => ({ ...agg, year: agg.key })),
+    },
   });
 
   // const highlightedDivision = useAppSelector(getHighlightedDivision);
-  const [ tooltipProps, setTooltipProps ] = useState<TooltipProps>({});
+  const [tooltipProps, setTooltipProps] = useState<TooltipProps>({});
 
   // update colors globally with new domain
   // TODO why are colors not persistent
@@ -115,7 +129,7 @@ const Chart = (props: ChartProps) => {
       });
     }
   }, [visRef.current]);
-  
+
   // update data on filter changes
   useEffect(() => {
     if (data && vis) {
@@ -129,7 +143,7 @@ const Chart = (props: ChartProps) => {
       }
     }
   }, [vis, query.sort, data]);
-  
+
   // update timeline on year change
   useEffect(() => {
     if (yearData && vis) {
@@ -140,7 +154,7 @@ const Chart = (props: ChartProps) => {
       }
     }
   }, [vis, query.sort, yearData]);
-  
+
   // update bar styles on highlight
   // useEffect(() => {
   //   vis?.highlightGroup(highlightedDivision);
@@ -163,8 +177,8 @@ const Chart = (props: ChartProps) => {
   // const handleTooltipLeave = (key: string, year: number) => {
   //   // setTooltipProps({});
   // };
-  
-  const handleSetYearRange = ([ start, end ]: [ number, number ]) => {
+
+  const handleSetYearRange = ([start, end]: [number, number]) => {
     setQuery({ start, end });
   };
 

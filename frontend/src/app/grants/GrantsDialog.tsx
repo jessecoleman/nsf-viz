@@ -1,19 +1,21 @@
-import { styled } from '@material-ui/core/styles';
-import { 
-  Dialog,
-  Button,
-  TableSortLabel,
-  DialogActions,
+import {
   Box,
-} from '@material-ui/core';
+  Button,
+  Dialog,
+  DialogActions,
+  TableSortLabel,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
 
 import { Grant } from 'api';
+
 import { useMeasure } from 'app/hooks';
 import { useGrantsDialogQuery } from 'app/query';
+
 import AbstractDialog from './AbstractDialog';
-import { cols, GrantColumn, GrantListItem } from './GrantRow';
-import GrantsTable from './GrantsTable';
 import FilterChip from './FilterChip';
+import { GrantColumn, GrantListItem, cols } from './GrantRow';
+import GrantsTable from './GrantsTable';
 import useGrantsDownload from './grantsDownload';
 
 const TopAlignedDialog = styled(Dialog)`
@@ -24,26 +26,27 @@ const TopAlignedDialog = styled(Dialog)`
 
 type GrantListHeaderStyles = {
   scrollOffset?: number;
-}
+};
 
-export const GrantListHeader = styled(GrantListItem)<GrantListHeaderStyles>(({ theme, scrollOffset }) => `
+export const GrantListHeader = styled(GrantListItem)<GrantListHeaderStyles>(
+  ({ theme, scrollOffset }) => `
   height: 96px;
   font-size: ${theme.typography.h6.fontSize};
   padding-right: ${scrollOffset ?? 0}px;
-`);
+`
+);
 
 const GrantsDialog = () => {
-
-  const [ dialog, setDialogQuery ] = useGrantsDialogQuery();
+  const [dialog, setDialogQuery] = useGrantsDialogQuery();
   const url = useGrantsDownload();
 
-  const [ widthRef, ] = useMeasure<HTMLDivElement>();
-  
+  const [widthRef] = useMeasure<HTMLDivElement>();
+
   const handleSort = (sort: keyof Grant) => () => {
-    const direction = (
-      dialog.grantSort === sort
-      && dialog.grantDirection === 'asc' ? 'desc' : 'asc'
-    );
+    const direction =
+      dialog.grantSort === sort && dialog.grantDirection === 'asc'
+        ? 'desc'
+        : 'asc';
 
     setDialogQuery({
       grantSort: sort,
@@ -60,7 +63,7 @@ const GrantsDialog = () => {
       case 'date':
         setDialogQuery({ grantDialogYear: undefined });
         break;
-      case'cat1_raw':
+      case 'cat1_raw':
         setDialogQuery({ grantDialogDivision: undefined });
         break;
     }
@@ -96,12 +99,12 @@ const GrantsDialog = () => {
                 >
                   {label}
                 </TableSortLabel>
-                {getFilterLabel(id) &&
+                {getFilterLabel(id) && (
                   <FilterChip
                     label={getFilterLabel(id)}
                     onClear={handleClearFilter(id)}
                   />
-                }
+                )}
               </Box>
             </GrantColumn>
           ))}
@@ -111,9 +114,7 @@ const GrantsDialog = () => {
           <Button component='a' href={url}>
             Download
           </Button>
-          <Button onClick={handleClose}>
-            Dismiss
-          </Button>
+          <Button onClick={handleClose}>Dismiss</Button>
         </DialogActions>
       </TopAlignedDialog>
       <AbstractDialog />

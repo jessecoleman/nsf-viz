@@ -1,34 +1,32 @@
-import { MouseEvent, ChangeEvent, useState } from 'react';
-import { Flipper, Flipped } from 'react-flip-toolkit';
-import { alpha, styled } from '@material-ui/core/styles';
+import { ChangeEvent, MouseEvent, useState } from 'react';
+import { Flipped, Flipper } from 'react-flip-toolkit';
 
 import {
-  Box,
-  IconButton,
-  Tooltip,
-} from '@material-ui/core';
-
-import {
-  Search,
   ClearAll,
   HighlightOff,
+  Search,
   Sort,
   SortByAlpha,
 } from '@mui/icons-material';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import { alpha, styled } from '@mui/material/styles';
+
+import { useLoadRelated, useLoadTermCounts, useLoadTypeahead } from 'api';
+// import { clearTypeahead } from 'app/dataReducer';
+import { useQueryParam } from 'use-query-params';
 
 import { useDebounce } from 'app/hooks';
 import { ArrayParam, useBeta, useQuery } from 'app/query';
-import TermChip from './TermChip';
-import TermsInput from './TermsInput';
-import TermsPreset from './TermsPreset';
-// import { clearTypeahead } from 'app/dataReducer';
-import { useQueryParam } from 'use-query-params';
-import { useLoadTermCounts, useLoadRelated, useLoadTypeahead } from 'api';
-import TermsList from './TermsList';
 import { queryClient } from 'app/queryClient';
 import { useWizardRef } from 'app/wizard/wizard';
 
-const SearchContainer = styled('div')(({ theme }) => `
+import TermChip from './TermChip';
+import TermsInput from './TermsInput';
+import TermsList from './TermsList';
+import TermsPreset from './TermsPreset';
+
+const SearchContainer = styled('div')(
+  ({ theme }) => `
   min-width: 25em;
   flex-shrink: 1;
   // width: 100%;
@@ -43,7 +41,7 @@ const SearchContainer = styled('div')(({ theme }) => `
     background-color: ${alpha(theme.palette.common.white, 0.25)};
   }
   margin-left: 0;
-  ${theme.breakpoints.down('sm')} {
+  ${theme.breakpoints.down('md')} {
     width: 100%;
     max-height: 8em;
   }
@@ -56,13 +54,15 @@ const SearchContainer = styled('div')(({ theme }) => `
     flex-grow: 1;
     display: flex;
   }
-  ${theme.breakpoints.down('sm')} {
+  ${theme.breakpoints.down('md')} {
     border-radius: 0;
     width: 100%;
   }
-`);
+`
+);
 
-const ChipContainer = styled('div')(({ theme }) => `
+const ChipContainer = styled('div')(
+  ({ theme }) => `
   flex-grow: 1;
   display: flex;
   flex-wrap: wrap;
@@ -72,63 +72,74 @@ const ChipContainer = styled('div')(({ theme }) => `
     margin-top: -8px;
     margin-left: -8px;
   }
-`);
+`
+);
 
-const SearchIcon = styled('div')(({ theme }) => `
+const SearchIcon = styled('div')(
+  ({ theme }) => `
   padding: ${theme.spacing(0.5, 1)};
   pointer-events: none;
-`);
+`
+);
 
 const exitThenFlipAndEnter = ({
   hideEnteringElements,
   animateEnteringElements,
   animateExitingElements,
-  animateFlippedElements
+  animateFlippedElements,
 }) => {
   hideEnteringElements();
-  animateExitingElements()
-    .then(() => {
-      animateFlippedElements();
-      animateEnteringElements();
-    });
+  animateExitingElements().then(() => {
+    animateFlippedElements();
+    animateEnteringElements();
+  });
 };
 
 const TermsFilter = () => {
-
-  const [ input, setInput ] = useState('');
-  const [ beta ] = useBeta();
+  const [input, setInput] = useState('');
+  const [beta] = useBeta();
   const debouncedInput = useDebounce(input, 300);
   const { ref: filterTermsRef } = useWizardRef<HTMLDivElement>('filterTerms');
   const { ref: clearTermsRef } = useWizardRef<HTMLButtonElement>('clearTerms');
 
-  const [ terms, setTerms ] = useQueryParam('terms', ArrayParam);
-  const [ sort, setSort ] = useState<'alpha' | 'count' | undefined>();
+  const [terms, setTerms] = useQueryParam('terms', ArrayParam);
+  const [sort, setSort] = useState<'alpha' | 'count' | undefined>();
   const [{ org }] = useQuery();
-  const selected = terms.find(term => term.match('~'));
+  const selected = terms.find((term) => term.match('~'));
 
-  const { data: counts } = useLoadTermCounts({ org, terms }, {
-    query: {
-      keepPreviousData: true,
-      enabled: terms.length > 0,
-      select: ({ data }) => data
+  const { data: counts } = useLoadTermCounts(
+    { org, terms },
+    {
+      query: {
+        keepPreviousData: true,
+        enabled: terms.length > 0,
+        select: ({ data }) => data,
+      },
     }
-  });
+  );
 
-  const { data: typeahead, queryKey: typeaheadKey } = useLoadTypeahead(debouncedInput, { selected_terms: terms }, {
-    query: {
-      keepPreviousData: true,
-      enabled: input.length > 0,
-      select: ({ data = [] }) => data.filter(d => !terms.includes(d.term))
+  const { data: typeahead, queryKey: typeaheadKey } = useLoadTypeahead(
+    debouncedInput,
+    { selected_terms: terms },
+    {
+      query: {
+        keepPreviousData: true,
+        enabled: input.length > 0,
+        select: ({ data = [] }) => data.filter((d) => !terms.includes(d.term)),
+      },
     }
-  });
+  );
 
-  const { data: related, queryKey: relatedKey } = useLoadRelated({ terms }, {
-    query: {
-      keepPreviousData: true,
-      enabled: terms.length > 0,
-      select: ({ data = [] }) => data.filter(d => !terms.includes(d.term))
+  const { data: related, queryKey: relatedKey } = useLoadRelated(
+    { terms },
+    {
+      query: {
+        keepPreviousData: true,
+        enabled: terms.length > 0,
+        select: ({ data = [] }) => data.filter((d) => !terms.includes(d.term)),
+      },
     }
-  }); 
+  );
 
   const handleChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -136,45 +147,48 @@ const TermsFilter = () => {
 
   const handleClickChip = (e: MouseEvent, chip: string) => {
     e.preventDefault();
-    setTerms(terms.map(term => {
-      if (term === chip) return `~${term}~`;
-      else return term.replaceAll('~', '');
-    }));
+    setTerms(
+      terms.map((term) => {
+        if (term === chip) return `~${term}~`;
+        else return term.replaceAll('~', '');
+      })
+    );
   };
 
   const handleAddChip = (chipString: string) => {
     setInput('');
-    const chips = chipString.split(',').filter(c => c.length > 0); 
-    if (terms.find(t => chips.includes(t))) {
+    const chips = chipString.split(',').filter((c) => c.length > 0);
+    if (terms.find((t) => chips.includes(t))) {
       return;
     }
     setTerms(terms.concat(chips));
   };
 
   const handleDeleteChip = (term: string) => () => {
-    setTerms(terms.filter(t => t !== term));
+    setTerms(terms.filter((t) => t !== term));
   };
-  
+
   const handleClearInput = () => {
     queryClient.removeQueries(typeaheadKey);
   };
- 
+
   const handleClearTerms = () => {
     queryClient.removeQueries(relatedKey);
     if (selected) {
-      setTerms(terms.map(term => term.replaceAll('~', '')));
+      setTerms(terms.map((term) => term.replaceAll('~', '')));
     } else {
       setTerms([]);
     }
   };
-  
+
   const handleSortTerms = () => {
-    setSort(sort => sort === 'alpha' ? 'count' : 'alpha');
+    setSort((sort) => (sort === 'alpha' ? 'count' : 'alpha'));
     const compareAlpha = (t1: string, t2: string) => t1.localeCompare(t2);
-    const compareCount = (t1: string, t2: string) => (counts?.[t2] ?? 0) - (counts?.[t1] ?? 0);
+    const compareCount = (t1: string, t2: string) =>
+      (counts?.[t2] ?? 0) - (counts?.[t1] ?? 0);
     setTerms(terms.sort(sort === 'alpha' ? compareCount : compareAlpha));
   };
-  
+
   return (
     <Flipper
       flipKey={JSON.stringify(terms)}
@@ -194,17 +208,15 @@ const TermsFilter = () => {
                       <IconButton
                         color='inherit'
                         onClick={handleSortTerms}
+                        size='large'
                       >
-                        {sort === 'count'
-                          ? <Sort />
-                          : <SortByAlpha />
-                        }
+                        {sort === 'count' ? <Sort /> : <SortByAlpha />}
                       </IconButton>
                     </Tooltip>
                   )}
                 </Box>
               </Flipped>
-              {terms.map(term => (
+              {terms.map((term) => (
                 <TermChip
                   key={term}
                   term={term.replaceAll('~', '')}
@@ -220,17 +232,18 @@ const TermsFilter = () => {
                 onAddChip={handleAddChip}
                 onDeleteLastChip={handleDeleteChip(terms[terms.length - 1])}
                 onClearInput={handleClearInput}
-                suggestions={input
-                  ? <TermsList
-                    beta={beta}
-                    input={input}
-                    header='autocomplete'
-                    filter={terms}
-                    terms={typeahead}
-                    onAddChip={handleAddChip}
-                  />
-                  : terms.length
-                    ? <TermsList
+                suggestions={
+                  input ? (
+                    <TermsList
+                      beta={beta}
+                      input={input}
+                      header='autocomplete'
+                      filter={terms}
+                      terms={typeahead}
+                      onAddChip={handleAddChip}
+                    />
+                  ) : terms.length ? (
+                    <TermsList
                       beta={beta}
                       input={input}
                       header='related terms'
@@ -238,10 +251,9 @@ const TermsFilter = () => {
                       terms={related}
                       onAddChip={handleAddChip}
                     />
-                    : beta
-                      ? <TermsPreset />
-                      : null
-
+                  ) : beta ? (
+                    <TermsPreset />
+                  ) : null
                 }
               />
             </ChipContainer>
@@ -252,11 +264,9 @@ const TermsFilter = () => {
                 ref={clearTermsRef}
                 color='inherit'
                 onClick={handleClearTerms}
+                size='large'
               >
-                {selected
-                  ? <HighlightOff />
-                  : <ClearAll />
-                }
+                {selected ? <HighlightOff /> : <ClearAll />}
               </IconButton>
             </Tooltip>
           </Flipped>

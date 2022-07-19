@@ -1,11 +1,14 @@
-import { memo, MouseEvent } from 'react';
+import { MouseEvent, memo } from 'react';
 import { Flipped } from 'react-flip-toolkit';
-import { animate } from 'motion';
-import { Chip, CircularProgress } from '@material-ui/core';
-import { alpha, styled } from '@material-ui/core/styles';
-import { format } from 'd3';
 
-const StyledChip = styled(Chip)(({ theme }) => `
+import { Chip, CircularProgress } from '@mui/material';
+import { alpha, styled } from '@mui/material/styles';
+
+import { format } from 'd3';
+import { animate } from 'motion';
+
+const StyledChip = styled(Chip)(
+  ({ theme }) => `
   margin-right: ${theme.spacing(1)};
   margin-bottom: ${theme.spacing(1)};
   &.MuiChip-root {
@@ -23,15 +26,17 @@ const StyledChip = styled(Chip)(({ theme }) => `
       background-color: ${alpha(theme.palette.common.white, 0.7)};
     }
   }
-`);
+`
+);
 
-const ChipContent = styled('span')(({ theme }) => `
+const ChipContent = styled('span')(
+  ({ theme }) => `
   display: flex;
   flex-direction: row;
   align-items: center;
   // count
   & > span {
-    ${theme.breakpoints.down('sm')} {
+    ${theme.breakpoints.down('md')} {
       display: none;
     }
     height: ${theme.spacing(3)};
@@ -46,7 +51,8 @@ const ChipContent = styled('span')(({ theme }) => `
     justify-content: center;
     border-radius: ${theme.spacing(1.5)};
   }
-`);
+`
+);
 
 const animateIn = (e: HTMLElement, i: number) => {
   e.style.transform = 'translate(50%)';
@@ -57,19 +63,18 @@ const animateIn = (e: HTMLElement, i: number) => {
   });
 };
 
-const animateOut = (e: HTMLElement) => (
+const animateOut = (e: HTMLElement) =>
   animate(e, {
     opacity: 0,
     // transform: 'scale(0%)'
-  })
-);
+  });
 
 export type TermChipProps = {
-  term: string
-  count?: number
-  onClick?: (e: MouseEvent, key: string) => void
-  onDelete?: () => void
-  selected?: boolean
+  term: string;
+  count?: number;
+  onClick?: (e: MouseEvent, key: string) => void;
+  onDelete?: () => void;
+  selected?: boolean;
 };
 
 const TermChip = (props: TermChipProps) => (
@@ -84,10 +89,11 @@ const TermChip = (props: TermChipProps) => (
       label={
         <ChipContent>
           <span>
-            {props.count !== undefined
-              ? format('.2s')(props.count).replace('.0', '')
-              : <CircularProgress size='1.25em' color='secondary' />
-            }
+            {props.count !== undefined ? (
+              format('.2s')(props.count).replace('.0', '')
+            ) : (
+              <CircularProgress size='1.25em' color='secondary' />
+            )}
           </span>
           {props.term}
         </ChipContent>
@@ -97,5 +103,5 @@ const TermChip = (props: TermChipProps) => (
     />
   </Flipped>
 );
- 
+
 export default memo(TermChip);

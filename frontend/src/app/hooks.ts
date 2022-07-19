@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, RefObject, useMemo } from 'react';
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
+
 import { useQuery } from './query';
 
-export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] => {
-  
+export const useMeasure = <T extends HTMLElement>(): [RefObject<T>, number] => {
   const ref = useRef<T>(null);
   const padding = useRef<number>(0);
 
@@ -15,23 +15,26 @@ export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] =>
       }
     }
   }, [ref.current?.getBoundingClientRect().width]);
- 
-  return [ ref, padding.current ];
+
+  return [ref, padding.current];
 };
 
 type Dims = {
-  width: number
-  height: number
-}
+  width: number;
+  height: number;
+};
 
-export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObject<T>, Dims ] => {
-  
+export const useMeasureChart = <T extends HTMLElement>(): [
+  RefObject<T>,
+  RefObject<T>,
+  Dims
+] => {
   const topRef = useRef<T>(null);
   const bottomRef = useRef<T>(null);
-  const [ windowWidth, windowHeight ] = useWindowDimensions();
+  const [windowWidth, windowHeight] = useWindowDimensions();
   // resize when terms change since they change height of toolbar
   const [{ terms }] = useQuery();
-  const [ prevTerms, setPrevTerms ] = useState(terms);
+  const [prevTerms, setPrevTerms] = useState(terms);
 
   useEffect(() => {
     setPrevTerms(terms);
@@ -49,12 +52,18 @@ export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObj
       }
     }
     return { width: 0, height: 0 };
-  }, [topRef.current, bottomRef.current, windowWidth, windowHeight, JSON.stringify(prevTerms)]);
- 
-  return [ topRef, bottomRef, dims ];
+  }, [
+    topRef.current,
+    bottomRef.current,
+    windowWidth,
+    windowHeight,
+    JSON.stringify(prevTerms),
+  ]);
+
+  return [topRef, bottomRef, dims];
 };
 
-type ResultBox<T> = { v: T }
+type ResultBox<T> = { v: T };
 
 export const useConstant = <T extends unknown>(fn: () => T): T => {
   const ref = useRef<ResultBox<T>>();
@@ -67,17 +76,19 @@ export const useConstant = <T extends unknown>(fn: () => T): T => {
 };
 
 const getWindowDimensions = () => {
-  return [ window.innerWidth, window.innerHeight ];
+  return [window.innerWidth, window.innerHeight];
 };
 
 export const useWindowDimensions = () => {
-  const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
+  const [windowDimensions, setWindowDimensions] = useState(
+    getWindowDimensions()
+  );
 
   useEffect(() => {
     const handleResize = () => {
       setWindowDimensions(getWindowDimensions());
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -86,7 +97,6 @@ export const useWindowDimensions = () => {
 };
 
 export const useDebounce = <T>(value: T, delay?: number): T => {
-
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {

@@ -1,14 +1,15 @@
 import ReactDOM from 'react-dom';
-import './index.css';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
 import { QueryClientProvider } from 'react-query';
-import * as serviceWorker from './serviceWorker';
+import { Route, BrowserRouter as Router } from 'react-router-dom';
 
 import ThemeProvider from 'theme';
-import App from './App';
-
 import { QueryParamProvider } from 'use-query-params';
+
 import { queryClient } from 'app/queryClient';
+
+import App from './App';
+import './index.css';
+import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(
   <Router>

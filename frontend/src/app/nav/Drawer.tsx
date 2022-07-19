@@ -1,34 +1,37 @@
-import { Drawer, useMediaQuery } from '@material-ui/core';
-import { styled } from '@material-ui/core';
-import DirectoryTree from 'app/divisions/DirectoryTree';
+import { Drawer, useMediaQuery } from '@mui/material';
+import { styled } from '@mui/material';
+
 import { BooleanParam, useQueryParam } from 'use-query-params';
-    
-const Container = styled('nav')(({ theme }) => `
+
+import DirectoryTree from 'app/divisions/DirectoryTree';
+
+const Container = styled('nav')(
+  ({ theme }) => `
   & .MuiDrawer-paper {
     width: ${theme.drawerWidth};
     display: flex;
     flex-direction: column;
-    ${theme.breakpoints.down('sm')} {
+    ${theme.breakpoints.down('md')} {
       width: 100%;
     }
   }
-`);
+`
+);
 
 const DivisionDrawer = () => {
-  
   const wideScreen = useMediaQuery('(min-width:960px)');
-  const [ drawerOpen, setDrawerOpen ] = useQueryParam('drawer', BooleanParam);
- 
+  console.log(wideScreen);
+  const [drawerOpen, setDrawerOpen] = useQueryParam('drawer', BooleanParam);
+
   return (
     <Container aria-label='divisions filter'>
       <Drawer
-        container={window.document.body}
-        variant={wideScreen ? 'permanent' : 'temporary'}
+        variant={wideScreen ? 'persistent' : 'temporary'}
         anchor='left'
         open={wideScreen || !!drawerOpen}
         onClose={() => setDrawerOpen(false)}
         ModalProps={{
-          keepMounted: true
+          keepMounted: true,
         }}
       >
         <DirectoryTree />

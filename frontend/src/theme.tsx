@@ -1,49 +1,51 @@
-import * as d3 from 'd3';
-import { ThemeProvider as EmotionThemeProvider } from '@emotion/react';
+import { CssBaseline } from '@mui/material';
 import {
-  createTheme,
-  Theme as MuiTheme,
-  ThemeProvider as MuiThemeProvider,
-} from '@material-ui/core/styles';
-import { CssBaseline } from '@material-ui/core';
-import {
+  amber,
+  blue,
   deepPurple,
   green,
-  blue,
-  red,
-  amber,
   pink,
-} from '@material-ui/core/colors';
+  red,
+} from '@mui/material/colors';
+import {
+  Theme as MuiTheme,
+  ThemeProvider as MuiThemeProvider,
+  createTheme,
+} from '@mui/material/styles';
 
-export const interleave = <T extends unknown>(v: T, i: number, a: T[]) => (
-  a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)]
-);
+import { ThemeProvider as EmotionThemeProvider } from '@emotion/react';
+import * as d3 from 'd3';
+
+export const interleave = <T extends unknown>(v: T, i: number, a: T[]) =>
+  a[Math.trunc(i / 2) + (i % 2 ? a.length / 2 : 0)];
 
 export const colorScales = {
-  count: d3.scaleOrdinal(Object.values(deepPurple).slice(0, -4).map(interleave)),
+  count: d3.scaleOrdinal(
+    Object.values(deepPurple).slice(0, -4).map(interleave)
+  ),
   amount: d3.scaleOrdinal(Object.values(green).slice(0, -4).map(interleave)),
 };
 
 export const hierColorScale = d3.scaleOrdinal(
-  [deepPurple, green, blue, red, amber, pink].map(color =>
+  [deepPurple, green, blue, red, amber, pink].map((color) =>
     d3.scaleOrdinal(Object.values(color).slice(0, -4).map(interleave))
   )
 );
 
-declare module '@material-ui/core/styles/createPalette' {
+declare module '@mui/material/styles/createPalette' {
   export interface PaletteOptions {
-    amounts: PaletteColorOptions,
-    counts: PaletteColorOptions,
+    amounts: PaletteColorOptions;
+    counts: PaletteColorOptions;
   }
 }
-  
-declare module '@material-ui/core/styles/createTheme' {
+
+declare module '@mui/material/styles/createTheme' {
   export interface ThemeOptions {
-    drawerWidth: string
+    drawerWidth: string;
   }
-  
+
   export interface Theme {
-    drawerWidth: string
+    drawerWidth: string;
   }
 }
 
@@ -51,21 +53,21 @@ const theme = createTheme({
   drawerWidth: '35em',
   palette: {
     primary: {
-      main: '#6772e5'
+      main: '#6772e5',
     },
     counts: {
       main: deepPurple[500],
     },
     amounts: {
       main: green[500],
-    }, 
+    },
   },
 });
 
 const ThemeProvider = ({ children }: { children: JSX.Element }) => {
   return (
     <MuiThemeProvider theme={theme}>
-      <EmotionThemeProvider theme={theme}>        
+      <EmotionThemeProvider theme={theme}>
         <CssBaseline />
         {children}
       </EmotionThemeProvider>

@@ -1,11 +1,22 @@
-import { List, ListItem, ListItemIcon, ListItemText, ListSubheader, styled } from '@material-ui/core';
-import { AddCircle } from '@mui/icons-material';
-import Highlight from 'app/Highlight';
 import { Flipped, Flipper } from 'react-flip-toolkit';
+
+import { AddCircle } from '@mui/icons-material';
+import {
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
+  styled,
+} from '@mui/material';
+
 import anime from 'animejs';
 import { Term } from 'api';
 
-const StyledListItem = styled(ListItem)(({ theme }) => `
+import Highlight from 'app/Highlight';
+
+const StyledListItem = styled(ListItem)(
+  ({ theme }) => `
   background-color: white;
   border-top: 1px solid ${theme.palette.grey[200]};
   &:hover {
@@ -24,7 +35,8 @@ const StyledListItem = styled(ListItem)(({ theme }) => `
       color: ${theme.palette.text.disabled};
     }
   }
-`);
+`
+);
 
 // const animateIn = (e: HTMLElement) => (
 //   animate(e, {
@@ -32,7 +44,7 @@ const StyledListItem = styled(ListItem)(({ theme }) => `
 //     // transform: 'translate(0%, 100%)'
 //   })
 // );
-// 
+//
 // const animateOut = (e: HTMLElement) => (
 //   animate(e, {
 //     opacity: 0,
@@ -57,7 +69,7 @@ const animateOut = (el, i, onComplete) => {
     // delay: i * 10,
     easing: 'easeOutSine',
     duration: 100,
-    complete: onComplete
+    complete: onComplete,
   });
 };
 
@@ -65,24 +77,23 @@ const exitThenFlipAndEnter = ({
   hideEnteringElements,
   animateEnteringElements,
   animateExitingElements,
-  animateFlippedElements
+  animateFlippedElements,
 }) => {
   hideEnteringElements();
-  animateExitingElements()
-    .then(() => {
-      animateFlippedElements();
-      animateEnteringElements();
-    });
+  animateExitingElements().then(() => {
+    animateFlippedElements();
+    animateEnteringElements();
+  });
 };
 
 type TermsListProps = {
-  beta?: boolean,
-  input: string,
-  header: string,
-  filter: string[],
-  terms: Term[] | undefined,
-  onAddChip: (term: string) => void,
-}
+  beta?: boolean;
+  input: string;
+  header: string;
+  filter: string[];
+  terms: Term[] | undefined;
+  onAddChip: (term: string) => void;
+};
 
 const TermsList = (props: TermsListProps) => (
   <Flipped flipId='terms-list'>
@@ -92,38 +103,32 @@ const TermsList = (props: TermsListProps) => (
         handleEnterUpdateDelete={exitThenFlipAndEnter}
       >
         <List subheader={<ListSubheader>{props.header}</ListSubheader>}>
-          {props.terms
-            ?.map(t => (
-              <Flipped
-                key={t.term}
-                flipId={`${t.term}-suggest`}
-                onAppear={animateIn}
-                onExit={animateOut}
-              >
-                <div>
-                  <StyledListItem
-                    key={t.term}
-                    dense
-                    onClick={() => props.onAddChip(t.term)}
-                  >
-                    <ListItemText>
-                      <Highlight
-                        value={t.term}
-                        query={props.input}
-                      />
-                      {props.beta &&
-                        <span className='forms'>
-                          {t.forms.join(', ')}
-                        </span>
-                      }
-                    </ListItemText>
-                    <ListItemIcon>
-                      <AddCircle />
-                    </ListItemIcon>
-                  </StyledListItem>
-                </div>
-              </Flipped>
-            ))}
+          {props.terms?.map((t) => (
+            <Flipped
+              key={t.term}
+              flipId={`${t.term}-suggest`}
+              onAppear={animateIn}
+              onExit={animateOut}
+            >
+              <div>
+                <StyledListItem
+                  key={t.term}
+                  dense
+                  onClick={() => props.onAddChip(t.term)}
+                >
+                  <ListItemText>
+                    <Highlight value={t.term} query={props.input} />
+                    {props.beta && (
+                      <span className='forms'>{t.forms.join(', ')}</span>
+                    )}
+                  </ListItemText>
+                  <ListItemIcon>
+                    <AddCircle />
+                  </ListItemIcon>
+                </StyledListItem>
+              </div>
+            </Flipped>
+          ))}
         </List>
       </Flipper>
     </div>

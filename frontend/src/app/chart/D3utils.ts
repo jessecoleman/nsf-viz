@@ -8,16 +8,16 @@ export type Selection<
 > = d3.Selection<Element, Datum, PElement, PDatum>;
 
 export type Padding = {
-  top: number,
-  bottom: number,
-  left: number,
-  right: number,
-}
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
 
 export type TickFormat = {
-  x: (t: number) => string
-  y: (t: number) => string
-}
+  x: (t: number) => string;
+  y: (t: number) => string;
+};
 
 export const debounce = () => {
   let timer: NodeJS.Timeout;

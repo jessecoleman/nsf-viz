@@ -1,7 +1,8 @@
-import { Chip, styled } from '@material-ui/core';
 import { FilterList } from '@mui/icons-material';
+import { Chip, styled } from '@mui/material';
 
-const StyledChip = styled(Chip)(({ theme }) => `
+const StyledChip = styled(Chip)(
+  ({ theme }) => `
   transition: ease 0.3s all; 
   box-sizing: border-box;
   border: 16px solid lightgrey;
@@ -32,15 +33,15 @@ const StyledChip = styled(Chip)(({ theme }) => `
       margin-left: -8px;
     }
   } 
-`);
+`
+);
 
 type FilterChipProps = {
-  label: string,
-  onClear: () => void,
+  label: string;
+  onClear: () => void;
 };
 
 const FilterChip = (props: FilterChipProps) => {
-
   return (
     <StyledChip
       onDelete={props.onClear}
