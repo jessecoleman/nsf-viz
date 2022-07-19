@@ -2,14 +2,11 @@ import { useLoadDirectory } from 'api';
 import { StringParam, useQueryParam } from 'use-query-params';
 
 export const useDirectory = () => {
-  const [ org ] = useQueryParam('org', StringParam);
+  const [org] = useQueryParam('org', StringParam);
   const {
-    data: {
-      divisionMap,
-      divisionTree,
-    } = {
+    data: { divisionMap, divisionTree } = {
       divisionMap: {},
-      divisionTree: {}
+      divisionTree: {},
     },
     ...rest
   } = useLoadDirectory(org ?? 'nsf', {
@@ -19,17 +16,21 @@ export const useDirectory = () => {
       // },
       keepPreviousData: true,
       select: ({ data }) => ({
-        divisionMap: Object.fromEntries(data.flatMap(({ departments = [], ...d }) => (
-          [[d.abbr, d]].concat(departments.map(d => [d.abbr, d]))
-        ))),
-        divisionTree: Object.fromEntries(data.map(dir => [
-          dir.abbr,
-          dir.departments?.map(d => d.abbr) ?? []
-        ]))
+        divisionMap: Object.fromEntries(
+          data.flatMap(({ departments = [], ...d }) =>
+            [[d.abbr, d]].concat(departments.map((d) => [d.abbr, d]))
+          )
+        ),
+        divisionTree: Object.fromEntries(
+          data.map((dir) => [
+            dir.abbr,
+            dir.departments?.map((d) => d.abbr) ?? [],
+          ])
+        ),
       }),
-    }
+    },
   });
-  
+
   return {
     divisionMap,
     divisionTree,

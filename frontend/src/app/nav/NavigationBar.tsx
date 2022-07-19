@@ -1,24 +1,26 @@
-import { 
+import { forwardRef } from 'react';
+
+import { Info } from '@mui/icons-material';
+import {
   AppBar,
+  Box,
+  Button,
+  Link,
   Toolbar,
   Tooltip,
   Typography,
-  Box,
-  Button,
   styled,
-  Link,
-} from '@material-ui/core';
-
-import TermsFilter from 'app/terms/TermsFilter';
+} from '@mui/material';
 
 import grantExplorer from 'app/images/grant-explorer.svg';
-import DrawerToggle from './DrawerToggle';
-import { forwardRef } from 'react';
-import { useWizardRef } from 'app/wizard/wizard';
-import { Info } from '@mui/icons-material';
 import { useAbout } from 'app/query';
+import TermsFilter from 'app/terms/TermsFilter';
+import { useWizardRef } from 'app/wizard/wizard';
 
-const StyledToolbar = styled(Toolbar)(({ theme }) => `
+import DrawerToggle from './DrawerToggle';
+
+const StyledToolbar = styled(Toolbar)(
+  ({ theme }) => `
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
@@ -35,24 +37,30 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => `
       flex-grow: initial;
     }
   }
-`);
+`
+);
 
-const Logo = styled('img')(({ theme }) => `
+const Logo = styled('img')(
+  ({ theme }) => `
   margin-right: ${theme.spacing(2)};
   width: ${theme.spacing(4)};
   height: ${theme.spacing(4)};
-`);
+`
+);
 
-const AboutButton = styled(Button)(({ theme }) => `
+const AboutButton = styled(Button)(
+  ({ theme }) => `
   color: white;
   border: 1px solid white;
   height: ${theme.spacing(6)};
   &:hover {
     background-color: rgba(255, 255, 255, 0.4);
   }
-`);
+`
+);
 
-const TitleBar = styled(Box)(({ theme }) => `
+const TitleBar = styled(Box)(
+  ({ theme }) => `
   width: 100%;
   height: 3em;
   display: flex;
@@ -74,9 +82,11 @@ const TitleBar = styled(Box)(({ theme }) => `
       margin-right: default;
     }
   }
-`);
+`
+);
 
-const Title = styled(Typography)(({ theme }) => `
+const Title = styled(Typography)(
+  ({ theme }) => `
   display: inline;
   ${theme.breakpoints.up('md')} {
     display: block;
@@ -85,11 +95,12 @@ const Title = styled(Typography)(({ theme }) => `
     color: white;
     text-decoration: none;
   }
-`);
+`
+);
 
 const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => {
   const { ref: titleBarRef } = useWizardRef<HTMLDivElement>('hello');
-  const [ , setAboutOpen ] = useAbout();
+  const [, setAboutOpen] = useAbout();
   const handleClickAbout = () => {
     setAboutOpen(true);
   };
@@ -101,9 +112,7 @@ const SearchAppBar = forwardRef<HTMLDivElement>((props, ref) => {
           <DrawerToggle />
           <Logo src={grantExplorer} alt='GrantExplorer logo' />
           <Title variant='h6' noWrap>
-            <Link href='?'>
-              GrantExplorer
-            </Link>
+            <Link href='?'>GrantExplorer</Link>
           </Title>
         </TitleBar>
         <Box flexGrow={3} />

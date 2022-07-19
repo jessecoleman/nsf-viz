@@ -1,14 +1,18 @@
 import { MouseEvent } from 'react';
-import styled from '@emotion/styled';
-import { Tooltip } from '@material-ui/core';
-import { TreeItem, treeItemClasses, TreeItemProps } from '@material-ui/lab';
-import { colorScales } from 'theme';
-import DivisionRow from './DivisionRow';
-import { KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
-import { CheckboxState } from './DirectoryTableHead';
 import { Flipped } from 'react-flip-toolkit';
 
-const DirectoryRoot = styled(TreeItem)(({ theme }) => `
+import { KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
+import { TreeItem, TreeItemProps, treeItemClasses } from '@mui/lab';
+import { Tooltip } from '@mui/material';
+
+import styled from '@emotion/styled';
+import { colorScales } from 'theme';
+
+import { CheckboxState } from './DirectoryTableHead';
+import DivisionRow from './DivisionRow';
+
+const DirectoryRoot = styled(TreeItem)(
+  ({ theme }) => `
   color: ${theme.palette.text.secondary};
   & .${treeItemClasses.content} {
     padding: 0;
@@ -41,8 +45,8 @@ const DirectoryRoot = styled(TreeItem)(({ theme }) => `
     padding: ${theme.spacing(1, 1, 1, 2)};
     height: 100%;
   }
-`);
-
+`
+);
 
 type DirectoryProps = TreeItemProps & {
   name: React.ReactNode;
@@ -50,21 +54,12 @@ type DirectoryProps = TreeItemProps & {
   checked: CheckboxState;
   count?: number;
   amount?: number;
-  onCheck?: (e: MouseEvent, key: string, checked: CheckboxState) => void
+  onCheck?: (e: MouseEvent, key: string, checked: CheckboxState) => void;
 };
 
-
 const DirectoryEntry = (props: DirectoryProps) => {
-  const {
-    nodeId,
-    name,
-    desc,
-    children,
-    checked,
-    onCheck,
-    ...other
-  } = props;
-  
+  const { nodeId, name, desc, children, checked, onCheck, ...other } = props;
+
   return (
     <Flipped flipId={nodeId}>
       <div>
@@ -84,12 +79,11 @@ const DirectoryEntry = (props: DirectoryProps) => {
                 // onMouseOut={debouncedHighlight}
                 checked={checked}
                 aria-checked={checked}
-                cells={['count', 'amount'].map(field => ({
+                cells={['count', 'amount'].map((field) => ({
                   name: field,
                   value: props[field],
-                  fill: colorScales[field](nodeId)
+                  fill: colorScales[field](nodeId),
                 }))}
-                // tabIndex={-1}
               />
             }
             {...other}

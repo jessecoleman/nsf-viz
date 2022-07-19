@@ -2,25 +2,35 @@ import { RefObject } from 'react';
 import { FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 
+import { Collapse, LinearProgress, styled } from '@mui/material';
+
 import { useWindowDimensions } from 'app/hooks';
+
 import GrantRow from './GrantRow';
 import { useInfiniteLoadGrants } from './useInfiniteLoadGrants';
-import { Collapse, LinearProgress, styled } from '@material-ui/core';
 
 const ProgressBar = styled(LinearProgress)`
   margin-bottom: -4px;
 `;
 
 type GrantsTableProps = {
-  widthRef: RefObject<HTMLDivElement>
+  widthRef: RefObject<HTMLDivElement>;
 };
 
 const GrantsTable = (props: GrantsTableProps) => {
+  const [, height] = useWindowDimensions();
+  const {
+    loaderRef,
+    count,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    isFetchedAfterMount,
+    fetchNextPage,
+  } = useInfiniteLoadGrants();
 
-  const [ , height ] = useWindowDimensions();
-  const { loaderRef, count, hasNextPage, isFetching, isFetchingNextPage, isFetchedAfterMount, fetchNextPage } = useInfiniteLoadGrants();
-
-  const isLoaded = (idx: number) => !hasNextPage || (!isFetching && idx < count);
+  const isLoaded = (idx: number) =>
+    !hasNextPage || (!isFetching && idx < count);
   const ITEM_SIZE = 64;
 
   const handleLoadGrants = async (idx: number) => {

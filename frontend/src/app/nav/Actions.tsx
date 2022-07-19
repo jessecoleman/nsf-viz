@@ -1,9 +1,29 @@
-import { Link, SpeedDial, SpeedDialAction, styled, Tooltip } from '@material-ui/core';
-import { Download, GitHub, Science, InsertDriveFile, Help, Info } from '@mui/icons-material';
-import useGrantsDownload from 'app/grants/grantsDownload';
-import { useAbout, useBeta, useGrantsDialogQuery, useTutorial } from 'app/query';
-import { useWizardRef } from 'app/wizard/wizard';
 import { MouseEvent, useState } from 'react';
+
+import {
+  Download,
+  GitHub,
+  Help,
+  Info,
+  InsertDriveFile,
+  Science,
+} from '@mui/icons-material';
+import {
+  Link,
+  SpeedDial,
+  SpeedDialAction,
+  Tooltip,
+  styled,
+} from '@mui/material';
+
+import useGrantsDownload from 'app/grants/grantsDownload';
+import {
+  useAbout,
+  useBeta,
+  useGrantsDialogQuery,
+  useTutorial,
+} from 'app/query';
+import { useWizardRef } from 'app/wizard/wizard';
 
 const StyledAction = styled(SpeedDialAction)`
   & .MuiLink-root {
@@ -14,14 +34,14 @@ const StyledAction = styled(SpeedDialAction)`
 `;
 
 const Actions = () => {
-
-  const [ beta, setBeta ] = useBeta();
-  const [ , setTutorial ] = useTutorial();
+  const [beta, setBeta] = useBeta();
+  const [, setTutorial] = useTutorial();
   const grantsUrl = useGrantsDownload();
-  const [ , setDialogQuery ] = useGrantsDialogQuery();
-  const { ref: overflowMenuRef, active } = useWizardRef<HTMLDivElement>('overflowMenu');
-  const [ open, setOpen ] = useState(false);
-  const [ , setAboutOpen ] = useAbout();
+  const [, setDialogQuery] = useGrantsDialogQuery();
+  const { ref: overflowMenuRef, active } =
+    useWizardRef<HTMLDivElement>('overflowMenu');
+  const [open, setOpen] = useState(false);
+  const [, setAboutOpen] = useAbout();
 
   const actions = [
     // {
@@ -33,13 +53,13 @@ const Actions = () => {
       name: 'Download Grant Data',
       icon: <Download />,
       href: grantsUrl,
-      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation()
+      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation(),
     },
     {
       name: 'View Source',
       icon: <GitHub />,
       href: 'https://github.com/jessecoleman/nsf-viz',
-      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation()
+      handleClick: (e: MouseEvent<HTMLElement>) => e.stopPropagation(),
     },
     {
       name: 'About Grant Explorer',
@@ -47,7 +67,7 @@ const Actions = () => {
       handleClick: (e: MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         setAboutOpen(true);
-      }
+      },
     },
     {
       name: 'View Tutorial',
@@ -55,15 +75,18 @@ const Actions = () => {
       handleClick: (e: MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         setTutorial(0);
-      }
+      },
     },
     {
       name: (beta ? 'Disable' : 'Enable') + ' Beta Features',
       icon: <Science htmlColor={beta ? 'red' : 'green'} />,
-      handleClick: (e: MouseEvent<HTMLElement>) => { e.stopPropagation(); setBeta(!beta); }
-    }
+      handleClick: (e: MouseEvent<HTMLElement>) => {
+        e.stopPropagation();
+        setBeta(!beta);
+      },
+    },
   ];
-  
+
   const handleOpen = () => {
     setOpen(true);
   };
@@ -71,19 +94,16 @@ const Actions = () => {
   const handleClose = () => {
     setOpen(false);
   };
-  
+
   const handleOpenGrants = (e: MouseEvent) => {
     // console.log(e.target, e.currentTarget.classList);
     if (e.currentTarget.classList.contains('MuiSpeedDial-root')) {
       setDialogQuery({ grantDialogOpen: true });
     }
   };
- 
+
   return (
-    <Tooltip
-      title='View Grants'
-      placement='left-end'
-    >
+    <Tooltip title='View Grants' placement='left-end'>
       <SpeedDial
         ref={overflowMenuRef}
         open={active || open}
@@ -98,11 +118,7 @@ const Actions = () => {
           <StyledAction
             key={action.name}
             onClick={action.handleClick}
-            icon={(
-              <Link href={action.href}>
-                {action.icon}
-              </Link>
-            )}
+            icon={<Link href={action.href}>{action.icon}</Link>}
             tooltipTitle={action.name}
           />
         ))}

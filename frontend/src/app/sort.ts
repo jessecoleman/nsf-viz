@@ -1,4 +1,5 @@
-import { SortDirection } from '@material-ui/core';
+import { SortDirection } from '@mui/material';
+
 import { AggFields } from './chart/D3Chart';
 
 const desc = <T>(a: T, b: T, key: SortableKeys) => {
@@ -7,7 +8,11 @@ const desc = <T>(a: T, b: T, key: SortableKeys) => {
   else return 0;
 };
 
-export const stableSort = <T>(array: T[], key: SortableKeys, direction: SortDirection): T[] => {
+export const stableSort = <T>(
+  array: T[],
+  key: SortableKeys,
+  direction: SortDirection
+): T[] => {
   const stabilizedThis = array.map((el, index): [T, number] => [el, index]);
   const sign = direction === 'desc' ? 1 : -1;
   stabilizedThis.sort((a, b) => {
@@ -15,9 +20,10 @@ export const stableSort = <T>(array: T[], key: SortableKeys, direction: SortDire
     if (order !== 0) return order;
     return sign * (a[1] - b[1]);
   });
-  return stabilizedThis.map(el => el[0]);
+  return stabilizedThis.map((el) => el[0]);
 };
 
 export type SortableKeys = 'name' | 'count' | 'amount';
 
-export const isAgg = (key: SortableKeys): key is keyof AggFields => ['count', 'amount'].includes(key);
+export const isAgg = (key: SortableKeys): key is keyof AggFields =>
+  ['count', 'amount'].includes(key);
