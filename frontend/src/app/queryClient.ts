@@ -6,7 +6,8 @@ if (process.env.REACT_APP_LOCAL) {
   Axios.defaults.baseURL = 'http://localhost:8888';
 // eslint-disable-next-line no-constant-condition
 } else if (true) { //process.env.CIP_API) {
-  Axios.defaults.baseURL = 'https://grantexplorer-api.apps.cip.uw.edu/data';
+  // Axios.defaults.baseURL = 'https://grantexplorer-api.apps.cip.uw.edu/data';
+  Axios.defaults.baseURL = 'https://www.grantexplorer.org/data';
 } else {
   Axios.defaults.baseURL = '/data';
 }

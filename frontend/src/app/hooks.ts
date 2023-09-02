@@ -28,28 +28,24 @@ export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObj
   
   const topRef = useRef<T>(null);
   const bottomRef = useRef<T>(null);
+  const [ dims, setBox ] = useState({ width: 0, height: 0 });
   const [ windowWidth, windowHeight ] = useWindowDimensions();
   // resize when terms change since they change height of toolbar
   const [{ terms }] = useQuery();
   const [ prevTerms, setPrevTerms ] = useState(terms);
 
   useEffect(() => {
-    setPrevTerms(terms);
-  }, [terms]);
-
-  const dims = useMemo(() => {
     if (topRef.current && bottomRef.current) {
-      const top = topRef.current.getBoundingClientRect();
-      const bottom = bottomRef.current.getBoundingClientRect();
-      if (top.height && bottom.height) {
-        return {
-          width: top.width,
-          height: windowHeight - top.height - bottom.height,
-        };
+      const bbox = topRef.current.getBoundingClientRect();
+      const bottom = topRef.current.getBoundingClientRect();
+      if (parent && bbox.height && bottom.height) {
+        setBox({
+          width: bbox.width,
+          height: windowHeight - bbox.height - bottom.height,
+        });
       }
     }
-    return { width: 0, height: 0 };
-  }, [topRef.current, bottomRef.current, windowWidth, windowHeight, JSON.stringify(prevTerms)]);
+  }, [topRef.current, windowWidth, windowHeight, JSON.stringify(terms)]);
  
   return [ topRef, bottomRef, dims ];
 };

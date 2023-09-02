@@ -23,36 +23,35 @@ const GrantsTable = (props: GrantsTableProps) => {
   const isLoaded = (idx: number) => !hasNextPage || (!isFetching && idx < count);
   const ITEM_SIZE = 64;
 
-  const handleLoadGrants = async (idx: number) => {
-    if (!isFetchingNextPage) {
-      await fetchNextPage({ pageParam: idx });
-    }
-  };
+  const handleLoadGrants = (idx: number) => (
+    !isFetchingNextPage
+      ? fetchNextPage({ pageParam: idx })
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      : new Promise(() => {})
+  );
 
   return (
     <>
-      <Collapse in={isFetchedAfterMount}>
-        <div className='scrollbox'>
-          <InfiniteLoader
-            ref={loaderRef}
-            isItemLoaded={isLoaded}
-            itemCount={hasNextPage ? count + 1 : count}
-            loadMoreItems={handleLoadGrants}
-          >
-            {({ onItemsRendered, ref }) => (
-              <FixedSizeList
-                onItemsRendered={onItemsRendered}
-                height={Math.min(ITEM_SIZE * (count + 1), height - 256)}
-                width='100%'
-                itemSize={ITEM_SIZE}
-                itemCount={hasNextPage ? count : count + 1}
-                ref={ref}
-              >
-                {GrantRow}
-              </FixedSizeList>
-            )}
-          </InfiniteLoader>
-        </div>
+      <Collapse in={count > 0 && isFetchedAfterMount}>
+        <InfiniteLoader
+          ref={loaderRef}
+          isItemLoaded={isLoaded}
+          itemCount={hasNextPage ? count + 1 : count}
+          loadMoreItems={handleLoadGrants}
+        >
+          {({ onItemsRendered, ref }) => (
+            <FixedSizeList
+              onItemsRendered={onItemsRendered}
+              height={Math.min(ITEM_SIZE * (count + 1), height - 256)}
+              width='100%'
+              itemSize={ITEM_SIZE}
+              itemCount={hasNextPage ? count : count + 1}
+              ref={ref}
+            >
+              {GrantRow}
+            </FixedSizeList>
+          )}
+        </InfiniteLoader>
       </Collapse>
       {isFetching && hasNextPage && <ProgressBar />}
     </>

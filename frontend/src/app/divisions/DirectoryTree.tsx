@@ -57,7 +57,10 @@ const DirectoryTree = () => {
     }
   });
   
-  const { divisionMap, divisionTree, isLoading } = useDirectory();
+  const { divisionMap, divisionTree, isFetching } = useDirectory();
+  // const debouncedHighlight = useDebouncedCallback(key => {
+  //   // dispatch(highlightDivision(key));
+  // }, 150);
 
   const handleRequestSort = (sort: SortableKeys) => {
     let direction: SortDirection | undefined;
@@ -187,7 +190,7 @@ const DirectoryTree = () => {
       />
       <ScrollableDiv>
         <Flipper flipKey={JSON.stringify([divisionFilter, query.terms, query.direction, query.sort])}>
-          {!divisionAggs || isLoading 
+          {!divisionAggs || isFetching 
             ? <LinearProgress />
             : <TreeView
               key={query.org}
