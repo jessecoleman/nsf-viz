@@ -18,6 +18,7 @@
         "@types/react-dom": "^17.0.9",
         "@types/react-router-dom": "^4.3.3",
         "@types/redux-logger": "^3.0.9",
+        "animejs": "^3.2.1",
         "autosuggest-highlight": "^3.1.1",
         "awesome-debounce-promise": "^2.1.0",
         "axios": "^0.25.0",
