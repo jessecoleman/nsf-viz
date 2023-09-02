@@ -5,10 +5,10 @@ import ChartLegend from './ChartLegend';
 import { useEffect, useRef, useState } from 'react';
 import BarChart from './D3Chart';
 import styled from '@emotion/styled';
-import { colorScales } from 'theme';
 import { useSearch } from 'api';
 import { isAgg } from 'app/sort';
 import { useYears } from 'api';
+import { useWizardRef } from 'app/wizard/wizard';
 
 let vis: BarChart;
 
@@ -62,6 +62,7 @@ type ChartProps = {
 const Chart = (props: ChartProps) => {
 
   const visRef = useRef<HTMLDivElement>(null);
+  const { ref: timelineRef, active } = useWizardRef<SVGGElement | null>('filterYears');
   const [ divisions ] = useDivisionsQuery();
   const [ query, setQuery ] = useSearchQuery();
   const [ , setDialogQuery ] = useGrantsDialogQuery();
@@ -107,6 +108,7 @@ const Chart = (props: ChartProps) => {
       vis = new BarChart({
         dimensions: props,
         containerEl: visRef.current,
+        timelineRef,
         onTooltipEnter: handleTooltipEnter,
         // onTooltipLeave: handleTooltipLeave,
         onBarClick: handleBarClick,
@@ -147,7 +149,11 @@ const Chart = (props: ChartProps) => {
 
   // update chart on window resize
   useEffect(() => {
-    if (props.height) vis.measure(props.width, props.height);
+    if (props.height) {
+      vis.animationDur = vis.timeline.animationDur = 0;
+      vis.measure(props.width, props.height);
+      vis.animationDur = vis.timeline.animationDur = 1000;
+    }
   }, [props.width, props.height]);
 
   const handleTooltipEnter = (dataKey: string, year: number) => {

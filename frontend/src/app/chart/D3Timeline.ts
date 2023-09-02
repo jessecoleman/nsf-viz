@@ -57,7 +57,7 @@ export default class D3Timeline {
     this.y.rangeRound([this.chartHeight, 0]);
 
     // TODO set this dynamically
-    this.yearRange = [1960, 2021];
+    this.yearRange = [1960, 2023];
     this.tickFormat = props.tickFormat;
    
     // setup brush
@@ -73,7 +73,7 @@ export default class D3Timeline {
           .duration(this.animationDur / 2)
           .call(target.move, this.yearRange.map(this.getBrushBounds));
       });
-
+      
     this.gb = this.chart.append('g').raise();
 
     this.xAxis = this.chart.append('g')
@@ -170,6 +170,8 @@ export default class D3Timeline {
     this.data = data;
     if (agg) this.agg = agg;
     this.years = data.map(d => d.key);
+    // TODO see if this can be updated dynamically
+    // this.yearRange = d3.extent(this.years) as [number, number];
     this.x.domain(this.years);
     this.max = Math.max(...data.map(d => d[this.agg]));
     this.y.domain([0, this.max]);
@@ -179,6 +181,9 @@ export default class D3Timeline {
 
   redraw = () => {
 
+    d3.select('.selection')
+      .attr('stroke', '#777')
+      .attr('stroke-width', '2px');
     this.updateAxes();
     this.updateBrush();
 

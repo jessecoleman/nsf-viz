@@ -1,6 +1,4 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
-import { useAsync } from 'react-async-hook';
-import AwesomeDebouncePromise from 'awesome-debounce-promise';
+import { useState, useEffect, useRef, RefObject, useMemo } from 'react';
 import { useQuery } from './query';
 
 export const useMeasure = <T extends HTMLElement>(): [ RefObject<T>, number ] => {
@@ -34,6 +32,7 @@ export const useMeasureChart = <T extends HTMLElement>(): [ RefObject<T>, RefObj
   const [ windowWidth, windowHeight ] = useWindowDimensions();
   // resize when terms change since they change height of toolbar
   const [{ terms }] = useQuery();
+  const [ prevTerms, setPrevTerms ] = useState(terms);
 
   useEffect(() => {
     if (topRef.current && bottomRef.current) {
@@ -74,7 +73,7 @@ export const useWindowDimensions = () => {
     const handleResize = () => {
       setWindowDimensions(getWindowDimensions());
     };
-
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -82,39 +81,16 @@ export const useWindowDimensions = () => {
   return windowDimensions;
 };
 
-export const useDebouncedCallback = <T extends (...args: unknown[]) => void>(
-  callback: T,
-  timeout: number
-) => {
-  return useConstant(() =>
-    AwesomeDebouncePromise<T>(callback, timeout)
-  );
-};
+export const useDebounce = <T>(value: T, delay?: number): T => {
 
-export const useDebouncedSearch = (
-  searchFunction: (input: string) => void,
-  timeout: number
-) => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  // Handle the input text state
-  const [ input, setInput ] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay || 500);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
 
-  // Debounce the original search async function
-  const debouncedSearchFunction = useConstant(() =>
-    AwesomeDebouncePromise(searchFunction, timeout)
-  );
-
-  // The async callback is run each time the text changes,
-  // but as the search function is debounced, it does not
-  // fire a new request on each keystroke
-  const results = useAsync(async () => (
-    input.length === 0 ? [] : debouncedSearchFunction(input)
-  ), [debouncedSearchFunction, input]);
-
-  // Return everything needed for the hook consumer
-  return {
-    input,
-    setInput,
-    results,
-  };
+  return debouncedValue;
 };

@@ -5,7 +5,7 @@ import { Box, LinearProgress, SelectChangeEvent, styled } from '@material-ui/cor
 import { TreeView } from '@material-ui/lab';
 
 import { SortableKeys } from 'app/sort';
-import { useDebouncedCallback, useMeasure } from 'app/hooks';
+import { useMeasure } from 'app/hooks';
 import { Organization, useDivisionsQuery, useSearchQuery } from 'app/query';
 import { SortDirection } from '@material-ui/core';
 import { colorScales } from 'theme';
@@ -58,9 +58,9 @@ const DirectoryTree = () => {
   });
   
   const { divisionMap, divisionTree, isFetching } = useDirectory();
-  const debouncedHighlight = useDebouncedCallback(key => {
-    // dispatch(highlightDivision(key));
-  }, 150);
+  // const debouncedHighlight = useDebouncedCallback(key => {
+  //   // dispatch(highlightDivision(key));
+  // }, 150);
 
   const handleRequestSort = (sort: SortableKeys) => {
     let direction: SortDirection | undefined;

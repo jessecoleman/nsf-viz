@@ -1,9 +1,8 @@
 import os
-import json
 import csv
 import dateutil.parser
 from pathlib import Path
-from typing import Generator, Iterable, List, Mapping, Optional, Type, Union
+from typing import Generator, Iterable, Union
 from elasticsearch_dsl import (
     Document,
     Date,
@@ -23,7 +22,12 @@ import logging
 root_logger = logging.getLogger()
 logger = root_logger.getChild(__name__)
 
-from parse_abbrevs import abbrevs_flat, normalize, nsf_mapped_reversed, nsf_directory_inv
+from parse_abbrevs import (
+    abbrevs_flat,
+    normalize,
+    nsf_mapped_reversed,
+    nsf_directory_inv,
+)
 
 host = os.environ.get("ELASTICSEARCH_HOST", "localhost")
 es = connections.create_connection(hosts=[host], timeout=20)
@@ -35,13 +39,23 @@ es_index.settings(
     number_of_replicas=2,
 )
 
-english_stop = token_filter("english_stop", type="stop", stopwords="_english_")
-
-english_possessive_stemmer = token_filter(
-    "english_stemmer", type="stemmer", language="english"
+english_stop = token_filter(
+    "english_stop",
+    type="stop",
+    stopwords="_english_"
 )
 
-english_stemmer = token_filter("english_stemmer", type="stemmer", language="english")
+english_possessive_stemmer = token_filter(
+    "english_stemmer",
+    type="stemmer",
+    language="english"
+)
+
+english_stemmer = token_filter(
+    "english_stemmer",
+    type="stemmer",
+    language="english"
+)
 
 aggressive_analyzer = analyzer(
     "aggressive_analyze",
@@ -73,6 +87,9 @@ class Grant(Document):
     cat2_raw = Keyword()
     cat3 = Keyword()
     cat3_raw = Keyword()
+    external_url = Keyword()
+    investigators = Keyword()
+    recipient_org = Keyword()
 
 
 def format_date(date_str: str) -> str:
@@ -123,11 +140,16 @@ def get_data(data_source: Iterable) -> Generator:
                 # date=r['date'],
                 date=format_date(r["date"]),
                 cat1_raw=cat1_raw,
+                # may make more sense to swap cat1/cat2 here
                 cat1=mapped_abbrev,
                 cat2=nsf_directory_inv.get(mapped_abbrev, mapped_abbrev),
                 agency=r["agency"],
+                external_url=r.get("external_url"),
+                investigators=r.get("investigators"),
+                recipient_org=r.get("recipient_org"),
             )
             yield g.to_dict(True)
+
         except KeyError:
             logger.debug(f"KeyError encountered for line {i}. skipping...")
             continue

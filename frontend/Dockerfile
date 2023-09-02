@@ -8,8 +8,8 @@ FROM node:14.16
 WORKDIR /usr/local/src/app/frontend
 
 # Install dependencies
-# COPY package.json yarn.lock ./
-COPY package.json ./
+COPY package.json yarn.lock ./
+# COPY package.json ./
 RUN yarn install --network-timeout 100000
 
 # Copy in the source code

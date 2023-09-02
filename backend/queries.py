@@ -1,13 +1,16 @@
+"""
+Elasticsearch DSL queries for aggregating by term/division/year
+"""
 import os
 import asyncio
-from models import Grant, SearchResponse, YearsResponse
+from models import Grant, SearchResponse, Term, YearsResponse
 import re
-import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from aioelasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
-from elasticsearch_dsl import query
+
+from gensim.models.phrases import Phraser
 
 import logging
 root_logger = logging.getLogger()
@@ -28,8 +31,6 @@ def get_divisions() -> List[Dict]:
             })
     return divisions
 
-# with open('assets/divisions.json') as div_file:
-#     divisions = json.load(div_file)
 divisions = get_divisions()
 div_map = {d['name']: d['key'] for d in divisions}
 inv_div_map = {d['key']: d['name'] for d in divisions}
@@ -150,7 +151,7 @@ def term_agg(agg_field: str, aggs: Dict[str, Any]):
             'terms': {
                 'field': agg_field,
                 # 'min_doc_count': 0,
-                'size': 100, # TODO: number of divisions
+                'size': 100, # has to be greater than total # divisions or it truncates
             },
             'aggs': aggs
         }
@@ -326,7 +327,7 @@ async def grants(aioes,
                                 'term': {
                                     'cat1': div,
                                 }
-                            } for div in divisions]
+                            } for div in (divisions or [])]
                         },
                     },
                     org_match(org)
@@ -360,7 +361,11 @@ async def grants(aioes,
         )
  
     
-async def abstract(aioes, _id: str, terms: str):
+async def abstract(
+    aioes,
+    _id: str,
+    terms: str,
+):
 
     query = {
         'query': {
@@ -389,7 +394,8 @@ async def abstract(aioes, _id: str, terms: str):
                     }
                 }
             },
-            'pre_tags': ['<em>']
+            'pre_tags': ['<em>'],
+            'post_tags': ['</em>']
         }
     }
 
@@ -399,7 +405,8 @@ async def abstract(aioes, _id: str, terms: str):
         highlight = hit['highlight']['abstract'][0]
         # this is an unfortunate limitation of ES highlight that requires merging
         # adjacent <em> spans manually
-        hit['_source']['abstract'] = re.sub(r'</em>([-\s]?)<em>', r'\1', highlight)
+        highlight = re.sub(r'</em>([-\s\.]*)<em>', r'\1', highlight)
+        hit['_source']['abstract'] = highlight
 
     # return hit['_source']['abstract']
     return Grant(
@@ -407,8 +414,8 @@ async def abstract(aioes, _id: str, terms: str):
         score=hit['_score'],
         **hit['_source'],
     )
+    
 
- 
 async def typeahead(aioes, prefix: str):
     result = await aioes.search(index=INDEX_SUGGEST, body={
             'suggest': {
@@ -416,17 +423,15 @@ async def typeahead(aioes, prefix: str):
                     'prefix': prefix,
                     'completion': {
                         'field': 'suggest',
-                        'size': 10
+                        'size': 15
                     }
                 },
-                # 'highlight': {
-                #     'pre_tag': '<em>',
-                #     'post_tag': '</em>',
-                # }
             }
         })
+    
 
-    return [
-        g['_source']['term']
-        for g in result['suggest']['gram-suggest'][0]['options']
-    ]
+    return [Term(
+        term=g['_source']['term'],
+        forms=[form.replace('_', ' ') for form in g['_source'].get('forms', []) if form != g['_source']['term']],
+        stem=g['_source']['stem'],
+    ) for g in result['suggest']['gram-suggest'][0]['options']]

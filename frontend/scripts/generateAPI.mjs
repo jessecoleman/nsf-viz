@@ -1,20 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-undef */
-import OpenAPI from 'openapi-typescript-codegen';
 import fetch from 'node-fetch';
-
-// async function fetchUntilSucceeded() {
-//   let success = false;
-//   while(!success) {
-//     try {
-//       let result = await fetch('http://localhost/data/generate_openapi_json');
-//       success = true;
-//       return result;
-//     } catch {
-//       setTimeout();
-//     }
-//   }
-// }
+import { writeFileSync } from 'fs';
+import orval from 'orval';
 
 function wait(delay) {
     return new Promise((resolve) => setTimeout(resolve, delay));
@@ -34,9 +22,8 @@ function fetchRetry(url, delay, tries, fetchOptions = {}) {
 fetchRetry('http://backend:8888/data/generate_openapi_json', 1000, 100)
     .then((res) => res.json())
     .then((res) => {
-
-        OpenAPI.generate({
-            input: res,
-            output: './src/api'
-        });
+	    writeFileSync("./api.json", JSON.stringify(res));
     });
+//     .then(() => {
+// 	    orval('../orval.config.js')
+//     });

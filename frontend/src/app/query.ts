@@ -35,7 +35,7 @@ export const DefaultBooleanParam = withDefault(
 
 const SortParam = withDefault(
   StringParam,
-  'name',
+  'amount',
 ) as QueryParamConfig<SortableKeys>;
 
 const SortDirectionParam = withDefault(
@@ -75,6 +75,10 @@ export const useGrantsDialogQuery = () => (
   useQueryParams(grantParamConfig)
 );
 
+export const useTermsQuery = () => (
+  useQueryParam('terms', ArrayParam)
+);
+
 export const useGrantIdQuery = () => (
   useQueryParam('grantId', DefaultStringParam)
 );
@@ -103,5 +107,12 @@ export const useDivisionsQuery = () => {
   //   return [ new Set(Object.keys(divisionMap)), setDivisions ];
   // }
 };
+
+
+export const useBeta = () => useQueryParam('beta', DefaultBooleanParam);
+
+export const useTutorial = () => useQueryParam('tutorial', DefaultNumberParam);
+
+export const useAbout = () => useQueryParam('about', DefaultBooleanParam);
 
 export type QueryParams = ReturnType<typeof useQuery>[0];

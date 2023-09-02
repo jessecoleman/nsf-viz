@@ -15,14 +15,6 @@ RUN poetry config virtualenvs.create false \
 # Copy over the source code
 COPY . .
 
-# RUN poetry run python app.py --generate-openapi-json ./api.json
-
-# EXPOSE 8888
-
-RUN python -m nltk.downloader stopwords \
-  && python -m nltk.downloader punkt \
-  && python -m nltk.downloader wordnet
-
 # Kick things off
 ENTRYPOINT [ "poetry" ]
 CMD ["run", "python", "app.py", "--host", "0.0.0.0"]

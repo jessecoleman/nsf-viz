@@ -17,6 +17,7 @@ export const useDirectory = () => {
       // onSuccess: ({ data }) => {
       //   setExpanded(data.map(d => d.abbr));
       // },
+      keepPreviousData: true,
       select: ({ data }) => ({
         divisionMap: Object.fromEntries(data.flatMap(({ departments = [], ...d }) => (
           [[d.abbr, d]].concat(departments.map(d => [d.abbr, d]))

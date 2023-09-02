@@ -1,39 +1,47 @@
-import { FocusEvent, forwardRef, KeyboardEvent, useRef, useState } from 'react';
-import { Flipper } from 'react-flip-toolkit';
-import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, List, Paper, Popper, styled } from '@material-ui/core';
-import TermsList from './TermsList';
-import { useLoadRelated, useLoadTypeahead } from 'api';
+import { MouseEvent, FocusEvent, forwardRef, KeyboardEvent, useRef, useState } from 'react';
+import { Box, ClickAwayListener, Fade, InputBase, InputBaseProps, Paper, Popper, styled } from '@material-ui/core';
+import { Flipped } from 'react-flip-toolkit';
 import { useQuery } from 'app/query';
 
+const InputContainer = styled(Box)(({ theme }) => `
+  flex-grow: 1;
+  cursor: text;
+`);
+
 const ChipInput = styled(InputBase)(({ theme }) => `
+  padding: 0;
   color: 'inherit';
   & .MuiInputBase-input {
     color: ${theme.palette.common.white};
-    transition: ${theme.transitions.create('width')};
+    // transition: ${theme.transitions.create('width')};
     width: 100%;
+    padding-left: ${theme.spacing(1)};
+    padding-bottom: ${theme.spacing(1.5)};
     ${theme.breakpoints.up('sm')} {
       width: 10ch;
-      &:focus {
-        width: 20ch;
-      }
+      // &:focus {
+      //   width: 20ch;
+      // }
     }
   }
 `);
 
-const Dropdown = styled(Paper)(({ theme }) => `
+const Dropdown = styled(Paper)<{ topics: boolean }>(({ theme, topics }) => `
   right: 0;
   width: 100%;
   margin-top: ${theme.spacing(.5)};
   max-height: calc(100vh - 256px);
+  overflow-x: hidden;
   overflow-y: auto;
   z-index: 3;
   ${theme.breakpoints.up('sm')} {
-    width: 25em;
+    width: ${topics ? '50em' : '25em'};
   }
 `);
 
 type TermsInputProps = {
   value: string
+  suggestions: React.ReactElement | null
   onAddChip: (chips: string) => void
   onDeleteLastChip: () => void
   onClearInput: () => void
@@ -42,26 +50,22 @@ type TermsInputProps = {
 const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => {
 
   const {
+    suggestions,
     onAddChip,
     onDeleteLastChip,
     onClearInput,
     ...inputProps
   } = props;
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [ focused, setFocused ] = useState(false);
   const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
   const [{ terms }] = useQuery();
-  // TODO add debounce
-  const { data: typeahead } = useLoadTypeahead(props.value, {
-    query: {
-      enabled: props.value.length > 0
-    }
-  });
-  const { data: related } = useLoadRelated({ terms }, {
-    query: {
-      enabled: terms.length > 0
-    }
-  });
+  
+  const handleClickFocus = (e: MouseEvent) => {
+    inputRef.current?.focus();
+    setFocused(true);
+  };
 
   const handleFocus = (e: FocusEvent) => {
     setFocused(true);
@@ -76,6 +80,7 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    console.log(e.key);
     switch(e.key) {
       case 'Enter':
         onAddChip(props.value);
@@ -90,6 +95,12 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
       case 'Escape':
         handleClickAway();
         break;
+      case 'ArrowDown':
+        console.log('down');
+        break;
+      case 'ArrowUp':
+        console.log('down');
+        break;
     }
   };
 
@@ -100,15 +111,20 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
 
   return (
     <ClickAwayListener onClickAway={handleClickAway}>
-      <Box flexGrow={1}>
-        <ChipInput
-          ref={ref}
-          placeholder='keywords'
-          inputRef={inputRef}
-          {...inputProps}
-          onFocus={handleFocus}
-          onKeyDown={handleKeyDown}
-        />
+      <InputContainer onClick={handleClickFocus}>
+        <Flipped flipId='chip-input'>
+          {flipProps => (
+            <ChipInput
+              componentsProps={{ root: flipProps as any }}
+              ref={ref}
+              placeholder='keywords'
+              inputRef={inputRef}
+              {...inputProps}
+              onFocus={handleFocus}
+              onKeyDown={handleKeyDown}
+            />
+          )}
+        </Flipped>
         <Popper
           open={focused}
           anchorEl={anchorEl}
@@ -117,32 +133,13 @@ const TermsInput = forwardRef((props: InputBaseProps & TermsInputProps, ref) => 
         >
           {({ TransitionProps }) => (
             <Fade {...TransitionProps} timeout={350}>
-              <Dropdown>
-                <Flipper flipKey={JSON.stringify([typeahead?.data, related])}>
-                  <List>
-                    {props.value
-                      ? <TermsList
-                        input={props.value}
-                        header='autocomplete'
-                        filter={terms}
-                        terms={typeahead?.data ?? []}
-                        onAddChip={onAddChip}
-                      />
-                      : <TermsList
-                        input={props.value}
-                        header='related terms'
-                        filter={terms}
-                        terms={related?.data ?? []}
-                        onAddChip={onAddChip}
-                      />
-                    }
-                  </List>
-                </Flipper>
+              <Dropdown topics={!(props.value || terms.length)}>
+                {suggestions}
               </Dropdown>
             </Fade>
           )}
         </Popper>
-      </Box>
+      </InputContainer>
     </ClickAwayListener>
   );
 });
